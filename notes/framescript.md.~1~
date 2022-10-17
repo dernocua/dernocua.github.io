@@ -1,0 +1,10 @@
+Suppose you want to run some arbitrary scripts in an interactive
+display system, like a game, using a flexible programming language
+like Lisp, but you want to ensure that those scripts don’t cause it to
+use more memory or become unresponsive.  One possible way to handle
+this is to run the scripts once per frame, allocating only from a
+per-frame arena heap which gets nuked before the next frame.  Any
+permanent effects need to go through some kind of “interprocess
+communication” eye of the needle which will not pass references into
+the per-frame heap — so you can pass, say, byte strings, or maybe
+JSON-serializable objects, but not 

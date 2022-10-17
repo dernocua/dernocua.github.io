@@ -1,0 +1,3 @@
+Single-ended data transmission, as used in RS-232, is limited in noise
+immunity, so higher-speed signaling is commonly done with differential
+signaling.

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html><title>Wiki models ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Wiki models</h1><div class="metadata">Kragen Javier Sitaker, 02021-08-19 (updated 02021-12-30)
+(1 minute)</div><p>I’ve been thinking about how to build simple models.</p>
+<p>Suppose I write the equations:</p>
+<pre><code>area = height * section.perimeter + 2 * section.area
+volume = height * section.area
+</code></pre>
+<p>These describe a cylinder or prism, and they imply some things about
+<code>section</code>: it should have a property <code>area</code> that can be multiplied by
+an integer or whatever <code>height</code> is, and a property <code>perimeter</code> that
+can be multiplied by whatever <code>height</code> is and then added to an integer
+times <code>area</code>.</p>
+<p>My editor should offer to create <code>section</code> and <code>height</code>, and in
+<code>section</code> it should offer to create <code>perimeter</code> and <code>area</code>.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/hci.html">Human-computer interaction</a> (22 notes)
+</li><li><a href="../topics/end-user-programming.html">End user programming</a> (6 notes)
+</li><li><a href="../topics/numerical-modeling.html">Numerical modeling</a> (5 notes)
+</li><li><a href="../topics/editors.html">Editors</a> (4 notes)
+</li><li><a href="../topics/wiki.html">Wiki</a> (2 notes)
+</li><li>Calculation</li></ul></div></html>

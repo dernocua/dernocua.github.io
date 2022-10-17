@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><title>First class locations ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>First class locations</h1><div class="metadata">Kragen Javier Sitaker, 02021-01-04
+(3 minutes)</div><p>As mentioned in <a href="../notes/layout-typescript.html">Layout typescript</a> one of the deficiencies of
+the Lisp object-graph memory model is that <em>places</em> aren’t
+first-class: object slots (instance variables or record fields), local
+variables, global variables, array elements, and so on, can’t be
+referred to in the language except indirectly.  In that note, I was
+pondering the implications for LispM-style “presentations” in a
+typescript, which I’d like to make interactively explorable by
+default, but I’ve also written about a related question in terms of
+IMGUI libraries.</p>
+<p>In an IMGUI library, it’s very convenient to be able to say something
+like (from [Dear ImGui]):</p>
+<pre><code>ImGui::SliderFloat("this field is called f", &amp;f, 0.0f, 1.0f);
+</code></pre>
+<p>This works in C because we can pass a pointer to the global variable
+<code>f</code> to the slider; similarly we can pass pointers to record (struct)
+fields.  Golang and C++ are similarly empowered.  But this is
+potentially unsafe, in the sense that we can also pass pointers to
+local variables, the callee can save the pointer somewhere, and those
+local variables can then go out of scope, leaving a dangling pointer
+ready to cause mischief.</p>
+<p>In languages like Pascal, a safe version of this facility is available
+as “var parameters”: a parameter which, rather than being a local
+variable with a copy of the passed-in value, is an alias to a location
+provided by the caller.  This preserves the freedom for the compiler
+to manage activation records with a stack discipline, while also
+providing the ability for SliderFloat or whatever to get the reference
+it wants.  The callee can pass this reference to other subroutines but
+cannot reseat the reference or save it elsewhere.  C++’s reference
+type works similarly.</p>
+<p>On a modern machine, we could imagine saving activation records on the
+heap and capturing references to them inside of, for example, textual
+or graphical output, enabling a debugger to go back and trace the
+“why” of a given value — as in <a href="https://youtu.be/8QiPFmIMxFc?t=483" title="8'3&quot;: ‘This has to work the other way too: that if I see part of the picture, I need to know what code was responsible for drawing it.  So I do the same thing: I hold down the Option key, and now as I move over each pixel of the picture, you’ll see on the right it’s jumping to the line of code that drew that pixel.’ http://vimeo.com/36579366">Bret Victor’s tree demo from
+<em>Inventing on Principle</em></a>, for example.  In an IMGUI context we
+can fake it by recreating the XXX</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/hci.html">Human-computer interaction</a> (22 notes)
+</li><li><a href="../topics/safety.html">Safe programming languages</a> (11 notes)
+</li><li><a href="../topics/programming-languages.html">Programming languages</a> (8 notes)
+</li><li><a href="../topics/c.html">C</a> (8 notes)
+</li><li><a href="../topics/terminals.html">Terminals</a> (6 notes)
+</li><li><a href="../topics/post-teletype.html">Post-teletype terminal design</a> (6 notes)
+</li><li><a href="../topics/end-user-programming.html">End user programming</a> (6 notes)
+</li><li><a href="../topics/pascal.html">Pascal</a> (4 notes)
+</li><li><a href="../topics/ownership.html">Memory ownership</a> (2 notes)
+</li><li>Immediate-mode GUIs</li></ul></div></html>

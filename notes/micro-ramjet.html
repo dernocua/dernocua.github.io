@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html><title>Micro ramjet ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Micro ramjet</h1><div class="metadata">Kragen Javier Sitaker, 02021-11-22 (updated 02021-12-30)
+(3 minutes)</div><p>Most of the fuel of a rocket is its oxidizer.  For the air, ramjets
+are an appealing alternative: just carry the reducer, squirt it into a
+combustion chamber, and let the hot compressed incoming air maintain
+the combustion!</p>
+<p>The autoignition temperature of heptane is 223°, and it’s nearly as
+energy-dense as diesel or regular jet fuel: <a href="https://en.wikipedia.org/wiki/Energy_density#In_chemical_reactions_(oxidation)">gasoline is 34 MJ/l
+versus diesel’s 39 or kerosene’s 35</a>.  So if the incoming air can
+get over 250° or so, a bit less than doubling its input temperature,
+we’re golden; from there it’s just a matter of adding the heptane or
+whatever gradually enough to avoid cooling the air below ignition
+temperature.</p>
+<p>How much compression does that need?  For an ideal gas, <em>PV</em> = <em>nRT</em>;
+in an isothermal process, where <em>nRT</em> is constant, <em>PV</em> = some
+constant <em>C</em>.  So the short answer is that we need to double <em>PV</em>.
+But when we increase <em>P</em>, <em>V</em> decreases.  By how much?</p>
+<p>Well, in <a href="https://en.wikipedia.org/wiki/Adiabatic_heating#Adiabatic_heating_and_cooling">adiabiatic heating and cooling</a>, <em>PV<sup>n</sup></em> = <em>C</em>,
+where <em>n</em> is the adiabatic index, 7/5 for diatomic gases.  So, I
+guess, if the volume is cut in half, then the pressure needs to
+increase by a compensating factor of 2<sup>7/5</sup> = 2.64, which
+means that the product <em>PV</em> and therefore the temperature increased by
+32% (2<sup>2/5</sup> = 1.32).  So to double the temperature we need to
+decrease the volume by 2<sup>5/2</sup> = 5.66, which will increase the
+pressure by 5.66<sup>7/5</sup> = 11.314, and 11.314/5.66 = 1.999.</p>
+<p>(I had to write 24 lines of Python to figure that out.)</p>
+<p>So we need about 11 atmospheres of pressure on the front of the ram in
+order to run the jet.  How fast is that?</p>
+<p>As I understand it, in <a href="https://en.wikipedia.org/wiki/Stagnation_pressure#Compressible_flow">isentropic compressible flow, the stagnation
+pressure</a> is (1 + ½(<em>n</em>-1)<em>M</em>²)<sup>(<em>n</em>/(<em>n</em>-1))</sup> times the
+static pressure of the surrounding air, at Mach <em>M</em>.  Here <em>n</em> is 7/5,
+<em>n</em>-1 is 2/5, <em>n</em>/(<em>n</em>-1) is thus 7/2, so this simplifies to (1 +
+<em>M</em>²/5)<sup>7/2</sup>.  So, to get 11 times higher stagnation
+pressure:</p>
+<blockquote>
+<p>11 = (1 + <em>M</em>²/5)<sup>7/2</sup><br />
+11<sup>2/7</sup> = 1 + <em>M</em>²/5<br />
+5(11<sup>2/7</sup> - 1) = <em>M</em>²<br />
+<em>M</em> = (5(11<sup>2/7</sup> - 1))<sup>½</sup><br />
+</p>
+</blockquote>
+<p>This works out to be about Mach 2.22, about 760 m/s at sea level, if
+I’ve calculated everything correctly.  But I suspect that it isn’t
+correct because Wikipedia talks about <a href="https://en.wikipedia.org/wiki/Ramjet">subsonic ramjets</a>, and they
+surely aren’t using fuel that ignites at a much lower temperature than
+heptane, right?  Indeed, WP says that they’ve been run as low as 45
+m/s, but need to run at at least Mach 0.5 to be self-sustaining.</p>
+<p>A crucial thing here is that the stagnation pressure and thus the
+stagnation temperature doesn’t depend on the scale or shape of the
+ramjet in any way; it’s the same for a millimeter-wide ramjet or a
+kilometer-wide ramjet.  I’m not sure if that’s part of my error,
+though.  The ideal-gas assumptions break down in the transonic region,
+as I understand it, but I don’t think that’s my problem.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/physics.html">Physics</a> (18 notes)
+</li><li><a href="../topics/facepalm.html">Facepalm</a> (7 notes)
+</li><li><a href="../topics/small-things.html">Small things</a> (5 notes)
+</li><li><a href="../topics/flying.html">Flying</a> (3 notes)
+</li></ul></div></html>

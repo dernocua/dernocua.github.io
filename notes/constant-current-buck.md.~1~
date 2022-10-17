@@ -1,0 +1,8 @@
+I was talking about flashlights and mentioned that I'd tried designing
+a constant-current buck converter without success.  But now I don't
+see what was so hard about it.  Maybe when I submit this design to
+simulation I'll find out.
+
+The basic buck converter is GND->|-a-R1-b-L1-c-C1-GND.  The input
+power waveform is applied between GND and a; the output appears across
+the output capacitor C1.

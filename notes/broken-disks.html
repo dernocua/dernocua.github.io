@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><title>Broken hard disks are the cheapest source of ultraprecision components ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Broken hard disks are the cheapest source of ultraprecision components</h1><div class="metadata">Kragen Javier Sitaker, 02021-06-02 (updated 02021-06-12)
+(3 minutes)</div><p>Ooh, broken disks are <a href="https://articulo.mercadolibre.com.ar/MLA-691736404-discos-rigidos-a-revisar-reparar-lote-de-10-surtidos-_JM?searchVariation=46220774514">AR$1200 (US$8) for a ten-pack</a>.  $120 (80¢)
+(or <a href="http://www.resourcefever.com/publications/reports/Bo2W_HDD_Dismantling_Nov2015_final.pdf" title="Recycling of Hard Disk Drives, Manhart et al., 02015">US$1 in the EU in 02013</a>) <a href="https://hackaday.com/2016/02/03/hard-drive-disassembly-is-easy-and-rewarding/">gets you</a> a voice-coil actuator
+built around two pyrophoric <a href="https://www.scrapmetaljunkie.com/269/how-to-scrap-hard-drives-2">neodymium magnets plated in nickel
+mounted on permalloy or mu-metal brackets</a>, a 5400rpm long-life
+bearing, and a BLDC motor with a controller, plus some extremely flat
+(<a href="https://www.fujielectric.com/company/tech/pdf/57-02/FER-57-2-062-2011.pdf" title="Aluminum Substrate for 3.5-inch 1 TB Magnetic Recording Media, Kainuma et al. 02011">Ra 120 pm</a>) first-surface glass-ceramic mirrors with <a href="http://imajeenyus.com/optical/20140813_hdd_mirrors/index.shtml">80%
+reflectivity</a> and a low thermal coefficient of expansion (<a href="http://www.oharacorp.com/pdf/TS-10.pdf">7.4
+ppm/° for TS-10</a>) and high modulus (100 GPa), <a href="http://www.resourcefever.com/publications/reports/Bo2W_HDD_Dismantling_Nov2015_final.pdf" title="Recycling of Hard Disk Drives, Manhart et al., 02015">about 400g of
+castable aluminum</a> between possible platters and the case (maybe
+<a href="https://www.quora.com/What-aluminum-alloy-is-used-to-cast-computer-hard-drive-shells">A380 or ADC12</a> or <a href="https://www.scrapmetalforum.com/computer-recycling/25497-hard-drive-shells-heatsinks-alloy-separation.html">6061 or 5052</a>) some Torx screws, a SATA
+power connector, some machined 6061-T6 aluminum spacers, and some
+jumper blocks.  Oh and maybe <a href="https://www.st.com/en/applications/data-center/hard-disk-drive-hdd.html">an accelerometer and temperature and
+pressure sensors</a>.  As scrap metal this totals about <a href="http://www.resourcefever.com/publications/reports/Bo2W_HDD_Dismantling_Nov2015_final.pdf" title="Recycling of Hard Disk Drives, Manhart et al., 02015">US$1.66</a>,
+mostly from copper and gold from the PCB, but obviously you can’t get
+voice-coil actuators or bearings that cheap.</p>
+<p>Oh, and <a href="https://spritesmods.com/?art=hddhack&amp;page=3">an ARM core accessible over JTAG, using external RAM and
+Flash</a>.  And it talks to the controller that controls the spindle
+and head over SPI.  <a href="https://web.archive.org/web/20130228021446/http://nazyura.hardw.net/Part02.htm">The Flash format has been largely reversed</a>,
+but <a href="https://www.overclockers.com/forums/showthread.php/568740-Microcontrollers-on-Hard-drives">the chipmakers don’t publish datasheets</a>.</p>
+<p>The whole precisely balanced platter assembly with the platters,
+motor, and bearings is nowadays almost invariably 5400rpm or 7200rpm;
+10krpm disks are exotic rarities, and 3600rpm disks are antique.  A
+7200-rpm 3.5" desktop drive has a rim speed of 5.3 m/s, while a
+5400-rpm 2.5" laptop drive is 2.9 m/s.  Either of these is a fairly
+respectable speed on its own for things like fine grinding, but also
+you can also <a href="http://imajeenyus.com/electronics/20140125_brushless_motor_driver/index.shtml">overclock them quite a bit</a>.  They’re normally only
+operated at about 3 watts, so you probably can’t get more than 30
+watts out of them no matter how much cooling you add.</p>
+<p>The motor might be suitable as a hand pullstring generator.</p>
+<p>Desktop disks still use aluminum platters, typically <a href="https://ceramics.org/ceramic-tech-today/glass-could-replace-aluminum-in-hard-disk-drives-that-store-20-tb-of-data">635 μm</a>
+thick.  These are also 6061.</p>
+<p>For small machinery the cobalt alloy used for the magnetic medium
+might be worth extracting and refining.  I’m guessing it’s on the
+order of 10 mg per disk, assuming 25 nm thickness, 3 platters, and
+3.5", and ignoring the center hole; <a href="https://www.fujielectric.com/company/tech/pdf/57-02/FER-57-2-062-2011.pdf" title="Aluminum Substrate for 3.5-inch 1 TB Magnetic Recording Media, Kainuma et al. 02011">there are also two layers on top
+of it and three underneath</a>.</p>
+<p><a href="https://hackaday.com/2018/01/07/scrap-a-hard-drive-build-a-rotary-encoder/#comment-4301966">Reputedly the head arm bearing is also very high precision</a>.
+<a href="https://scanlime.org/2008/07/hard-disk-laser-scanner-at-ilda-4k/">Micah Elizabeth Scott built a 4kpps laser projector in 02008</a>
+using two voice-coil actuators from hard disks.</p>
+<p>Not sure how to use the actual GMR sensors themselves; presumably they
+can detect small magnetic fields reliably.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/contrivances.html">Contrivances</a> (45 notes)
+</li><li><a href="../topics/electronics.html">Electronics</a> (39 notes)
+</li><li><a href="../topics/pricing.html">Pricing</a> (35 notes)
+</li><li><a href="../topics/lasers.html">Frrickin’ lasers!</a> (12 notes)
+</li><li><a href="../topics/ghettobotics.html">Ghettobotics</a> (12 notes)
+</li><li><a href="../topics/precision.html">Precision</a> (9 notes)
+</li></ul></div></html>

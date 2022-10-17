@@ -1,0 +1,8 @@
+Reading some hackers talking about Packrat parsers, it occurred to me
+that perhaps you could get a huge speedup in Packrat by a different
+memoizing approach.
+
+Normally in Packrat a parsing grammar node (or perhaps a nonterminal)
+is invoked at a given position of a given stream and returns a result,
+either a successful parse or a failure, which is memoized with the
+(position, grammar node) pair as the memo table key.

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html><title>ASCII art, but in Unicode, with Braille and other alternatives ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>ASCII art, but in Unicode, with Braille and other alternatives</h1><div class="metadata">Kragen Javier Sitaker, 02021-02-10 (updated 02021-02-24)
+(9 minutes)</div><p>There are a variety of Unicode graphics drawing character sets,
+similar to the <a href="https://www.curiousmarc.com/computing/hp-264x-terminals">Large Character Microvector Set ROM from the HP 2640
+series</a>, which let you draw each character from a “3×3 matrix of
+smaller characters”.</p>
+<p>I was thinking it might be fun to abuse some of these character sets
+for asciinema plotting and the like.</p>
+<h2>Unicode math character pieces</h2>
+<p>These are used to build up large math symbols over several character
+cells.  I don’t know where they come from but I suspect they’re in
+Unicode for round-tripping compatibility.</p>
+<p>(loop for i from #x239b to #x23b3 do (insert i))</p>
+<pre><code>⎛⎜⎝⎞⎟⎠⎡⎢⎣⎤⎥⎦⎧⎨⎩⎪⎫⎬⎭⎮⎯
+</code></pre>
+<p>You can use them like this:</p>
+<pre><code>⎛    ⎞ ⎡  ⎤ ⎧    ⎫           ⎰ ⎱ 
+⎜⎛  ⎞⎟ ⎢  ⎥ ⎪    ⎪  ⎧        ⎱ ⎰ 
+⎜⎜()⎟⎟ ⎣  ⎦ ⎨    ⎬  ⎮ x² dx      
+⎜⎝  ⎠⎟      ⎪    ⎪  ⎭        ⎲   
+⎝    ⎠      ⎩    ⎭           ⎳
+</code></pre>
+<h2>Box drawings</h2>
+<p>This is the set from U+2500 to U+257F from Videotex mosaic characters:</p>
+<p>(loop for i from #x2500 to #x257f do (insert i))</p>
+<pre><code>─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟
+┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿
+╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟
+╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿
+</code></pre>
+<p>This contains light, heavy, and double line weights in horizontal and
+vertical orientations, though not all combinations of these, plus
+double, triple, and quadruple-dashed variants of light and heavy
+straight lines, plus light diagonals, plus rounded corners.  With
+these you can do arbitrary combinations of vertical and horizontal
+lines in half-character-cell increments.  I think all the combinations
+of light and heavy lines are provided; that would be 3⁴ = 81
+characters, which are the ones from U+2500 to U+254B inclusive except
+U+2504 to U+250B inclusive, plus the ones from U+2574 to U+257F: (+ (-
+(- #x254C #x2500) (- #x250c #x2504)) (- #x2580 #x2574)) gives 80, so
+either I miscounted or one is missing.  All three combinations of
+diagonal lines are provided, but most of the light–double combinations
+and all of the heavy–double combinations are missing.</p>
+<p>So with these Videotex characters you can do things like this:</p>
+<pre><code>╭──────┒   ╲╳╱   ╱╲     ╔══════╗
+│      ┃          ╱╲    ╟──────╢
+┕━━━━━━┛         ╱╲     ║      ║
+                        ╚══════╝
+</code></pre>
+<h2>Quadrant characters</h2>
+<p>There’s <a href="https://www.unicode.org/L2/L2018/18235-terminals-prop.pdf">a 2018 “Graphics for Legacy Computing” proposal to add 64
+sextant characters to Unicode starting at U+1FB00</a> compatible with
+the TRS-80 “pseudopixel” or “semigraphics” set, or teletext systems
+including Minitel.  But since 1991 Unicode has contained “quadrant”
+characters, like the Sinclair ZX-80 and ZX-81 or the Commodore line,
+with <em>four</em> pseudopixels per character cell, from U+2596 to U+259F:</p>
+<p>(loop for i from #x2596 to #x259f do (insert i))</p>
+<pre><code>▖▗▘▙▚▛▜▝▞▟
+</code></pre>
+<p>This is visibly missing the all-empty and all-full configurations (■,
+which follows them, is not the all-full configuration), but normally a
+space can be used with or without inverse video.</p>
+<p>For monochrome or 2-color graphics, these characters plus inverse
+video permit doubling the character grid resolution, with full color
+freedom.</p>
+<h2>Eighth blocks and scan lines</h2>
+<p>This is the set from U+2580 to U+2590, in “Blocks” (now “Block
+Elements”):</p>
+<p>(loop for i from #x2580 to #x2590 do (insert i))</p>
+<pre><code>▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▏▐
+</code></pre>
+<p>These characters allow you to divide character cells vertically or
+horizontally (but not both) into two colors with a resolution of ⅛
+cell.  They’re commonly used, for example, for plotting sparklines.
+They are clearly designed for use with inverse video (^[[7m in ANSI).</p>
+<p>This is particularly useful for bar plots, as provided by
+<a href="https://github.com/Evizero/UnicodePlots.jl">UnicodePlots.jl</a>, where the blocks divided left to right can
+provide 640 pixels of horizontal precision for your bars on an
+80-character screen.  This includes stacked bars in which different
+colors divide a bar horizontally and may include inline legends.
+However, experimentation seems to show that my terminal here renders
+them incorrectly, with some unfilled space above them in the character
+cell:</p>
+<pre><code>▊▋▌▍▎▏▐
+▊▋▌▍▎▏▐
+▊▋▌▍▎▏▐
+</code></pre>
+<p>Similar are the “horizontal scan line” characters, of which there are
+only four starting at U+23BA:</p>
+<pre><code>⎺⎻⎼⎽
+</code></pre>
+<p>These are explained in <a href="https://www.unicode.org/L2/L2000/00159-ucsterminal.txt">Frank da Cruz’s proposal L2/00-159</a> as
+being for round-trip compatibility with some old terminals:</p>
+<pre><code>  E0D6   Scan 1    DSG 06/15, H19 07/10, WG3 05/00, TVI 09/00, IBM SV300400
+  E0D7   Scan 3    DSG 07/00, WYA 01/01, WG3 05/00, IBM SV300200
+  E0D8   Scan 5    DSG 07/01, WYA 02/02, IBM SV300300, IBM SM920000
+  E0D9   Scan 7    DSG 07/02, WYA 01/03, WG3 05/01, IBM SV300100
+  E0DA   Scan 9    DSG 07/03, H19 07/11, WG3 05/01, TVI 09/01, IBM SV300600
+</code></pre>
+<p>They’re intended to join up with U+23B8 “⎸” and U+23B9 “⎹” to make
+boxes in a similar way to the Videotex box-drawing characters above,
+and there are supposed to be five of them, but this does not work in
+my current font:</p>
+<pre><code>⎹⎽⎸⎹⎺⎸⎹⎻⎸⎹⎼⎸
+</code></pre>
+<p>These can be used for sparklines in a similar way to the
+vertically-divided eighth blocks, but with half the resolution.
+Sometimes U+2500 is considered a part of the set, but at least in the
+font I’m using at the moment, it doesn’t fit:</p>
+<pre><code>⎺⎻─⎼⎽
+</code></pre>
+<p>The proposed “legacy computing” characters would augment these with,
+among other things, 8-position horizontal and vertical lines.</p>
+<h2>Edge box drawing</h2>
+<p>As sort of noted above, the characters <code>⎹</code> U+23B9 and <code>⎺</code> U+23BA link
+up:</p>
+<pre><code>⎹⎺⎹⎺⎹⎺⎺⎺⎺⎺⎺⎺
+  ⎹⎺⎹⎺⎹⎺⎺⎺⎺⎺⎺⎺⎺
+</code></pre>
+<p>In my current font, successive rows of <code>⎹</code> don’t quite link up the way
+they’re supposed to, but successive columns of <code>⎺</code> do.  From the
+“eighth blocks” area we have another couple of characters (or actually
+various pairs of characters) that can potentially be applied in the
+same way:</p>
+<pre><code>▁▏▁▁▏▁▁▏▁▁▏
+▁▏▁▏▁▏▁▏▁▏
+</code></pre>
+<p>These also fail to link up from one line to the next in my current
+font.</p>
+<p>The aforementioned “Graphics for Legacy Computing” proposal includes
+more such characters, including four corners intended to link up with
+the above “eighth blocks”:</p>
+<p>(loop for i from #x1fb7c to #x1fb7f do (insert i))</p>
+<pre><code>🭼🭽🭾🭿
+</code></pre>
+<p>In theory, with three printable characters like this plus a space, you
+could lay out a grid of thin lines with the resolution of the
+character grid, with the lines beginning and ending at, say, the upper
+left-hand corner of each character cell.  This would be potentially
+more parsimonious than the box-drawing characters we <em>did</em> get, which
+can end and join at the center of each character cell, but be
+interrupted at half-character-cell intervals, a relatively useless
+ability.  But for this ability we need 15 graphics characters (for a
+single line width) rather than 3.</p>
+<h2>Shade characters</h2>
+<p>The three “shade” characters from U+2591 to U+2593 can be used to
+dither between a foreground color and a background color; really you
+only need two of them if you have inverse video or full liberty in
+color choice:</p>
+<pre><code>░▒▓
+</code></pre>
+<p>This doesn’t increase the resolution of your display any, though.</p>
+<h2>Braille provides the best resolution, though not without drawbacks</h2>
+<p>The Braille block from U+2800 to U+28FF offers a full selection of 256
+binary patterns of 8 pixels:</p>
+<p>(loop for i from #x2800 to #x28ff do (insert i))</p>
+<pre><code>⠀⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟
+⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿
+⡀⡁⡂⡃⡄⡅⡆⡇⡈⡉⡊⡋⡌⡍⡎⡏⡐⡑⡒⡓⡔⡕⡖⡗⡘⡙⡚⡛⡜⡝⡞⡟
+⡠⡡⡢⡣⡤⡥⡦⡧⡨⡩⡪⡫⡬⡭⡮⡯⡰⡱⡲⡳⡴⡵⡶⡷⡸⡹⡺⡻⡼⡽⡾⡿
+⢀⢁⢂⢃⢄⢅⢆⢇⢈⢉⢊⢋⢌⢍⢎⢏⢐⢑⢒⢓⢔⢕⢖⢗⢘⢙⢚⢛⢜⢝⢞⢟
+⢠⢡⢢⢣⢤⢥⢦⢧⢨⢩⢪⢫⢬⢭⢮⢯⢰⢱⢲⢳⢴⢵⢶⢷⢸⢹⢺⢻⢼⢽⢾⢿
+⣀⣁⣂⣃⣄⣅⣆⣇⣈⣉⣊⣋⣌⣍⣎⣏⣐⣑⣒⣓⣔⣕⣖⣗⣘⣙⣚⣛⣜⣝⣞⣟
+⣠⣡⣢⣣⣤⣥⣦⣧⣨⣩⣪⣫⣬⣭⣮⣯⣰⣱⣲⣳⣴⣵⣶⣷⣸⣹⣺⣻⣼⣽⣾⣿
+</code></pre>
+<p>At the expense of a little dottiness, background bleedthrough, and
+spacing jitter, this can be used to get 8× character cell resolution
+for things like plotting points and lines on a character display;
+15360 pixels in a standard 80×24 terminal window.  This is better
+resolution than even the proposed sextant characters, and the
+pseudopixels are usually squarer.  The bit positions within the
+character cell, with x increasing right and y increasing down, are (0,
+0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (0, 3), and (1, 3), in
+that order.</p>
+<p>For example, you can plot this circle:</p>
+<p>⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡤⠤⠴⠒⠒⠒⠒⠒⠒⠢⠤⠤⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠖⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠓⠦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠴⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠲⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡰⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢳⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡼⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢳⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠔⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠓⠦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠖⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠒⠢⠤⢤⣀⣀⣀⣀⣀⣀⣠⠤⠤⠖⠚⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀</p>
+<p>(Some terminals display this suboptimally with the non-active Braille
+dots also drawn, as empty circles.)</p>
+<p>I did that with this simple Python program:</p>
+<pre><code>from __future__ import division, print_function
+import sys
+
+bitpos = [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (0, 3), (1, 3)]
+
+try:
+    unichr
+except NameError:
+    unichr = chr
+
+class Canvas:
+    def __init__(self, text_cols, text_rows):
+        assert text_rows &gt; 0
+        self.pixels = [[0 for x in range(text_cols * 2)]
+                       for y in range(text_rows * 4)]
+
+    def pixelsize(self):
+        return len(self.pixels[0]), len(self.pixels)
+
+    def pset(self, x, y):
+        try:
+            self.pixels[y][x] = 1
+        except IndexError:
+            pass                # clip silently
+
+    def render(self):
+        p = self.pixels
+        ww, hh = self.pixelsize()
+        return '\n'.join(''.join(
+                unichr(0x2800 + sum(1 &lt;&lt; i if p[y+by][x+bx] else 0
+                                    for i, (bx, by) in enumerate(bitpos)))
+                for x in range(0, ww, 2)
+                ) for y in range(0, hh, 4))
+
+    def write(self, fileobj):
+        fileobj.write(self.render() + '\n')
+
+def draw_circle(canvas):
+    ww, hh = canvas.pixelsize()
+    mindim = min(ww, hh)
+    cx, cy = ww/2, hh/2
+    r = mindim/2 - 1
+    x, y = r, 0
+    for i in range(1000):
+        canvas.pset(int(round(x + cx)), int(round(y + cy)))
+        x -= y * .01
+        y += x * .01
+
+if __name__ == '__main__':
+    import cgitb; cgitb.enable(format='text')
+    canvas = Canvas(80, 24)
+    draw_circle(canvas)
+    canvas.write(sys.stdout)
+</code></pre>
+<h2>Triangle characters</h2>
+<p>These probably are <em>not</em> useful as mosaic characters like the ones in
+the “Graphics for Legacy Computing” item above; faced with the choice
+between making them mate properly for mosaicing and giving them 45°
+angles, font designers have typically chosen the latter:</p>
+<pre><code>◢◣
+◥◤
+</code></pre><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/python.html">Python</a> (12 notes)
+</li><li><a href="../topics/graphics.html">Graphics</a> (10 notes)
+</li><li><a href="../topics/terminals.html">Terminals</a> (6 notes)
+</li><li><a href="../topics/ascii-art.html">ASCII art</a> (3 notes)
+</li><li><a href="../topics/art.html">Art</a> (3 notes)
+</li><li><a href="../topics/unicode.html">Unicode</a> (2 notes)
+</li></ul></div></html>

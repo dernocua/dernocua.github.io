@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html><title>Vaughan Pratt and Henry Baker’s COMFY control-flow combinators ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Vaughan Pratt and Henry Baker’s COMFY control-flow combinators</h1><div class="metadata">Kragen Javier Sitaker, 02021-03-04 (updated 02021-03-20)
+(8 minutes)</div><p>I read <a href="https://josephoswald.nfshost.com/comfy/summary.html">Henry Baker’s columns about COMFY-65 and COMFY-80</a> and
+found them very interesting.  He credits the approach to Pratt in the
+early 01970s, which is pretty interesting; combined with <a href="http://crockford.com/javascript/tdop/tdop.html">top-down
+operator precedence</a> — not PEG or TDPL, but a different linear-time
+top-down parsing algorithm with better space and time bounds — it
+seems like Pratt totally reinvented compilers in a different way in
+the 01970s and nobody noticed!</p>
+<p>The COMFY-65 approach is “structured control flow” in the sense that
+larger pieces of code are built up from smaller pieces of code using a
+fixed set of forms of composition, but they aren’t the same forms as
+the Kleene set of sequence, alternation, and closure used in the
+Böhm-Jacopini theorem.  The key difference is that Pratt’s/Baker’s
+pieces of code have one entry and two exits (“win” and “lose”) instead
+of one, so they can directly represent arbitrary control-flow graphs.
+In COMFY-65 his forms of composition are <code>seq</code>, <code>alt</code>, <code>if</code>, <code>while</code>,
+<code>not</code>, and <code>loop</code>, which are similar to the usual constructs but not
+the same.</p>
+<h2>Re-expressing the COMFY approach with constraint satisfaction</h2>
+<p>I suspect that constraint satisfaction is a productive way to
+formulate compilation problems in general, so here’s an attempt to
+formulate Baker’s constructs logically as sets of constraints in a
+hypothetical hierarchical constraint language supporting the
+definition of infix operators, using <code>yes</code> and <code>no</code> rather than <code>win</code>
+and <code>lose</code>.  Starting with <code>loop</code>:</p>
+<pre><code>(loop X):
+    entry = X.entry = X.yes
+    no = X.no
+</code></pre>
+<p>This is an abbreviation for</p>
+<pre><code>(loop X).entry = X.entry = X.yes
+(loop X).no = X.no
+</code></pre>
+<p>The remaining constructs can be defined as follows:</p>
+<pre><code>(A; B):                # sequence
+    entry = A.entry
+    A.yes = B.entry
+    yes = B.yes
+    no = A.no = B.no
+
+(A || B) = !(!A; !B)   # alternation
+
+(!X):                  # negation
+    entry = X.entry
+    yes = X.no
+    no = X.yes
+
+(A ? B : C):           # general conditional
+    entry = A.entry
+    A.yes = B.entry
+    A.no = C.entry
+    no = B.no = C.no
+
+(while A: B):
+    entry = A.entry
+    A.yes = B.entry
+    B.yes = A.entry
+    yes = A.no
+    no = B.no
+</code></pre>
+<p>Baker’s compiler compiles these constructs recursively, providing
+<code>yes</code> and <code>no</code> (<code>win</code> and <code>lose</code>) as concrete numbers when <code>compile</code>
+is invoked.  It does this by filling memory with instructions starting
+from the end, such that each of these exit points (the <code>yes</code> and <code>no</code>
+items) generally refer to things that have previously been compiled
+and will follow them in memory — possibly immediately, in which case
+manifesting the required control flow doesn’t require a jump
+instruction.  In that context, though, I’m not totally sure how he
+handles loops, which necessarily need a jump back to the beginning of
+the loop, which is at a location unknown when the loop body is being
+compiled.  I need to look at his code.</p>
+<p>But not right now!</p>
+<p>An alternate definition of <code>alt</code>:</p>
+<pre><code>(A || B):
+    entry = A.entry
+    A.no = B.entry
+    no = B.no
+    yes = A.yes = B.yes
+</code></pre>
+<p>Given a program <code>pass</code> which does nothing and just passes control to
+its <code>yes</code>, we could define <code>loop</code> as:</p>
+<pre><code>loop X = (while pass: X)
+</code></pre>
+<p>We could define <code>fail</code>, which does nothing and just passes control to
+its <code>no</code>, as <code>!pass</code>, we could define sequencing as a conditional:</p>
+<pre><code>(A; B) = (A ? B : fail)
+</code></pre>
+<p>Here's a totally revised, terser version, using some symbols from
+Baker’s 1976 note, the above constructions, a Python-like respelling
+of the conditional, and C-like blocks instead of Python indentation.
+I’m also changing “entry” to “go” (on your mark, get set,...) and
+defining ¬X in terms of the conditional, as Darius did in his
+“Language of Choice”.  Actually, it occurs to me that COMFY is very
+closely related to binary decision diagrams, but its control graph
+isn’t constrained to be acyclic...</p>
+<pre><code>pass            { go = yes }
+fail            { go = no }    # do not pass go
+(B if A else C) { go = A.go, A.yes = B.go, A.no = C.go, no = B.no = C.no }
+(while A: B)    { go = A.go, A.yes = B.go, B.yes = A.go, yes = A.no, no = B.no }
+
+(¬X)      = (fail if X else pass)
+(A; B)    = (B    if A else fail)
+(A / B)   = (pass if A else B)
+(X∞)      = (while pass: X)
+</code></pre>
+<p>I was going to try to unpack a small program in this notation into a
+flat pile of constraints, but I’m getting confused about the
+class/instance distinction when I try.</p>
+<p>A particular instruction might fit into this framework in a form like
+the following:</p>
+<pre><code>pushq_rbp { mem[go] = 0x55, yes = go + 1 }
+</code></pre>
+<p>(Since <code>pushq %rbp</code> doesn’t use its <code>no</code> exit, it imposes no
+constraints on <code>no</code>.)</p>
+<p>More generally, I think straight-line code as cons-lists of bytes can
+be emitted as follows:</p>
+<pre><code>straight([])   = pass
+straight(A::B) { mem[go] = A, T = straight(B), T.go = go + 1, yes = T.yes }
+</code></pre>
+<p>There’s a semantic lacuna in the above, though; something like
+<code>pushq_rbp / pushq_rbp</code> will fail, because there’s no place to insert
+the necessary jumps.  (Also, because <code>pushq_rbp</code> can’t fail, the
+second alternative could be entirely optimized out.)</p>
+<h2>Dissection of Baker’s Elisp</h2>
+<p>Here’s the part of Baker’s Elisp code concerned with compiling loops.
+It turns out to work more or less the way you’d expect if you know it
+compiles things recursively, starting from the end of memory:</p>
+<pre><code>(defun compile (e win lose)
+  (cond ((eq (car e) 'loop)
+         (let* ((l (genbr 0)) (r (compile (cadr e) l lose)))
+           (ra l r)
+           r))
+        ((eq (car e) 'while)             ; do-while.
+         (let* ((l (genbr 0))
+                (r (compile (cadr e)
+                             (compile (caddr e) l lose)
+                             win)))
+           (ra l r)
+           r))))
+</code></pre>
+<p>So, it begins by generating a branch to 0 at the end of the loop,
+saving the address of the jump instruction in <code>l</code>; then it compiles
+the contents of the loop (possibly including jumps to <code>lose</code> and, in
+the <code>while</code> case, <code>win</code>).  It saves the address of the beginning of
+the loop in <code>r</code>, and then it runs <code>(ra l r)</code>:</p>
+<pre><code>(defun ra (b a)
+  ;;; replace the absolute address at the instruction "b"
+  ;;; by the address "a".
+  (let* ((ha (lsh a -8)) (la (logand a 255)))
+     (aset mem (1+ b) la)
+     (aset mem (+ b 2) ha))
+  b)
+</code></pre>
+<p>So this just backpatches the jump; <code>ha</code> and <code>la</code> are the high and low
+bytes of the address, and it stores them two bytes after and one byte
+after the address of the jump instruction, which is generated as
+follows:</p>
+<pre><code>(defun genbr (win)
+  ;;; generate an unconditional jump to "win".
+  (gen 0) (gen 0) (gen jmp) (ra f win))
+</code></pre>
+<p>And that’s in terms of <code>gen</code>, which is:</p>
+<pre><code>(defun gen (obj)
+  ;;; place one byte "obj" into the stream.
+  (setq f (1- f))
+  (aset mem f obj)
+  f)
+</code></pre>
+<p>Modifying <code>mem</code> and <code>f</code>:</p>
+<pre><code>(defvar mem (make-vector 10 0)
+  "Vector where the compiled code is placed.")
+
+(setq mem (make-vector 100 0))
+
+(defvar f (length mem)
+  "Compiled code array pointer; it works its way down from the top.")
+</code></pre>
+<p>The semantic lacuna mentioned above is filled in this case with an
+explicit <code>genbr</code> call followed by the backpatching.  But the <code>win</code> and
+<code>lose</code> addresses (which Baker calls continuations) are passed in to
+compile the snippets of code within the loop, which in many cases
+bottom out in <code>emit</code>, which begins by inserting a call to the <code>genbr</code>
+above if necessary:</p>
+<pre><code>(defun emit (i win)
+  ;;; place the unconditional instruction "i" into the stream with
+  ;;; success continuation "win".
+  (cond ((not (= win f)) (emit i (genbr win)))
+         ...))
+</code></pre>
+<p>That is, if the next address to execute is not the address immediately
+following where we’re going to be compiling, then first we <code>genbr</code> a
+jump so that it is.</p>
+<h2>Naming</h2>
+<p>What should you call something derived from Baker’s system, but
+different?  Antonyms for “comfy” include cold, cool, disagreeable,
+dissatisfied, hard, strict, troubled, uncomfortable, unfriendly,
+unhappy, unpleasant, unsuited, destitute, poor, discontented, needy,
+hopeless, miserable, neglected, pitiable, upset, and wretched,
+according to Roget’s.  Synonyms include snug, cozy, cushy, homey, and
+soft.  Lojban has “kufra” for “foo is comfortable with bar”.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/history.html">History</a> (24 notes)
+</li><li><a href="../topics/lisp.html">Lisp</a> (11 notes)
+</li><li><a href="../topics/compilers.html">Compilers</a> (10 notes)
+</li><li><a href="../topics/program-calculator.html">Program calculator</a> (4 notes)
+</li><li><a href="../topics/control-flow.html">Control flow</a> (3 notes)
+</li><li><a href="../topics/comfy.html">COMFY-*</a> (3 notes)
+</li><li>Constraints</li></ul></div></html>

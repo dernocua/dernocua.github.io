@@ -1,0 +1,41 @@
+In my childhood, I used a mechanical typewriter with no exclamation
+mark “!”.  It did have a vertical apostrophe “'” which was nearly
+right, lacking only the dot at the bottom.  The solution was to type a
+“'”, press the backspace key, and then type “.”, thus creating an
+exclamation mark on the paper.  If memory serves, it also had an
+underscore key used in the same way to produce underlined text.
+
+Traditional printers (including the ASR-33) are equipped with this
+ability to “overstrike”, typically using backspace or a carriage
+return without an accompanying line feed, which permitted them to do
+boldface, accented letters, and underlining, without any dedicated
+electronics or mechanics for those purposes.  Some also implemented
+superscript and subscript with a half-linefeed feature, so you could
+write x² or xᵢ in a more or less readable way — although these were
+the same font size due to mechanical limitations.  APL used this
+overstrike capability to create an unlimited variety of new operator
+symbols; for example, by overstriking Δ with |, you could get ⍋, the
+ascending-sort-order operator.
+
+Most glass terminals did not implement this feature, because taking an
+arbitrarily long period of time to compose a glyph was not very
+compatible with scanning out pixels in real time to a CRT electron
+beam.  Instead, “printing” a new character at the location of an
+existing character simply replaced it.  While this removed the ability
+to overstrike, it made it possible to do real-time screen editing,
+updating any part of the screen to contain arbitrary new contents.
+One exception was [the PLATO V terminals for the University of
+Illinois PLATO project][0]; these used gas-plasma screens with
+8080-driven framebuffers, and they *did* support overstrike, doing a
+bitwise OR of the various characters in a character cell, an ability
+PLATO users used to compose a variety of creative cartoons.
+
+[0]: https://archives.library.illinois.edu/erec/University%20Archives/0713808/1977%20Aug%20X-50%20PLATO%20V%20Terminal%20Stifle.pdf
+
+XXX <https://archives.library.illinois.edu/erec/University%20Archives/0713808/1974%20Nov%20X-15%20Plato%20IV%20Student%20Terminal%20Stifle.pdf>
+
+Replacing characters in this way was not ergonomically optimal for
+human editing of text, since although we do occasionally replace some
+text with other text consisting of the same number of characters, it’s
+much more common to insert text, delete text, or replace text with
+text of some other length.XXX

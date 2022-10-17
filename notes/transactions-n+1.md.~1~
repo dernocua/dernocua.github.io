@@ -1,0 +1,14 @@
+Reading [a note on Rust for web
+APIs](https://macwright.com/2021/01/15/rust.html) I ran across the
+"n+1" problem, familiar to anyone who’s done database-backed web
+sites: 
+
+> The n+1 problem is something that everyone building web applications
+> should understand. The gist is: you have a page of photos (1
+> query). You want to show the author of each photo. How many queries
+> do you end up with: 1, combining the photos & authors, or a query
+> per photo to get the author after retrieving the photos? Or 2
+> queries, with the second having something like user.id IN ids to
+> fetch all authors in a single pass and then reconnect them to their
+> photos.
+

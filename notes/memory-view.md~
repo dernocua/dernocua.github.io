@@ -1,0 +1,2 @@
+I was thinking that, for examining data in PDF files, it would be nice
+to have objects that basically represent chunks of bytes.

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html><title>iPhone replacement cameras as 6-μs streak cameras ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>iPhone replacement cameras as 6-μs streak cameras</h1><div class="metadata">Kragen Javier Sitaker, 02021-01-22 (updated 02021-12-30)
+(2 minutes)</div><p>The <a href="https://support.apple.com/kb/sp726?locale=en_US">iPhone 6s specs</a>
+say it can record 720p video at 240 fps and 1080p video at 120 fps.  A
+friend tells me he bought a replacement camera for US$8, including the
+flex cable, but it was the front camera, which <a href="https://stackoverflow.com/questions/50082391/what-are-the-fps-of-the-facetime-camera-for-the-iphone-6s-vs-7-vs-x-vs-ipad-pro">is only 60fps for
+720p</a>.</p>
+<p>iPhone cameras are well-known for their rolling-shutter feature, where
+they scan each line of the image out at a separate time during the
+frame, leading to visual distortions of rapidly moving objects rather
+than blur, at least when light is adequate.  So rather than
+considering the back camera as a 240fps camera, it may be reasonable
+to consider it as a 172800-line-per-second camera, although the gating
+time (shutter speed) for each line might actually be longer than the
+5.8 μs suggested there.  <a href="https://blog.robertelder.org/recording-660-fps-on-raspberry-pi-camera/">Robert Elder reports success recording 660
+frames per second</a> on a US$6 Raspberry Pi camera and 1007 frames
+per second on the V2 camera by reading out the same lines over and
+over again (so you get a smaller frame at a higher frame rate) but
+alternatives include using a glass rod to defocus the camera in Y so
+that every line sees almost exactly the same image, or to use two
+parallel mirrors to kaleidoscopically replicate a small fraction of
+the field of view several times.</p>
+<p>Streak cameras are an extremely important research tool for
+investigating all kinds of ultrafast phenomena, such as the time
+evolution of an arc in air.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/contrivances.html">Contrivances</a> (45 notes)
+</li><li><a href="../topics/metrology.html">Metrology</a> (6 notes)
+</li><li><a href="../topics/cameras.html">Cameras</a> (3 notes)
+</li><li>Ultrafast</li></ul></div></html>

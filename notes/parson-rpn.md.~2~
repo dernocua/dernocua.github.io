@@ -1,0 +1,32 @@
+Darius Bacon’s Parson parsing library includes a beautiful little
+example compiler, quoted in full:
+
+    from parson import Grammar, alter
+
+    g = Grammar(r"""  stmt* :end.
+
+    stmt   :  ident '=' exp0 ';'  :assign.
+
+    exp0   :  exp1 ('+' exp1      :'add')*.
+    exp1   :  exp2 ('*' exp2      :'mul')*.
+
+    exp2   :  '(' exp0 ')'
+           |  /(\d+)/
+           |  ident               :'fetch'.
+
+    ident  :  /([A-Za-z]+)/.
+
+    FNORD ~:  /\s*/.
+    """)(assign=alter(lambda name, *rpn: rpn + (name, 'store')))
+
+    ## print ' '.join(g('v = 42 * (5+3) + 2*2; v = v + 1;'))
+    #. 42 5 3 add mul 2 2 mul add v store v fetch 1 add v store
+
+As can be seen from the Halp example at the bottom, this is all that’s
+needed with Parson to compile a 
+
+XXX
+
+semirings
+
+kleene closure: ka = 1 + ka a, so ka = 1/(1 - a)?

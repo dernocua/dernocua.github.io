@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html><title>Some notes on perusing the Udanax Green codebase ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Some notes on perusing the Udanax Green codebase</h1><div class="metadata">Kragen Javier Sitaker, 02021-10-05 (updated 02021-10-08)
+(12 minutes)</div><p>Some notes on perusing <a href="http://udanax.xanadu.com/green/download/udanax-1999-09-29.tar.gz">the Udanax Green codebase</a>, with particular
+attention to how it thinks about version tracking.</p>
+<p>There’s a slightly updated version at
+<a href="https://github.com/dotmpe/udanax-mpe">https://github.com/dotmpe/udanax-mpe</a>.</p>
+<h2>Conceptual guides I’ve found</h2>
+<p>A conceptual overview is in <code>olddemo/demo_docs/Bizplan4</code>.</p>
+<p>The place to start for nuts and bolts is quite likely green/man, which
+contains man pages that GNU man can format with, e.g., <code>man
+green/man/fex.L</code>, which documents the frontend UI.  I suspect the
+“Xanadu FeBe Protocol 88.1x” document might be more informative if I
+could find it.  <code>man green/man/xumain.L</code> offers an illuminating
+glimpse into how Xanadu thought of documents at the time.</p>
+<p>Each document is evidently identified by a “docid”, a dot-separated
+sequence of numbers called a “tumbler”; the numbers constituting the
+tumbler are sometimes called “digits” or “tdigits”.  (Sometimes a
+tumbler is also called an “isa” in the source.)  Tumblers, like
+tilde-bearing WWW URLs, can contain in sequence a network node
+identifier, a user account (/~kragen/, represented as a number in a
+tumbler), a document ID within that account, and a region identifier
+within that document; so they can identify finer-grained or
+coarser-grained things than individual documents.  A “span” is
+specified in terms of character counts.  I think?  Bizplan4 says:</p>
+<blockquote>
+<p>by combining a document's unique identifier with a character
+position within that document, we can uniquely address any character
+stored in the entire system.</p>
+<p>By designating a particular (starting) character and a length we can
+address any contiguous string of characters in the system.  Such a
+string is called a “span.”  By clever use of tumblers instead of
+plain integers to represent character positions and span lengths, it
+is possible to have spans which contain whole documents and cross
+document boundaries.</p>
+</blockquote>
+<p>There doesn’t seem to be any thought given (in
+<code>green/olddemo/demodocs/ReplacingD</code>, anyway) to the problem of
+updating documents while retaining links.  They do conceive of
+multiple versions of a document, and in <code>green/olddemo/demo_docs/Suespaper</code>
+it says, “Xanadu hypertext can maintain multiple versions of any given
+document, efficiently storing the common portions in common, ...  All
+such editing wil [sic] be logged by Xanadu's historical trace
+function. Xanadu can provide historical traceback information in dated
+chronological order about any and all changes to a given document.”;
+but in <a href="http://udanax.xanadu.com/green/status.html">the status page on the WWW</a> “Historical Trace” is in the
+“Needs Implementation” column.</p>
+<p>The concern for the space required for multiple versions seems very
+quaint now; it’s easy to forget that even when Subversion was
+introduced in October 02000 the fact that it kept a separate
+“pristine” copy of whatever source code you were editing was
+considered a major concern, and in 02001 crazy old Tom Lord’s arch’s
+policy of keeping the entire version history on your development
+workstation was, for many, considered a showstopper.  (Today almost
+everybody uses Git, except for people working with large binary
+assets, who often use Subversion.)</p>
+<h2>The source base itself</h2>
+<p>It’s surprising they chose C as an implementation language so early.
+It’s archaic K&amp;R C formatted with 2-space tab stops (in <code>less</code>, use
+<code>-x2</code>), but it’s C.  Before 01984 it doesn’t seem like it would have
+been an obvious choice; it seems like at some point they decided to
+restart from scratch on a 68000-based Sun.
+<code>green/olddemo/demo_docs/Datamation</code>, which seems to be from 01982,
+says “running under Unix on a Motorola 68000-based Onyx desktop
+computer,” but <a href="https://web.archive.org/web/20020810193147/http://www.dmsd.com/Onyx.history.html" title="More about Onyx Systems, by John L. Bass">I think Onyx’s Unix machines were
+Z8000/Z8002-based</a>, <a href="https://web.archive.org/web/20020614113953/http://www.heuse.com/1980.htm">running the first microcomputer Unix in
+01980</a>, but <a href="https://web.archive.org/web/20040414024027/http://rlab.cs.nyu.edu/ultra/reports/proton/01" title="[Courant] UltraComputer Prototype Note #1, Microprocessor System Survey, by Jim Lipkis, October, 01981">even in 01981 people had a hard time finding the
+company</a>.  Evidently the team was foresightful enough to recognize
+the importance of Unix.  The choice of C is a pleasant surprise; it
+makes the codebase a lot more readable than, say, EUMEL.</p>
+<p>In the context of the space concerns mentioned above, it’s sort of
+surprising that the source base <em>per se</em> is 39,000 lines of C weighing
+1.07 megabytes (16000 unique lines weighing 650 KB), in significant
+part because they named their functions things like
+<code>klugefindisatoinsertnonmolecule</code>.</p>
+<p>In the backend types are mostly named with the prefix “type”, as in
+“typecuc” or “typetask”; in the frontend that is more typically a
+suffix, as in “spectype” and “cutseqtype”.</p>
+<p>The source base seems to be fairly consistent in putting the names of
+functions being defined (and <em>only</em> functions being defined) at the
+left margin without indentation.  I think this is an accommodation for
+archaic versions of <code>ctags</code>, but it’s handy as a way to navigate the
+source base without <code>ctags</code>.</p>
+<p>I’m inferring that maybe documents, at least in the frontend
+(<code>fe_source/vm.c</code>) are referred to by “specs” (type <code>spectype</code>) and
+consist of “charspans” (<code>charspantype</code>).  The spec contains a
+<code>specspanptr</code> (which I guess is a charspan?), which contains a
+<code>sizeofspan</code>, and a <code>docid</code>, which is a “tumbler” and can be sent to
+the backend.  Destroying a spec is done with <code>specfree(&amp;specptr)</code>.</p>
+<p>They’ve implemented their own virtual memory system made of objects of
+type <code>vmthingtype</code>.  There’s a subtyping graph:</p>
+<pre><code>spectype* -&gt; vmthingtype*
+charspan* -&gt; vmthingtype*
+</code></pre>
+<p>The frontend evidently contemplates editing documents; there’s a
+<code>sendrearrange</code> function in <code>fe_source/sendtop.c</code> which sends a
+“cutseq”, I guess like an EDL for text?, to the backend.  There’s also
+<code>sendinsert</code>, which makes it seem like the granularity of edits is
+very small.</p>
+<p>A “link” is from a spec, to a spec, three a spec (“threesets are used
+to describe the intended meaning of the link, such as if it is a jump
+link or a footnote link”, the other possibilities evidently being
+“quote” and “marginal note”).  But when the frontend does
+<code>sendcreatelink</code> to the backend, it also includes an additional docid,
+apart from those in the three specs; this is explained in
+<code>olddemo/demo_docs/Bizplan4</code>:</p>
+<blockquote>
+<p>Links themselves are said to reside inside documents, located in a
+separate logical address space from the text. A link may reside in
+one document and link from a second document to yet a third.  The
+location of residence of a link is entirely independent of the
+contents of the link's end-sets.  The fact that links are among the
+potential contents of documents means that links themselves may be
+linked from or to, just as characters may.  Thus very general sorts
+of indirect structures may be assembled.</p>
+</blockquote>
+<p>For the frontend they seem to have used curses, including its
+windowing system (well, <code>newwin</code>, <code>delwin</code>, and <code>wrefresh</code>, anyway),
+and also some kind of Sun GUI (it’s trying to <code>#include
+&lt;suntool/tool_hs.h&gt;</code>, call <code>win_setcursor</code>, etc.)  This seems to be
+the “sunwindow” system sometimes called “SunWindows” and the “Sun
+Graphical User Interface,” and later called SunView, mentioned in
+<a href="http://homepages.rpi.edu/home/56/frankwr/afs/rpi.edu/campus/sun/lang/2.01/SC2.0.1/include/CC_413/sunwindow/win_struct.h">http://homepages.rpi.edu/home/56/frankwr/afs/rpi.edu/campus/sun/lang/2.01/SC2.0.1/include/CC_413/sunwindow/win_struct.h</a>,
+(which seems to be part of a huge repository of old Sun stuff that was
+shipped to customers, up to Solaris 2.5) and documented in
+<a href="http://bitsavers.trailing-edge.com/pdf/sun/sunos/4.1/800-1784-11A_SunView_System_Programmers_Guide_199003.pdf">http://bitsavers.trailing-edge.com/pdf/sun/sunos/4.1/800-1784-11A_SunView_System_Programmers_Guide_199003.pdf</a>;
+this window system had a file descriptor per window.</p>
+<p>The backend refers to something called a “granfilade”, which I think
+is one of the three possible types of enfilade: GRAN, SPAN, and POOM.</p>
+<h3>Creating new versions</h3>
+<p>The protocol documented in <code>green/olddemo/demo_docs/Feidoc</code> includes a
+<code>CREATENEWVERSION</code> function:</p>
+<blockquote>
+<p>A version is a document, the only distinction being that a version
+is descended from a previously existing document.  A new version
+inherits all of its immediate ancestor's information, both textual
+and topological.</p>
+</blockquote>
+<p>Its tumbler is to be nested under the document it was created from:</p>
+<blockquote>
+<p>For example, if there is only one version of document 23.0.17.0.256,
+this request will create a document with the id 23.0.17.0.256.1.</p>
+</blockquote>
+<p>However, this isn’t always possible, because sometimes you create a
+new version of a document that somebody else owns, and you don’t get
+to inject it into their namespace like that.  So, is there some way to
+trace the history back to the original?</p>
+<p>The <code>CREATENEWVERSION</code> request type is defined in
+<code>green/fe_source/requests.h</code> and <code>green/be_source/requests.h</code> as
+<code>#define CREATENEWVERSION 13</code>; the backend vectors it to a
+<code>createnewversion</code> function in <code>green/be_source/fns.c</code>, which calls
+<code>docreatenewversion</code> in <code>green/be_source/do1.c</code>, which eventually
+calls <code>docopyinternal</code> with a new “isa” pointer (allocated, I think,
+by <code>doopen</code>) and vspans and vspecs it got from the old document.  As
+mentioned above, “isa” is another name for “tumbler”, or maybe a
+certain kind of tumbler.</p>
+<p>There’s a conditional at the top of <code>docreatenewversion</code> which checks
+to see if the <code>wheretoputit</code> argument identifies a tumbler that
+belongs to the user, invoking <code>makehint</code> differently; makehint invokes
+<code>movetumbler</code>, which is just a struct assignment macro which copies
+its left argument over its right argument.</p>
+<p>Within <code>docreatenewversion</code>, in the case where the document does not
+belong to the user, there is no evident dataflow from <code>isaptr</code> (the
+tumbler of the document being copied) to <code>createorglingranf</code> (in
+<code>green/be_source/granf1.c</code>, delegating to <code>createorglgr</code> in
+<code>green/be_source/granf2.c</code>), which I guess allocates the new tumbler
+with <code>findisatoinsertgr</code> (just below) and inserts it somewhere with
+<code>insertseq</code>.</p>
+<p>I’m not sure what an “orgl” or a “sporgl” is but evidently it’s some
+kind of thing that gets stored on disk, an orgl being some sort of
+cuc, and maybe a granfilade consists of null, texts, and orgls.  In
+one place ORGLRANGE and SPANRANGE are explained as “wid and dsp
+indexes for sp”, which is pretty significant; widative and dspative
+are the two major dimensions of enfilade theory.  A diagram, however,
+seems to suggest that this is not respective but orthogonal: both wid
+and dsp have both ORGLRANGE and SPANRANGE.</p>
+<p>After <code>createorglingranf</code>, <code>docreatenewversion</code> builds a vspec and
+apparently copies the original <code>isaptr</code> into it, and then invokes
+<code>doopen</code> with <code>newisaptr</code> and without the vspec or the original
+<code>isaptr</code>, and then uses <code>docopyinternal</code> to copy the old document to
+the new document, using the vspec.  Also, the thing that it’s copying
+is the stream of a vspan obtained from <code>doretrievedocvspanfoo</code>, which
+delegates to <code>retrievedocumentpartofvspanpm</code>, which sets the stream
+and width of the vspan from two tumblers found in the orgl:
+<code>cdsp-&gt;dsas[V]</code> and <code>cwid-&gt;dsas[V]</code>.  I’m not quite sure what these
+are for; do they offer a way to navigate back to the original version?</p>
+<p>The vspec passed to <code>docopyinternal</code> (containing the original
+<code>isaptr</code>) is a “specset” to <code>docopyinternal</code>; it gets converted to a
+“spanset” named <code>ispanset</code>.  This is passed to <code>insertpm</code> and
+<code>insertspanf</code>.  <code>specset2ispanset</code> loops over the linked list of
+<code>spanset</code> objects (they have a <code>-&gt;next</code>) and specifically looks at the
+<code>docisa</code> copied into the vspec by <code>docreatenewversion</code>, passing it as
+the third argument to <code>findorgl</code>, so it can use it to fetch the orgl
+with <code>fetchorglgr</code>.  But that's all it does with the <code>docisa</code> that
+<code>docreatenewversion</code> copied from the <code>isaptr</code>.</p>
+<p>However, when <code>docreatenewversion</code> is being invoked from
+<code>createnewversion</code>, it <em>also</em> gets the original document tumbler as
+its <code>wheretoputit</code> argument!  So actually there is data flow from the
+original tumbler into <em>both</em> of the <code>makehint</code> cases, so the <code>hintisa</code>
+of the hint will have the original document tumbler in it.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/history.html">History</a> (24 notes)
+</li><li><a href="../topics/c.html">C</a> (8 notes)
+</li><li><a href="../topics/reading.html">Reading</a> (4 notes)
+</li><li><a href="../topics/hypertext.html">Hypertext</a> (3 notes)
+</li><li><a href="../topics/namespaces.html">Namespaces</a> (2 notes)
+</li></ul></div></html>

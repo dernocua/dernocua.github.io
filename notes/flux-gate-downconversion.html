@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html><title>Flux-gate downconversion in a loopstick antenna? ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Flux-gate downconversion in a loopstick antenna?</h1><div class="metadata">Kragen Javier Sitaker, 02021-06-15 (updated 02021-07-27)
+(2 minutes)</div><p>Lower radio frequencies like AM radio are typically received with
+ferrite loopstick antennas rather than half-wave dipoles or similar,
+because the dimensions of an efficient dipole are totally impractical
+for a human-scale system.  It occurred to me that if you saturate the
+loopstick with a magnetic field at a different frequency, you could
+use it as a magamp that does downconversion, either for downconversion
+to IF or baseband — in a sense, using the ferrite as a flux-gate
+magnetometer to measure the magnetic component of the radio waves at
+submicrosecond intervals.</p>
+<p>Mediumwave AM broadcasting is 530 kHz to 1700 kHz, so you couldn't
+just use a single fixed frequency to downconvert to IF — you could
+imagine using a 400 kHz LO to get 130–1200 kHz, say, but that's
+useless.  If you tried saturating the ferrite with a square wave at
+the frequency of the desired station, you might get half-wave
+synchronous rectification of the frequency without so much as a diode,
+or you might get nothing if you were in quadrature.  So you'd probably
+need some kind of second-order PLL or something to keep your phase in
+sync, and it would have to tolerate the intermittent nature of AM.
+This is probably more complexity than the usual tuning circuits, so
+there may be no real advantage to this design at all.</p>
+<p>There are magnetic core materials that work well up to about 10 MHz.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/contrivances.html">Contrivances</a> (45 notes)
+</li><li><a href="../topics/electronics.html">Electronics</a> (39 notes)
+</li><li><a href="../topics/radio.html">Radio</a> (3 notes)
+</li></ul></div></html>

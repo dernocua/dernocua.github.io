@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html><title>Safe FORTH with the FORTRAN memory model? ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Safe FORTH with the FORTRAN memory model?</h1><div class="metadata">Kragen Javier Sitaker, 02021-04-21 (updated 02021-06-12)
+(2 minutes)</div><p>What if we use the Fortran memory model in Forth?  With bounds
+checking?  No more free access to memory.  Like, a segmented kind of
+thing.</p>
+<p>Create a scalar variable x with value 3:</p>
+<pre><code>3 value x
+</code></pre>
+<p>Set it to 4:</p>
+<pre><code>4 to x
+</code></pre>
+<p>Create an array a containing the values 0, 1, 4, 9, 16:</p>
+<pre><code>create a 0 , 1 , 4 , 9 , 16 ,
+</code></pre>
+<p>Load 9 from its position 3, with bounds checking:</p>
+<pre><code>a 3 @
+</code></pre>
+<p>Store -4 in its position 2, overwriting 4:</p>
+<pre><code>-4 a 2 !
+</code></pre>
+<p>Define a word “cons” that allocates two cells and stores values on the
+stack in them:</p>
+<pre><code>: cons create , , ;
+</code></pre>
+<p>Use it:</p>
+<pre><code>3 4 cons mycon
+</code></pre>
+<p>Define a word “cdr” that loads the second field, and use it:</p>
+<pre><code>: cdr 1 @ ;
+mycon cdr
+</code></pre>
+<p>Define a different word “cons” that defines words that push the two
+values on the stack when run:</p>
+<pre><code>: cons create , , does&gt; dup 0 @ swap 1 @ ;
+</code></pre>
+<p>Define a word that creates a one-dimensional array of cells of a given
+size:</p>
+<pre><code>: array create cells allot ;
+</code></pre>
+<p>Use it:</p>
+<pre><code>10 array xs  500 xs 3 !  xs 3 @   \ retrieves the 500
+</code></pre>
+<p>For multi-dimensional arrays and for things like dynamically
+allocating conses, we probably need pointer arithmetic.  But we can
+bounds-check the pointer arithmetic with fat pointers.  That allows us
+to say, for example:</p>
+<pre><code>0 value this
+: 2darray create dup , * cells allot  \ save Y-dimension
+   does&gt; to this  this 0 @ * cells this + 1+ ;
+</code></pre>
+<p>This lets us get a pointer to the Nth row of the 2darray, and we can
+then use that row as a normal 1-D array, but with weaker
+bounds-checking:</p>
+<pre><code>32 64 2darray tile  5 tile  \ get pointer to row 5 of 32
+100 @    \ will work even though the row is smaller than that
+</code></pre>
+<p>Similarly, this allows us to allocate cons cells from an arena that we
+can later garbage-collect.  Address arithmetic within the arena is
+fine; trying to index out of your arena will fail.</p>
+<p>You can also have <code>allocate</code> if you want to be able to create new
+“segments” at run-time.</p>
+<p>One problem I’ve run into with the similar semantics in C is that it’s
+impossible to write memmove.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/safety.html">Safe programming languages</a> (11 notes)
+</li><li><a href="../topics/programming-languages.html">Programming languages</a> (8 notes)
+</li><li><a href="../topics/forth.html">FORTH</a> (5 notes)
+</li><li><a href="../topics/memory-models.html">Memory models</a> (3 notes)
+</li></ul></div></html>

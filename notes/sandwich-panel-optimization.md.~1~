@@ -1,0 +1,10 @@
+[Wikipedia says the stiffness of a sandwich panel][4] is ½(f(2h +
+f)²C) where C is, I think, the stiffness (Young’s modulus) of the face
+materials, f is the thickness of the face, and h is half the thickness
+of the foam (or similar filling).  This is ½C(4fh² + 4f²h + f³), which
+is roughly 2Cfh² if h is big enough relative to f.  If you want to
+maximize stiffness for a given (areal) density, then ρ₀f + ρ₁h is some
+constant total density k, so f = k/ρ₀ - (ρ₁/ρ₀)h, and the stiffness is
+2C(k/ρ₀ - (ρ₁/ρ₀)h)h².  Differentiating this with respect to h we get 
+
+[4]: https://en.wikipedia.org/wiki/Sandwich_theory

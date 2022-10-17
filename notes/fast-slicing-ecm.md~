@@ -1,0 +1,16 @@
+Electrochemical machining can remove material at a speed limited by
+the area of the interelectrode process gap, assuming adequate
+flushing.  That is, with the same current density distributed over
+twice as much electrode area, you can remove twice the volume of
+material per unit time.
+
+If you want to slice a block of metal in half, one way to do this is
+to use a wire electrode, which can cut a plane one line at a time.
+But if you instead use an electrode in the shape of a saw blade, with
+electrical insulation everywhere except the edge, the electrode
+surface area is potentially many times larger, and so you can
+potentially cut much faster.
+
+Taken to the extreme, this logic suggests using a long line of needles
+or teeth, a few times wider than the process gap, as the cutting
+cathode.

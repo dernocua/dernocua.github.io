@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html><title>Self hosting kernel ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Self hosting kernel</h1><div class="metadata">Kragen Javier Sitaker, 02021-06-21 (updated 02021-12-30)
+(1 minute)</div><p>Last time I talked to Jeremiah Orians about it, the stage0-posix
+project required only the following system calls of a POSIX kernel, up
+to M2-Planet+mescc-tools:</p>
+<ul>
+<li>execve(), fork(), waitpid(), exit()</li>
+<li>brk()</li>
+<li>open(), close(), read(), write()</li>
+<li>lseek()</li>
+<li>chmod()</li>
+</ul>
+<p>execve(), fork(), waitpid(), and exit() are used in a stereotyped
+manner for spawning a child process running a new program, then
+waiting for it to exit(); and chmod() is only used to make a file
+executable.</p>
+<p>He said mescc-tools-extra+Kaem also needs:</p>
+<ul>
+<li>fchmod()</li>
+<li>access()</li>
+<li>chdir(), fchdir()</li>
+<li>mkdir() (in particular for extracting tarballs)</li>
+<li>mknod()</li>
+<li>getcwd() (traditionally a library function implemented with stat())</li>
+<li>umask()</li>
+<li>uname() (to find out what the architecture is)</li>
+</ul>
+<p>Mes proper and probably tcc also needs:</p>
+<ul>
+<li>unlink()</li>
+<li>ioctl() (specifically isatty(), to find out whether a shell is interactive)</li>
+<li>stat()</li>
+<li>fsync(), though of course this can be a no-op</li>
+</ul>
+<p>In particular it doesn’t require pipes or I/O redirection.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/bootstrapping.html">Bootstrapping</a> (12 notes)
+</li><li><a href="../topics/small-is-beautiful.html">Small is beautiful</a> (8 notes)
+</li><li><a href="../topics/independence.html">Independence</a> (6 notes)
+</li><li><a href="../topics/oses.html">Operating systems</a> (4 notes)
+</li><li><a href="../topics/unix.html">Unix</a> (3 notes)
+</li></ul></div></html>

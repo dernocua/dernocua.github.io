@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html><title>Minor improvements to pattern matching ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Minor improvements to pattern matching</h1><div class="metadata">Kragen Javier Sitaker, 02021-03-24 (updated 02021-04-08)
+(10 minutes)</div><p>Reading EOPL I enountered their <code>variant-case</code> structure.  The idea is
+that if you have, say, a tree made out of <code>interior</code> records and
+<code>leaf</code> records defined as (p. 80, §3.4.1)</p>
+<pre><code>(define-record interior (symbol left-tree right-tree))
+(define-record leaf (number))
+</code></pre>
+<p>then you can define, say (p. 81, §3.4.2, slightly tweaked):</p>
+<pre><code>(define (leaf-sum tree)
+  (variant-case tree
+     (leaf (number) number)
+     (interior (left-tree right-tree)
+       (+ (leaf-sum left-tree) (leaf-sum right-tree)))
+     (else (error "leaf-sum: Invalid tree" tree))))
+</code></pre>
+<h2>Polymorphic variants in OCaml</h2>
+<p>This is pretty closely analogous to polymorphic variants in OCaml,
+except that the fields are named; in the last case, the <code>symbol</code> field
+is unused and so not mentioned.  In OCaml we can define this without
+defining the record types first, but the fields are named only
+positionally:</p>
+<pre><code># let rec leaf_sum = function `Leaf n -&gt; n | `Interior (_, left, right) -&gt; leaf_sum left + leaf_sum right ;;
+val leaf_sum : ([&lt; `Interior of 'b * 'a * 'a | `Leaf of int ] as 'a) -&gt; int =
+  &lt;fun&gt;
+# leaf_sum (`Interior (`Leaf 4, `Interior (`Leaf 5, `Leaf 6)));;
+Characters 9-60:
+  leaf_sum (`Interior (`Leaf 4, `Interior (`Leaf 5, `Leaf 6)));;
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error: This expression has type
+         [&gt; `Interior of
+              [&gt; `Leaf of int ] *
+              [&gt; `Interior of [&gt; `Leaf of int ] * [&gt; `Leaf of int ] ] ]
+       but an expression was expected of type
+         [&lt; `Interior of 'b * 'a * 'a | `Leaf of int ] as 'a
+       Types for tag `Interior are incompatible
+# leaf_sum (`Interior ("foo", `Leaf 4, `Interior ("bar", `Leaf 5, `Leaf 6)));;
+- : int = 15
+</code></pre>
+<p>The type inferred is not actually fully general, because it requires
+the type for a given tag to be consistent:</p>
+<pre><code># leaf_sum (`Interior ("foo", `Leaf 4, `Interior (3.14, `Leaf 5, `Leaf 6)));;
+Characters 9-73:
+  leaf_sum (`Interior ("foo", `Leaf 4, `Interior (3.14, `Leaf 5, `Leaf 6)));;
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error: This expression has type
+         [&gt; `Interior of
+              string *
+              ([&lt; `Interior of string * 'a * 'a | `Leaf of int &gt; `Leaf ]
+               as 'a) *
+              [&gt; `Interior of float * [&gt; `Leaf of int ] * [&gt; `Leaf of int ] ] ]
+       but an expression was expected of type 'a
+       Types for tag `Interior are incompatible
+</code></pre>
+<h2>Named fields for terser code</h2>
+<p>Usually you have more than one function operating on a given type, so
+it occurred to me that the Scheme code is somewhat redundant; as long
+as it’s only dispatching on record types, it could be written as follows:</p>
+<pre><code>(define (leaf-sum tree)
+  (variant-case tree
+     (leaf number)
+     (interior (+ (leaf-sum left-tree) (leaf-sum right-tree)))
+     (else (error "leaf-sum: Invalid tree" tree))))
+</code></pre>
+<p>Moreover the <code>error</code> could be implicit as it is in OCaml.</p>
+<p>This way of doing things requires you to name your fields in a type
+declaration, and only accommodates the simplest pattern-matches, but
+those are nevertheless the most commonly used ones.  (It also has the
+disadvantage that adding fields to a record type could silently change
+the meaning of existing code, instead of just breaking it as it
+normally does.)  So you could imagine saying, for example:</p>
+<pre><code>a tree:
+    a leaf:
+        n: int
+    a interior:
+        sym: symbol
+        left-tree: tree
+        right-tree: tree
+
+to leaf-sum:
+    on leaf:
+        n
+    on interior:
+        leaf-sum left-tree + leaf-sum right-tree
+</code></pre>
+<h2>Pointer-bit variant discrimination</h2>
+<p>Another vaguely related pattern-matching note is that if your record
+types are all non-polymorphic sum types like the above, and you do
+full type erasure, as is normal in ML, then in most cases you can get
+away with discriminating them entirely with pointer tag bits, avoiding
+embedding a tag field in the record itself.  <code>tree</code> above, for
+example, needs only one tag bit, to distinguish <code>leaf</code> from
+<code>interior</code>; very many such sum types need only 2–4.  You could provide
+an “overflow tag”, say, when all the pointer-tag bits are 1, which
+indicates that the record does indeed contain a tag field further
+discriminates the record type, but only types with 8 or more variants
+will need it if your pointers are 64-bit aligned.</p>
+<p>Here are the last few sum types I defined.  These are from porting
+μKanren to OCaml:</p>
+<pre><code>type var = Var of Index.t (* the index is a counter typically from call_fresh *)
+type term = Vart of var | Const of int | Pair of term * term
+type 'a stream = Cons of 'a * 'a stream | Thunk of (unit -&gt; 'a stream) | Mzero
+type state = State of env * Index.t (* index of the next variable to create *)
+</code></pre>
+<p>This is from an incomplete port of COMFY-65 to OCaml; the real type
+would have about five more variants:</p>
+<pre><code>type ast = If of ast * ast * ast | Not of ast | Seq of ast list | Const of int
+</code></pre>
+<p>This is also sort of an example:</p>
+<pre><code>type num = Int of int | Float of float
+type expr = Sum of expr * expr | Product of expr * expr | Const of num
+</code></pre>
+<p>This was also sort of an example:</p>
+<pre><code>type test_item = Hematocrit of int | Creatinine of float | Glucose of int
+type test_items = EmptyTest | TestCons of test_item * test_items
+type test = Test of (int * float * test_items)
+type int_tag = HematocritT | GlucoseT
+type float_tag = CreatinineT
+type by_type_tag = EmptyBTT
+                 | BTTConsInt of (int_tag * int * by_type_tag)
+                 | BTTConsFloat of (float_tag * float * by_type_tag)
+type int_item = HematocritI | GlucoseI
+type float_item = CreatinineI
+type item = IntItem of int_item * int | FloatItem of float_item * float
+type maps_test = MTest of (int IntMap.t * float FloatMap.t)
+  type item = Int of K.int_key * int
+            | Float of K.float_key * float
+  type int_key = Hematocrit | Glucose
+  type float_key = Creatinine
+</code></pre>
+<p>This was from Neel Krishnaswami:</p>
+<pre><code>type 'a exp =
+  | Var of string
+  | App of 'a exp * 'a exp
+  | Lam of string * 'a
+</code></pre>
+<p>This is a regular expression engine, based on a remark by Dave Long,
+which I cut down to use polymorphic variants in order to minimize the
+amount of code:</p>
+<pre><code>let rec any = function `N -&gt; false | `C (h, t) -&gt; h || any (t ())
+and map f = function `N -&gt; `N | `C (a, b) -&gt; `C (f a, fun () -&gt; map f (b ()))
+and iota m n = if m = n then `N else `C (m, fun () -&gt; iota (m+1) n)
+let rec splits s = let n = String.length s in
+                map (fun i -&gt; String.sub s 0 i, String.sub s i (n-i))
+                  (iota 0 (n+1))
+and matches s = function `Lit t -&gt; s = t
+                       | `Cat (h, t) -&gt; any (map (fun (a, b) -&gt;
+                         matches a h &amp;&amp; matches b t) (splits s))
+                       | `Alt (a, b) -&gt; matches s a || matches s b
+                       | `Star r -&gt; s = "" || matches s (`Cat (r, `Star r))
+</code></pre>
+<p>This uses two types, which could be defined in the conventional way as</p>
+<pre><code>type stream = Cons of bool * (unit -&gt; stream) | Nil
+type regex = Alt of regex * regex | Cat of regex * regex | Star of regex | Lit of string
+</code></pre>
+<p>And here are some types from Bicicleta:</p>
+<pre><code>type methods = NoDefs
+                           (* name, body, is_positional ... *)
+               | Definition of string * bicexpr * bool * methods
+and bicexpr = Name of string
+              | Call of bicexpr * string
+              | Literal of string option * methods
+              | Derivation of bicexpr * string option * methods
+              | StringConstant of string
+              | Integer of int
+              | Float of float
+              | NativeMethod of (lookup -&gt; bicobj)
+and userdata = UserString of string
+              | UserInteger of int 
+              | UserFloat of float
+                  (* name, selfname, body, env *)
+and bicmethod = string * string option * bicexpr * lookup
+and bicobj = ProtoObject 
+             | BaseObject of lookup
+            (* Derive of positional method names, methods, parent, cache *)
+             | Derive of string list * bicmethod list * bicobj
+                 * (string, bicobj) Hashtbl.t option ref
+             | UserData of userdata
+             | Error of string * string
+and lookup = Phi | Add of string * bicobj * lookup ;;
+</code></pre>
+<p>So, in reverse order, these types have 2, 5, 1, 3, 8, 2, 4, 2, 3, 1,
+2, 2, 1, 2, 1, 2, 3, 1, 2, 1, 2, 3, 3, 2, 4, 1, 3, 3, and 1 variant.
+So in most cases you could distinguish them entirely with pointer
+bits, even if you only had two pointer bits to play with.</p>
+<p>A more aggressive way to handle this is to represent references of a
+given type as integers, some of whose bits indicate which variant the
+object belongs to, while the other bits index an array of all objects
+of that variant.  For example, the high 16 bits of a 32-bit oop might
+indicate whether an object is a ProtoObject, a BaseObject, a Derive, a
+UserData, or an Error, while the low 16 bits index an array of Derives
+or BaseObjects or whatever.  For really simple generational garbage
+collection you could allocate a second set of typecodes for nursery
+ProtoObjects, nursery BaseObjects, and so on, where the “index” bits
+directly indicate an offset into the nursery (probably bit-shifted by
+whatever your nursery allocator alignment is.)</p>
+<h2>The regexp engine revisited</h2>
+<p>The regex engine above in OCaml with polymorphic variants consists of
+547 non-indentation characters.  We could rewrite it in the above
+notation:</p>
+<pre><code>a stream:
+    a cons:
+        car: bool
+        cdr: unit -&gt; stream
+    a nil
+
+a regex:
+    a literal:
+        content: string
+    a catenation:
+        head: regex
+        tail: regex
+    a alternation:
+        a: regex
+        b: regex
+    a closure:
+        content: regex
+
+to any:
+    on nil:
+        false
+    on cons:
+        head or any (tail())
+
+to map f:
+    on nil:
+        nil
+    on cons:
+        cons (f head) λ().map f (tail())
+
+to iota m n:
+    nil if m == n else cons m λ().iota (m+1) n
+
+to splits s:
+    n ← #s
+    map (λi.s[0:i], s[i:n-i]) (iota 0 (n+1))
+
+to matches s:
+    on literal:
+        s == content
+    on catenation:
+        any (map (λa b.matches a head and matches b tail) (splits s)
+    on alternation:
+        matches s a or matches s b
+    on closure:
+        s == "" or matches s (cat content (star content))
+</code></pre>
+<p>That’s 646 non-indentation characters, 15% larger.  You could imagine
+that if you had more than one function on regexps, you could start
+winning:</p>
+<pre><code>to can_be_empty:
+    on literal:
+        s == ""
+    on catenation:
+        can_be_empty head and can_be_empty tail
+    on alternation:
+        can_be_empty a or can_be_empty b
+    on closure:
+        true
+</code></pre><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/performance.html">Performance</a> (22 notes)
+</li><li><a href="../topics/lisp.html">Lisp</a> (11 notes)
+</li><li><a href="../topics/programming-languages.html">Programming languages</a> (8 notes)
+</li><li><a href="../topics/syntax.html">Syntax</a> (5 notes)
+</li><li><a href="../topics/ocaml.html">OCaml</a> (4 notes)
+</li><li><a href="../topics/scheme.html">Scheme</a> (3 notes)
+</li><li>Pattern matching</li></ul></div></html>

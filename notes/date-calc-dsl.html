@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html><title>DSLs for calculations on dates ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>DSLs for calculations on dates</h1><div class="metadata">Kragen Javier Sitaker, 02021-11-14 (updated 02021-12-30)
+(1 minute)</div><p><a href="https://github.com/mvrozanti/dte">https://github.com/mvrozanti/dte</a> is a DSL for doing calculations on
+dates, but it doesn’t attack my biggest pain point, which is (as
+described in <a href="https://news.ycombinator.com/item?id=29136554">https://news.ycombinator.com/item?id=29136554</a>)
+timezones.  I want to know what local time is 5 PM US Eastern or 11 AM
+US Pacific, or how long it is from now until 8 PM UTC.  Occasionally I
+want to know how long it is between 02021-11-15 21:55 and 02021-11-17
+05:00, or convert to or from Unix timestamps, or to know how many days
+it is since 01983-05-21, or until Christmas.  Occasionally I’d like to
+know the tzolkin date, the phase of the moon, or the time of sunset.
+Most of dte is useless to me; I <em>never</em> want to convert <code>23h:23</code> to
+<code>23:23:00</code>.</p>
+<p>Timezone selection is the hardest thing to do in a DSLish way, because
+any conceivable way to do it or debug it noninteractively involves
+memorizing <em>something</em> about every timezone you want to use.  You
+really want some kind of interface that gives you a list of the
+possibilities.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/hci.html">Human-computer interaction</a> (22 notes)
+</li><li><a href="../topics/dsls.html">Domain-specific languages (DSLs)</a> (4 notes)
+</li><li><a href="../topics/cli.html">Command-line interfaces (CLI)</a> (2 notes)
+</li></ul></div></html>

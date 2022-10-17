@@ -1,0 +1,2 @@
+Netstrings are a sort of TLV encoding without the T: “foo” is encoded
+as “3:foo,” and “3:foo,3:bar,” is encoded as “12:3:foo,3:bar,,”.

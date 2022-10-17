@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html><title>Running scripts once per frame for guaranteed GUI responsivity ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Running scripts once per frame for guaranteed GUI responsivity</h1><div class="metadata">Kragen Javier Sitaker, 02021-03-23 (updated 02021-10-12)
+(7 minutes)</div><p>User interfaces are real-time programs.  <a href="https://youtu.be/k79rIfcNDfg" title="Oral history of David Liddle, interviewed by Hansen Hsu and Marc Weber, 02020-02-04, at 1 hour 15 minutes 18 seconds">David Liddle says</a>:</p>
+<blockquote>
+<p>The programming world was not designed for the kind of programming
+we were doing.  These graphical user interfaces — that's real-time
+computing, okay?  And so all the programming languages that were in
+existence had been spawned, intended to do batch-like computing.
+All real-time stuff that was out there — it was all written in
+machine language!  I mean it was just hard coded, you know!
+Honeywell’s probably still selling Sigma 7s [the final SDS computer,
+bought by Xerox and then sold to Honeywell during Liddle’s tenure at
+Xerox], because there were a bunch of countries in Latin America
+that all got together and wrote flight simulators for the Sigma 7,
+okay?  And nobody wanted to pay to move that stuff, and it was all
+machine language, as <em>all</em> real-time [code] was back then!</p>
+<p>Well, we were doing real-time computing!  We were tracking the mouse
+and moving windows and all that kind of stuff.  You know how
+frustrating it is and there's even a <em>short</em> delay from a <em>manual</em>
+input.  So we had no choice. ... After 80 milliseconds, it’s cold
+pizza, man.  You know?  I mean, you can tolerate a <em>veerrry</em> tiny
+lag, okay?  But, you know, the human being wants to operate at, you
+know, 12½ hertz or go home.</p>
+</blockquote>
+<p>Suppose you want to run some arbitrary scripts in an interactive
+display system, like a game, using a flexible programming language
+like Lisp, but you want to ensure that those scripts don’t cause it to
+use more memory or become unresponsive.  One possible way to handle
+this is to run the scripts once per frame, allocating only from a
+per-frame arena heap which gets nuked before the next frame, similar
+to the nursery of a generational garbage collector.  The difference is
+that any permanent effects need to go through some kind of
+“interprocess communication” eye of the needle which will not pass
+references into the per-frame heap — so you can pass, say, byte
+strings, or maybe JSON-serializable objects, but not, say, mutable
+data structures.  There is no automatic copying out of retained
+objects when the nursery is full.</p>
+<p>An advantage of doing things this way is that, to the extent that you
+can contain any side effects from script execution inside a
+“transaction” of some kind, you have the option of fearlessly aborting
+a script at any point, either because it’s run out of time, because it
+ran out of <em>memory</em>, or because it detected an error.  Changes within
+the per-frame heap are entirely exempted from this because they will
+get vaporized when the script ends, whether succeeding or failing.</p>
+<p>If you run the pending event handlers in a frame starting from the
+highest-priority ones, you can ensure that if anything fails to run
+because you ran out of time, it’s the lowest-priority scripts.  Often,
+in interactive systems, the handling of an event can be separated into
+several parts which can to some extent fail independently:</p>
+<ol>
+<li><strong>Bottom-half handlers</strong>.  Some kind of minimal state update that
+   provides feedback that the event has happened; for example, a
+   bullet hitting a player might make the screen go red, or a
+   keystroke might put a letter on the screen.</li>
+<li><strong>Background tasks</strong>.  Some kind of cascading state changes that
+   happen as a result; for example, a keystroke might update an editor
+   buffer, which might cause a lot of text to get
+   re-syntax-highlighted, or a player entering a new region might
+h   spawn a bunch of mobs, which then begin pathfinding to attack the
+   player.</li>
+<li><strong>Isochronous tasks</strong>.  Some kind of logic to generate a screen
+   image from the current internal state.</li>
+</ol>
+<p>Normally you would like #3 to run <em>after</em> #1 and #2, so that it takes
+into account the latest events, but generally #3 has a hard deadline
+to generate some pixels, and if it doesn’t complete in time, the
+program will miss a frame, which is not ok.  So if something has to
+get aborted it should be a background task, #2.  But there isn’t a
+clearly obvious time at which that should happen; if the frame is due
+at 8.3 milliseconds, say, and the current time is 5.2 milliseconds,
+should we abort scripts from #2 or not?  And the answer depends on
+whether #3 needs more or less than 3.1 milliseconds to reliably run to
+completion.</p>
+<p>One plausible way to handle this is to analyze the isochronous code
+in #3 for its worst-case execution time (WCET) and use that to compute
+the deadline, so the deadline will always be hit.  A different
+alternative is to measure how long it takes, and how variable that
+timing usually is, and use something like the mean of the last 30
+execution times, plus, say, three standard deviations.  This will
+sometimes miss frames, but perhaps rarely enough to be acceptable for
+interactive applications.</p>
+<p>Computing WCET is harder when there are interrupts, because interrupts
+can happen during the isochronous code.  You need some kind of bound
+on how frequently they can happen and how long the (top-half) handler
+can take to run.</p>
+<p>Any time left over at the end of the frame can be used to run
+(bottom-half) handlers and background tasks.</p>
+<p>In general it is totally okay for the script’s ephemeral heap to
+contain pointers to things outside of it, just not the other way
+around.  But, if writing within the ephemeral heap is supported, the
+system needs to be able to distinguish these potentially-external
+pointers from heap-internal pointers.</p>
+<p>When a new event comes in, it would be undesirable for any
+currently-running background script to yield the CPU to the
+bottom-half handler.  This can be achieved by aborting it and
+resetting the allocation pointer or by running the handler on a
+different heap.  If you have multiple cores you presumably want to try
+to run background tasks on all of them, so you’ll probably have to
+suspend or abort one of them.</p>
+<p>Pointer-bumping allocators can be very quick.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/hci.html">Human-computer interaction</a> (22 notes)
+</li><li><a href="../topics/safety.html">Safe programming languages</a> (11 notes)
+</li><li><a href="../topics/real-time.html">Real time</a> (7 notes)
+</li><li><a href="../topics/guis.html">GUIs</a> (6 notes)
+</li><li><a href="../topics/transactions.html">Transactions</a> (4 notes)
+</li><li><a href="../topics/allocation-performance.html">Allocation performance</a> (3 notes)
+</li><li><a href="../topics/latency.html">Latency</a> (2 notes)
+</li><li><a href="../topics/interrupts.html">Interrupts</a> (2 notes)
+</li></ul></div></html>

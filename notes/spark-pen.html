@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><title>The spark-pen pointing device ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>The spark-pen pointing device</h1><div class="metadata">Kragen Javier Sitaker, 02021-10-10 (updated 02021-10-12)
+(1 minute)</div><p>I was watching the CHM David Liddle interview, and I was surprised by
+<a href="https://youtu.be/k79rIfcNDfg" title="Oral history of David Liddle, interviewed by Hansen Hsu and Marc Weber, 02020-02-04, at 36 minutes 11 seconds">his description of the “spark pen”</a>, a 01970s pointing device
+using a glass panel and microphones, using the audio transit time of
+the sound of a spark to measure the position you were pointing at.</p>
+<p>You can get several MHz of acoustic bandwidth through a glass panel,
+and a spark gap has submicrosecond rise time, so you can get
+submicrosecond positioning precision — maybe a millimeter or so.  Two
+things occurred to me about this:</p>
+<ol>
+<li>
+<p>A very low-tech way to get the spark is by mechanically opening a
+   switch with the pen point, pushing two pieces of metal apart, while
+   running current through those pieces of metal in series with an
+   inductor, ideally with regulated current.  This is maybe easiest if
+   the pen point doing the pushing is a glass rod, but metal would
+   work too.</p>
+</li>
+<li>
+<p>If you instead have a spark gap that can be induced to spark
+   frequently by opening a high-voltage MOSFET in parallel with it,
+   you can send a pseudorandom sequence of sparks that sounds like
+   white noise, allowing you to track the pen’s position continuously
+   instead of only on command.</p>
+</li>
+</ol><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/pulse.html">Pulsed machinery</a> (12 notes)
+</li><li><a href="../topics/sparks.html">Sparks</a> (4 notes)
+</li><li><a href="../topics/input-devices.html">Input devices</a> (4 notes)
+</li><li><a href="../topics/audio.html">Audio</a> (3 notes)
+</li></ul></div></html>

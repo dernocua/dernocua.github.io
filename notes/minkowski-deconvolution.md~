@@ -1,0 +1,5 @@
+Suppose you are moving a tool of some unknown, but static, geometry
+around a workpiece that also has unknown and static geometry, and you
+have a thing rigged up that stops motion when they touch, and tells
+you.  And you have a high-resolution positional feedback system that
+tells you what the relative positions are.

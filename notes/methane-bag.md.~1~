@@ -1,0 +1,44 @@
+As explained in file `material-observations.md`, I filled a small
+plastic shopping bag with methane, but to my disappointment it did not
+rise into the air.  Calculations suggest that methane has
+(12+4)/(.79×2×14+.21×2×16) ≈ 55% of the density of air, so should
+provide some 500 mg/ℓ of lift.  I didn’t weigh this bag beforehand or
+measure its volume, but it surely only contained a liter or two of
+air.  Average plastic shopping bags weigh about 5 g, but lightweight
+ones weigh as little as 100 mg.  None of the ones I have here weigh
+less than 800 mg; a household garbage bag (550 mm × 480 mm) weighs
+10.9 g, and another bag nearly as big (470 mm × 460 mm) only weighs
+4.5 g.  A 1.1 g pharmacy bag (170 mm × 240 mm) weighed 1.1 g.  Several
+bags of intermediate size weigh around 3 g.
+
+If we approximate the volume of the 4.5-g bag as a 470-mm-long
+cylinder wih 460-mm half-circumference, it would hold almost 32 ℓ,
+enough to lift about 16 g, so it should definitely fly, but only by a
+factor of about 3.  (And so should the garbage bag.)  If we scaled it
+down by a factor of 3 to a 160-mm-long cylinder with 150-mm
+half-circumference and 500 mg of mass, it would only hold 1.1 ℓ and
+thus be just on the edge of buoyancy.  Most of my bags seem to be a
+lot thicker than that, so they’ll only fly if they hold several
+liters.
+
+4.5 g over twice 470 mm × 460 mm is 10.4 g/m², so if the plastic is
+close to 1 g/cc (it is — it’s high-density polyethylene, not lead or
+something) it’s about 10 μm thick, same as the aluminum foil we get
+here.  So this is probably about as good as it gets without going to
+gold leaf or exotic composites.  Note that this suggests that ordinary
+balloons (and bladder and intestine tissue) stretch even thinner than
+this.
+
+Lifting this body into the air would require 115 kg of lift, a sphere
+of 2.8 m radius if filled with vacuum, or with methane (45% of the
+lift of vacuum) 3.7 m, or 170 m² of surface area.  Hydrogen would
+probably be a less dangerous lifting gas for humans suspended below
+it, with more tendency to rise upwards when there’s a rupture and less
+tendency to radiate heat downwards if it catches on fire.  There’s
+still the problem of how to stop falling before the ground, though.
+
+Unfortunately Mina doesn’t want me to fill a bag with 32 liters of
+inflammable gas in the kitchen, which I have to say is an entirely
+reasonable preference.
+
+A hydrogen 

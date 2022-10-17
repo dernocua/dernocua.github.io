@@ -1,0 +1,2 @@
+What’s the simplest way to support the basic Unix filesystem
+interface?  open, close, read, write, mkdir, chdir, lseek.

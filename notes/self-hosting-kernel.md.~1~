@@ -1,0 +1,5 @@
+00:12 <@oriansj> danderson: the distinction between stage0 and stage0-posix is that stage0 is bare metal only and stage0-posix is only 
+                 depending on a POSIX kernel that supports the following syscalls: exit, execve, fork, waitpid, brk, open, close, read, 
+                 write, lseek, chmod for up to M2-Planet+mescc-tools (excluding Kaem) but mescc-tools-extra+Kaem needs fchmod, access, 
+                 chdir, fchdir, mkdir, mknod, getcwd, umask and uname. Mes also needs unlink, ioctl,
+00:12 <@oriansj> stat and fsync (assuming I didn't miss anything janneke )

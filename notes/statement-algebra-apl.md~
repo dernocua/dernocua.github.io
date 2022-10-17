@@ -1,0 +1,8 @@
+Consider the statement:
+
+    y := x * x;
+    
+One way to think of this is as a mapping from states of the world to
+other states of the world.  The prior state needs to have some
+variable `x` defined in it, and the posterior state has that variable
+`x` and also a variable `y`.

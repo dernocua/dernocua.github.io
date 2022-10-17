@@ -1,0 +1,45 @@
+    0000000000001369 <cantbelievesort>:
+        1369:	f3 0f 1e fa          	endbr64 
+        136d:	48 89 f8             	mov    %rdi,%rax
+        1370:	4c 8d 0c b7          	lea    (%rdi,%rsi,4),%r9
+        1374:	49 39 c1             	cmp    %rax,%r9
+        1377:	74 23                	je     139c <cantbelievesort+0x33>
+        1379:	31 d2                	xor    %edx,%edx
+        137b:	48 39 f2             	cmp    %rsi,%rdx
+        137e:	74 16                	je     1396 <cantbelievesort+0x2d>
+        1380:	8b 08                	mov    (%rax),%ecx
+        1382:	44 8b 04 97          	mov    (%rdi,%rdx,4),%r8d
+        1386:	44 39 c1             	cmp    %r8d,%ecx
+        1389:	7d 06                	jge    1391 <cantbelievesort+0x28>
+        138b:	44 89 00             	mov    %r8d,(%rax)
+        138e:	89 0c 97             	mov    %ecx,(%rdi,%rdx,4)
+        1391:	48 ff c2             	inc    %rdx
+        1394:	eb e5                	jmp    137b <cantbelievesort+0x12>
+        1396:	48 83 c0 04          	add    $0x4,%rax
+        139a:	eb d8                	jmp    1374 <cantbelievesort+0xb>
+        139c:	c3                   	retq
+
+With gcc -Os 9.3.0, that's 52 bytes, 19 instructions.  gcc -Os has
+regressed; in 4.7.2, that used to be 44 bytes, 17 instructions.
+
+    000000000000139d <dumbsort>:
+        139d:	f3 0f 1e fa          	endbr64 
+        13a1:	b8 01 00 00 00       	mov    $0x1,%eax
+        13a6:	48 39 f0             	cmp    %rsi,%rax
+        13a9:	73 28                	jae    13d3 <dumbsort+0x36>
+        13ab:	48 8d 14 85 00 00 00 	lea    0x0(,%rax,4),%rdx
+        13b2:	00 
+        13b3:	4c 8d 04 17          	lea    (%rdi,%rdx,1),%r8
+        13b7:	48 8d 54 17 fc       	lea    -0x4(%rdi,%rdx,1),%rdx
+        13bc:	41 8b 08             	mov    (%r8),%ecx
+        13bf:	44 8b 0a             	mov    (%rdx),%r9d
+        13c2:	44 39 c9             	cmp    %r9d,%ecx
+        13c5:	7d 07                	jge    13ce <dumbsort+0x31>
+        13c7:	45 89 08             	mov    %r9d,(%r8)
+        13ca:	31 c0                	xor    %eax,%eax
+        13cc:	89 0a                	mov    %ecx,(%rdx)
+        13ce:	48 ff c0             	inc    %rax
+        13d1:	eb d3                	jmp    13a6 <dumbsort+0x9>
+        13d3:	c3                   	retq   
+
+55 bytes, 18 instructions, used to be 43 bytes, 15 instructions.

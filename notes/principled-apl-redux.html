@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html><title>Principled APL redux ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Principled APL redux</h1><div class="metadata">Kragen Javier Sitaker, 02021-01-03 (updated 02021-12-31)
+(12 minutes)</div><p>Writing <a href="http://canonical.org/~kragen/sw/dev3/rpneact.py">rpneact</a> I
+realized that there are some straightforward ways to extend such a
+system toward Bicicleta and the principled variant of APL I was
+thinking about, as well as to do performance work.</p>
+<p>One is that inheritance is relatively straightforward:</p>
+<pre><code>class Var(namedtuple('Var', ('name',)), Expr):
+    def eval(self, vars):
+        return vars[self.name].eval(vars)
+</code></pre>
+<p>If the second <code>vars</code> were a different object, we’d have the equivalent
+of invoking an inherited method — any vars referred to by the formula
+would come from the different object.  (And this is exactly how
+inheritance works in Bicicleta and in the ς-calculus it’s based on.)
+And of course in Python such inheritance is straightforward to
+implement in the <code>vars</code> object by having its <code>__getattr__</code> delegate to
+one or more different mappings.</p>
+<p>There’s code in rpneact for the solver that evaluates a loss formula
+at various points along a design variable; it works as follows:</p>
+<pre><code>var = design_var.name
+original = vars[var]
+...
+
+try:
+    ...
+            vars[var] = Const(b)
+            b_obj = objective.eval(vars)
+    ...
+finally:
+    vars[var] = original
+</code></pre>
+<p>This could be done in a purely functional way instead by the
+inheritance mechanism described above.</p>
+<p>Let’s call these “vars” namespace objects that might inherit from one
+another “worlds”.</p>
+<h2>Bitmask caching</h2>
+<p>For caching property values in such a system, you’d like to carry over
+the cached value of a property to any child worlds that hadn’t
+overridden any other property used during its computation.  Moreover,
+if that value didn’t get cached in the parent but did get computed in
+the child entirely from properties unchanged from the parent, you’d
+like to propagate those values back to the parent, so that other
+children can use them.</p>
+<p>I’m not sure what’s an actually scalable way to implement this, but an
+approach that’s reasonable up to a certain extent, with single
+inheritance, is to maintain a bitmask of overridden fields in each
+world.  Each field is assigned an index, starting from the number of
+fields in the base class.  Each cached result is stored at that index
+in a cached result vector associated with each world; each field
+definition is stored at that index in a definition vector; and in the
+bitmask of overridden fields for an world, the bit is set if the world
+has its own private definition of a field, rather than using the
+parent world’s.  And each cached result is associated with a bitmask
+of all the fields consulted during its computation.</p>
+<p>(For the moment I’m going to ignore dependencies on things outside of
+the world itself, which were common in Bicicleta but sort of
+impossible in the principled-APL approach.)</p>
+<p>These bitmasks can be 64 bits for worlds with 64 fields or less, so we
+can operate bitwise on them in a single instruction on a 64-bit CPU,
+or 128 bits for worlds with 128 fields or less.  In the limit of a
+large number of fields, of course, such explicit sets will tend to
+incur a large space and time cost.</p>
+<p>To know whether the parent world’s value of a variable can be safely
+reused, we can AND the current world’s overridden-field bitmask with
+the dependency bitmask for the parent world’s variable; if the
+intersection is null, we can just reuse the parent’s value (and
+perhaps also cache it locally).  Similarly, if we compute a field
+value locally, we also compute its dependency bitmask, so we can check
+in the same way to see whether it involved any locally overridden
+values (although you could imagine that maybe it would be more
+efficient to just set a flag during the computation, you have to
+compute the dependency bitmask anyway) and then do the same check.
+This lets you see how far up the inheritance hierarchy you can push
+the cached value.</p>
+<p>When a cached field is consulted during the computation of a field
+value, we must OR its dependency bitmask into the dependency bitmask
+of the computation, as well as set its bit.</p>
+<h2>Compilation and duplicate suppression</h2>
+<p>In a system compiled without runtime reflection, all of this bitmap
+consultation can happen at compile time; only the consultation to see
+if a field is already computed, and if so where, and what its value
+is, must be deferred to runtime.  This in some sense involves
+compiling a separate version of each world for each callsite,
+depending on the particular overrides provided at that callsite, but
+in many cases these worlds will use precisely the same code and can
+thus be merged, as with C++ templates.  (And runtime reflection can be
+supported in such a system by invoking the compiler at runtime.)</p>
+<p>If an override method doesn’t use any other fields of the object it’s
+being stuck onto, it could be implemented as a simple delegation to a
+thunk.  Then all the worlds that differ only by the contents of that
+thunk can be merged.  For example, in Bicicleta:</p>
+<pre><code>prog.if(foo, then={all kinds of stuff}, else={more stuff})
+</code></pre>
+<p>can be merged with all the other invocations of <code>prog.if</code> that
+override only <code>arg0</code>, <code>then</code>, and <code>else</code>.</p>
+<h3>Field order</h3>
+<p>The fields within a world can be topologically sorted to emit a single
+sequence of code that computes all of them in dependency order.  In
+cases where no cached results are possible, for example when a program
+starts, if there’s no risk to termination behavior, we can run all the
+fields peremptorily in sequence, one after the other.  In other cases,
+it may be sensible to do a slightly modified version of the same
+thing: concatenate the code and put a conditional jump past the
+computation of each field.  The jump can be based on, for example, a bitmap of fields
+whose computation is desired: the abjunction of the dependencies of a
+desired-fields bitmap and an already-computed-fields bitmap.  In many
+cases, we can jump directly to the first not-yet-computed field, and
+run straight-line code from there, perhaps even without such
+conditional skips.</p>
+<p>Inlining the computations of other worlds’ fields may be worthwhile,
+particularly when no references to those other worlds themselves
+escape from the computation.  The <code>if</code> case above is paradigmatic: no
+reference to <code>if</code> world survives, just its output.</p>
+<p>General inlining in a system as late-bound as the original Bicicleta
+design would require type specialization using hidden classes.  Maybe
+a “Triciclo” design could omit the ability to override standard
+operators like arithetic, but you could probably get to better
+performance than CPython or similar systems by the Ur-Scheme approach
+of inlining the implementation of native operators (integer addition,
+etc.) with a conditional jump to an exception handler for cases where
+an operator is overridden.  But this is to some extent orthogonal to
+the question of the caching strategy!</p>
+<h2>Simple compilation</h2>
+<p>In simple cases, the strategy is:</p>
+<ol>
+<li>
+<p>Topologically sort the variables.</p>
+</li>
+<li>
+<p>Assign each variable a memory location, not necessarily in
+   sequence.</p>
+</li>
+<li>
+<p>Generate the code snippet to compute each variable from the other
+   variables, fetching from memory and storing into memory as
+   necessary.</p>
+</li>
+<li>
+<p>Divide the topologically-sorted sequence into “basic blocks”
+   approximating some fixed granularity, say, 256 clock cycles.</p>
+</li>
+<li>
+<p>Assign each basic block a memory location for a flag that indicates
+   whether its results are valid (up-to-date) or not.</p>
+</li>
+<li>
+<p>For each basic block, emit a conditional checking to see whether
+   its results are valid, and if not, executing the concatenated code
+   snippets for its variables, then setting the flag to indicate that
+   its results are indeed valid.</p>
+</li>
+<li>
+<p>Peephole-optimize each basic block.</p>
+</li>
+<li>
+<p>Eliminate memory allocations no longer read after
+   peephole-optimization, unless they’re final outputs.</p>
+</li>
+<li>
+<p>Concatenate the basic blocks.</p>
+</li>
+</ol>
+<p>So for a full computation from scratch, you clear all the validity
+flags, set the inputs, and jump to the beginning of the first basic
+block.  In cases where you've changed some input, you clear some of
+the flags (following the transitive closure of dependency relations
+between the blocks) and jump to the beginning of the first one whose
+validity flag isn’t set there’s a granularity tradeoff where making
+the blocks bigger also increases the amount of redundant computation
+they do: you may recompute a variable that didn’t need recomputing
+because it was in the same basic block as one that did using larger
+basic blocks privileges worst-case computation time (where nothing is
+cached), while using smaller ones privileges best-case incremental
+update time.</p>
+<p>There’s no particular reason that this honking chunk of compiled code
+can’t accept a base address argument off which to find its variables
+and validity flags, nor, for that matter, two different base addresses
+off which to find variables and validity flags that vary differently.
+And these “base addresses” can as easily be array indices.  For
+example, you might have some set of variables that vary by day, and
+other variables that are global across all days.  The basic blocks for
+the per-day variables would use the day index to index into an array
+of validity flags, one flag per day per basic block, as well as arrays
+of variable values to compute; the basic blocks for the non-per-day
+variables would not.</p>
+<p>In the simplest case, the per-day variables are all computed from the
+non-per-day variables and not vice versa, but once reductions,
+quantifiers, and indexing are involved, the picture gets more
+complicated: you might have non-per-day variables computed from some
+of the per-day variables, more per-day variables computed from those,
+and so on.  This affects how you can bundle them into basic blocks
+efficiently.</p>
+<p>(Is Datalog-style stratified inference applicable to this problem?)</p>
+<h2>Transactional arrayification</h2>
+<p>Suppose you populate memory with some indepdendent-variable values and
+run a hunk of machine code in some kind of valgrind-like monitoring
+mode that monitors what memory locations it reads and writes.  After
+it completes, you can check to see which of your input values it read;
+you can then infer that the locations that it <em>wrote</em> depend at least
+on the independent variables that it <em>read</em>.  For example, if it read
+<em>x</em> and <em>y</em> but not <em>z</em>, and wrote <em>a</em> and <em>b</em>, you can conclude that
+<em>a</em> and <em>b</em> are dependent on <em>x</em> and <em>y</em>, but maybe not <em>z</em>.</p>
+<p>If you have a set of possibilities in mind for <em>x</em> and <em>y</em>, you can
+write each of the possibilities into the <em>x</em> and <em>y</em> memory locations
+and rerun the code, thus deriving <em>a</em> and <em>b</em> values for each (<em>x</em>,
+<em>y</em>) pair.  At some point you may or may not observe a dependency on
+<em>z</em> as well; if so, you might have to try all the <em>z</em> values as well.</p>
+<p>You may be able to provide <em>x</em>, <em>y</em>, <em>z</em>, <em>a</em>, and <em>b</em> as closures
+rather than memory locations, in which case efficiently noting that
+they are being accessed, without slowing down the rest of the
+computation, becomes easy.  This is the approach taken by, for
+example, Meteor and Adapton.  Moreover, depending on the degree to
+which local memory writes can be controlled, you may be able to use
+such thunks to save backtracking state — if <em>x</em> is consulted some time
+before <em>y</em>, it may be worthwhile to just roll back the computation to
+the first consultation of <em>y</em> to try different <em>y</em> values.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/performance.html">Performance</a> (22 notes)
+</li><li><a href="../topics/safety.html">Safe programming languages</a> (11 notes)
+</li><li><a href="../topics/compilers.html">Compilers</a> (10 notes)
+</li><li><a href="../topics/programming-languages.html">Programming languages</a> (8 notes)
+</li><li><a href="../topics/transactions.html">Transactions</a> (4 notes)
+</li><li><a href="../topics/caching.html">Caching</a> (4 notes)
+</li><li><a href="../topics/bicicleta.html">Bicicleta</a> (2 notes)
+</li><li><a href="../topics/apl.html">Apl</a> (2 notes)
+</li><li>Datalog</li><li>Arrays</li></ul></div></html>

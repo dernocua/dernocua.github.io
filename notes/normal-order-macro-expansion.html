@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html><title>:fq0zl, a normal-order text macro language ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>:fq0zl, a normal-order text macro language</h1><div class="metadata">Kragen Javier Sitaker, 02021-04-09 (updated 02021-07-27)
+(14 minutes)</div>
+<p>Textual macro replacement languages like m4 are famous for being easy
+to implement and eliminating artificial barriers to factoring out
+duplication.  They also have a very low barrier to entry for new
+programmers.  However, they also have a lot of problems.</p>
+<p>m4 is notoriously hard to use, although it’s often effective.  Part of
+the problem is that data is re-executed both on its way into and on
+its way out of macro invocations, so you often need
+quoting — confusingly, multiple levels thereof.  Worse, if you are
+missing a level of quoting, your code will often appear to work until
+some previously inert data happens to have a macro invocation in it.</p>
+<p>m4’s design has a number of other avoidable defects.  It’s
+whitespace-sensitive in a way that impairs readability.  Often m4
+macros collide with ordinary words, resulting in accidental macro
+invocations that corrupt the text.  Since it was defined, the ASCII
+apostrophe has been redefined as a terrible symmetrical typewriter
+glyph, depriving m4’s default quote characters of their symmetry.  And
+m4’s parameter-passing mechanism is so purely positional that, as in
+Forth, you can’t even name your arguments.</p>
+<p>Can we define a text macro language that retains the basic processing
+paradigm of m4, m6, and cpp, but has a better balance of power and
+usability?</p>
+<h2>Existing macro languages</h2>
+<p>TeX is a pure macro-expansion system, perhaps the most successful
+attempt, but I suspect we can do better.  Tcl is semantically mostly a
+macro-expansion language, and although it’s somewhat limited it’s at
+least usable.  Mooers’s TRAC is hard to find information about.
+MediaWiki templates, sh, make, PHP, ES6, Perl, cpp, macro assemblers,
+and many other languages implement string interpolation in more or
+less central ways.</p>
+<h2>Normal-order macro expansion</h2>
+<p>If macro <em>output</em> is not subject to macro expansion, we have
+“applicative-order macro expansion”, and m4 loses its
+Turing-completeness, making it much more comprehensible (all the macro
+invocations that will be expanded are explicitly present in the input
+file) but also much less useful.  (m4’s predecessor m6†, which was
+included with early versions of Unix, offered the call-time option to
+expand a macro in this fashion by terminating the call with a
+semicolon.)</p>
+<p>On the other hand, if macro <em>input</em> is not subject to macro expansion,
+much of the need for quoting disappears, but Turing-completeness
+remains.  This is “normal-order macro expansion”.  Done naïvely, there
+are cases where it will take exponentially longer than m4’s strategy,
+but I think these can be mostly avoided in practice, and a more
+sophisticated implementation can optimize them away.  Make's standard
+<code>$(variable)</code> mechanism works this way, though without the ability to
+define parameterized macros.</p>
+<p>Tcl, instead, doesn’t rely on macro expansion for computational power;
+its <code>proc</code> mechanism is not defined in terms of macro expansion
+producing an enormous string, just the construction of the arguments
+to a Tcl command.</p>
+<hr />
+<p>† “the program contains about 25 subroutines, totaling about 600
+executable statements,” according to the Bell Labs Computing Science
+Technical Report #2 about m6 in 01971.</p>
+<h2>Lexical syntax for :fq0zl</h2>
+<p>m6† used “warning characters” to delimit macro invocations, a feature
+that is present in a certain sense in cpp and has been added again in
+GNU m4.  In standard m4 we can write this and get 6:</p>
+<pre><code>define(`mylen',`ifelse($1,,0,`eval(1+mylen(substr($1,1)))')')dnl
+mylen(kanawa)
+</code></pre>
+<p>But, in m6, where the quote characters were <code>&lt;&gt;</code> and the default
+warning characters were <code>#:</code>, I think you would have written:</p>
+<pre><code>#def,mysize,&lt;#if,#seq,$1,:,0,1,&lt;#add,1,#mysize,#substr,$1,1:::&gt;:&gt;:
+#mysize,kanawa:
+</code></pre>
+<p>(As mentioned above, replacing <code>:</code> with <code>;</code> yielded applicative-order
+expansion, in which the macro’s output would not be expanded further.)</p>
+<p>Here <code>#seq,$1,:</code> tests whether the first argument to mylen was
+string-equal to the empty string, in which case the invocation of the
+builtin <code>#if</code> macro returns 0; otherwise it invokes <code>#eval</code> to
+recurse.  I think the inner <code>&lt;&gt;</code> are necessary to prevent the
+recursion from being evaluated infinitely before invoking <code>#if</code>.</p>
+<p>In GNU m4, if <code>changeword</code> is enabled, I think we can get a similar
+effect like this, but I don’t have m4 compiled with that at the
+moment to test:</p>
+<pre><code>changequote(&lt;,&gt;)changeword(&lt;#\([_a-zA-Z0-9]*\)&gt;)
+#define(&lt;mylen&gt;,&lt;#ifelse($1,,0,&lt;#eval(1+#mylen(#substr($1,1)))&gt;)&gt;)#dnl
+#mylen(kanawa)
+</code></pre>
+<p>Overall this is all pretty nasty and unreadable to my eyes.  I'd
+rather separate arguments with arbitrary amounts of whitespace and use
+an explicit, nestable, and visually symmetrical circumfix syntax for
+macro invocation.  Single ASCII characters only offer a few choices:</p>
+<pre><code>&lt;mylen kanawa&gt;
+[mylen kanawa]
+(mylen kanawa)
+{mylen kanawa}
+‘mylen kanawa’  # formerly ASCII, now sabotaged by aping MS-DOS
+</code></pre>
+<p>Of these, I like <code>&lt;mylen kanawa&gt;</code> best — it most strongly implies that
+it's a placeholder — but that would run into a lot of trouble if you
+started trying to macro-expand C programs that say things like
+<code>#include &lt;string.h&gt;</code> and <code>for (size_t i=0; i&lt;result-&gt;len; ++i)</code> all
+over the place, not to mention PDF files with hex strings like
+<code>&lt;668531e8e73e8ee1503359167219ef43&gt;</code>, and of course SGML, HTML, and
+XML — unless you pass undefined macro invocations through unchanged.
+But I want undefined macro invocations to crash.</p>
+<p>So, to avoid these problems, with SGML, HTML, and XML, you must
+precede the macro name with <code>:</code>, as in <code>&lt;:mylen kanawa&gt;</code>.</p>
+<p>Just as in m4 and m6, there’s the problem of how to embed the argument
+separator within an argument, which is more urgent when the separator
+is whitespace.  You <em>could</em> use the same delimiters in such a case, or
+something like <code>&lt;:q this text is a single argument&gt;</code>, but I think it’s
+best to expropriate more delimiters in a way analogous to m6’s use of
+<code>&lt;&gt;</code> — but <em>only in the context of macro arguments</em>.  And I think the
+best delimiters to use here are braces <code>{}</code>, backslashing } and
+backslash inside them if you need unbalanced braces.</p>
+<p>And I think named arguments are pretty important.  So instead of</p>
+<pre><code>define(`mylen',`ifelse($1,,0,`eval(1+mylen(substr($1,1)))')')
+</code></pre>
+<p>we might write</p>
+<pre><code>&lt;:def &lt;:mylen s&gt;
+    &lt;:ifelse %s {} 0 &lt;:eval 1+&lt;:mylen &lt;:substr %s 1&gt;&gt;&gt; &gt;
+&gt;
+</code></pre>
+<p>No quoting is needed here because we’re using normal-order
+macro-expansion; the <code>&lt;:mylen s&gt;</code> and <code>&lt;:ifelse ...&gt;</code> calls are parsed
+so we can see where they end, avoiding the need for extra <code>{}</code>, but
+they aren’t macro-expanded until and unless they end up in a strict
+context, such as a top-level output stream or the argument of <code>&lt;:eval
+...&gt;</code>.  And <code>%s</code> expands to the parameter <code>s</code>, as in MS-DOS batch
+files or in SGML parameter entities:</p>
+<pre><code>&lt;!ENTITY crap "#PCDATA | %font | %phrase | %special | %formctrl"&gt;
+</code></pre>
+<p>However, in :fq0zl, the substitution is only carried out on the text
+of a macro definition, and only using the parameters that are
+lexically within scope — it’s not done throughout the rest of the
+file, as in an SGML DTD (the above SGML defines <code>&amp;crap;</code> to expand to
+all that crap, with <code>%font</code> and the like additionally expanded,
+anywhere in any document ruled by this DTD).</p>
+<p>As in SGML, you can optionally terminate the parameter name with a
+<code>;</code>, which is useful for contexts that would otherwise be a problem:</p>
+<pre><code>&lt;:def &lt;:mylen %s&gt;
+    &lt;:ifelse %s; {} 0 &lt;:eval 1+&lt;:mylen &lt;:substr %s; 1&gt;&gt;&gt; &gt;
+&gt;
+</code></pre>
+<p>Consider, for example, this definition from the Hammer parsing library:</p>
+<pre><code>#define HAMMER_FN_DECL_NOARG(rtype_t, name)             \
+  rtype_t name(void);                                   \
+  rtype_t name##__m(HAllocator* mm__)
+</code></pre>
+<p>We can define the equivalent in :fq0zl as follows:</p>
+<pre><code>&lt;:def &lt;:hammer_fn_decl_noarg rtype_t name&gt; {
+    %rtype_t %name(void);
+    %rtype_t %name;__m(HAllocator* mm_);
+}&gt;
+</code></pre>
+<p>Without the disambiguating <code>;</code> we would have <code>%name__m</code>, which would
+abort with an error, since there is no parameter in scope named
+<code>name__m</code>.</p>
+<p>Named parameters can have defaults, and you can pass parameters by
+name.  So, for example, corresponding to this MediaWiki markup with
+its named parameters:</p>
+<pre><code>{{Infobox laboratory equipment
+|name         = Holter monitor
+|image        = HolterAFT1000.jpg
+|caption      = Holter monitor
+|inventor     = [[Norman Holter]] and Bill Glasscock at Holter Research Laboratory
+}}
+</code></pre>
+<p>we might have</p>
+<pre><code>&lt;:infobox-laboratory-equipment
+    name = {Holter monitor}
+    image = {HolterAFT1000.jpg}
+    caption = {Holter monitor}
+    inventor = {[[Norman Holter]] and Bill Glasscock at Holter Research Laboratory}
+&gt;
+</code></pre>
+<p>The spaces around the <code>=</code> are optional, so parsing this from left to
+right requires retconning <code>name</code> from being a parameter <em>value</em> “name”
+to being a parameter <em>name</em>.  When we define the macro we can provide
+it with default parameter values:</p>
+<pre><code>&lt;:def &lt;:infobox-laboratory-equipment
+            name caption inventor image={} model={}&gt;
+...&gt;
+</code></pre>
+<p>It’s reasonable to question having two separate replacement
+mechanisms, one for macros <code>&lt;:s&gt;</code> and the other for parameters <code>%s</code>.
+You could of course provide parameters as locally-defined macros, but
+my intuition is that bloating references to what are really just local
+variables to a minimum of four characters is excessive and would make
+:fq0zl clumsy to use.</p>
+<h2>Static function arguments</h2>
+<p>By defining a macro that expands to a <code>&lt;:def ...&gt;</code> we can do
+imperative programming, but what about higher-order functional
+programming?</p>
+<p>In m4 we can pass function arguments by name:</p>
+<pre><code>define(parenthesize,`($1)')dnl
+define(bracize,`{$1}')dnl
+define(hello,`$1(h)$1(e)$1(l)$1(l)$1(o)')dnl
+hello(`bracize')
+hello(`parenthesize')
+</code></pre>
+<p>The <code>hello</code> macro invokes the macro whose name is passed in as an
+argument, so we get:</p>
+<pre><code>{h}{e}{l}{l}{o}
+(h)(e)(l)(l)(o)
+</code></pre>
+<p>It took me about half an hour, and rereading much of the GNU m4
+manual, to figure out that the reason this wasn’t working was that I
+had forgotten to quote the argument to <code>hello</code>.  In :fq0zl we can do
+precisely the same thing, but quoting is unnecessary:</p>
+<pre><code>&lt;:def &lt;:parenthesize x&gt; (%x)
+&gt;&lt;:def &lt;:bracize x&gt; {{%x}}
+&gt;&lt;:def &lt;:hello f&gt; &lt;:%f h&gt;&lt;:%f e&gt;&lt;:%f l&gt;&lt;:%f l&gt;&lt;:%f o&gt;
+&gt;&lt;:hello parenthesize&gt;
+&lt;:hello bracize&gt;
+</code></pre>
+<p>If we change the definition in m4, we can pass in a curried function
+instead; this produces the same output:</p>
+<pre><code>define(wrap, `$1$3$2')dnl
+define(hello, `$1,h)$1,e)$1,l)$1,l)$1,o)')dnl
+hello(`wrap(`(',`)'')
+hello(`wrap({,}')
+</code></pre>
+<p>However, though this works in this case, it is clearly monstrous; it's
+incompatible with the previous <code>hello</code> definition, and not only is the
+definition of <code>hello</code> unreadable (you can’t even see the nesting
+structure), it’s buggy when you pass it alphanumerics:</p>
+<pre><code>define(wrap, `$1$3$2')dnl
+define(hello, `$1,h)$1,e)$1,l)$1,l)$1,o)')dnl
+hello(`wrap(_,_')
+</code></pre>
+<p>This produces the output</p>
+<pre><code>_h_wrap(_,_,e)_l_wrap(_,_,l)_o_
+</code></pre>
+<p>Two of the five calls to the callback argument got cabbaged because
+when the scanner got to them they’d undergone token pasting.  The
+m6/:fq0zl design is somewhat safer here, but this is far from the only
+such problem with macro expansion.</p>
+<p>It’s not impossible to fix this bug within m4:</p>
+<pre><code>define(wrap, `$1$3$2')dnl
+define(hello, `$1,h)`'$1,e)`'$1,l)`'$1,l)`'$1,o)')dnl
+hello(`wrap(_,_')
+</code></pre>
+<p>This produces the desired output:</p>
+<pre><code>_h__e__l__l__o_
+</code></pre>
+<p>But the definition is, if possible, even uglier than before.</p>
+<p>The straightforward equivalent definition in :fq0zl would use the same
+definition of <code>:hello</code> as above:</p>
+<pre><code>&lt;:def &lt;:wrap l r m&gt; %l;%m;%r;
+&gt;&lt;:def &lt;:hello f&gt; &lt;:%f h&gt;&lt;:%f e&gt;&lt;:%f l&gt;&lt;:%f l&gt;&lt;:%f o&gt;
+&gt;&lt;:hello {wrap ( )}&gt;
+&lt;:hello {wrap \{ \}}&gt;
+</code></pre>
+<p>But first we should explore the question of expansion semantics in
+more detail.</p>
+<h2>Expansion semantics</h2>
+<p>A big problem with make, sh, and m4 is that they tend to have subtle
+bugs when handling “special characters”: make totally fails on
+filenames with spaces.  sh by default re-splits the results of
+$variable and <code>`command`</code> expansion to “help” you use shell
+variables and command output as arrays of filenames instead of
+individual filenames.  The m4 behavior I exploited above to pass in a
+curried function as an argument is not only pretty unreadable in this
+context, it’s also an abundant source of bugs.</p>
+<p>Another problem with the m4 semantics is that they’re slow: the macro
+output must be rescanned character by character in case the token
+boundaries have moved.</p>
+<p>We have to scan the macro arguments when we first encounter them in
+order to figure out where they end.  The right solution is to store
+the resulting list structure and treat <em>that</em> as primary, rather than
+the character-by-character syntax.  This need not diminish the
+abstraction power of the language.</p>
+<p>Consider a macro invocation like this:</p>
+<pre><code>&lt;:foo %a b %c&gt;
+</code></pre>
+<p>It is desirable that we can statically know that this invocation
+invokes <code>foo</code> with three arguments, the second of which is the string
+<code>b</code>, which is a positional parameter.  It is not desirable for <code>b</code> to
+be the second or third argument depending on the value of <code>a</code>.</p>
+<p>I’ll handwave over actually establishing semantics here for now,
+though.</p>
+<h2>Lambda-lifting to construct data structures out of curried functions</h2>
+<p>With this ability to construct and invoke curried functions, we can
+define naturals, booleans, and Lisp-style lists in the λ-calculus
+fashion, even though we don’t have anonymous functions.  To examine a
+natural, we invoke it with two continuations, one to return if the
+natural is zero, and another to invoke with the number's predecessor
+if it is nonzero:</p>
+<pre><code>&lt;:def &lt;:zero ifzero ifsucc&gt; %ifzero&gt;
+&lt;:def &lt;:succ n&gt; {succ2 %n}&gt;
+&lt;:def &lt;:succ2 n ifzero ifsucc&gt; &lt;:%ifsucc %n&gt;&gt;
+</code></pre>
+<p>Given this definition, we can define addition recursively: 0+y is just
+y, and succ(n)+y is succ(n+y):</p>
+<pre><code>&lt;:def &lt;:add x y&gt; &lt;:%x ifzero=%y ifsucc={add2 %y}&gt;&gt;
+&lt;:def &lt;:add2 y n&gt; &lt;:succ &lt;:add %n %y&gt;&gt;&gt;
+</code></pre>
+<p>Comparing a number to zero is fairly trivial:</p>
+<pre><code>&lt;:def &lt;:eq0 x&gt; &lt;:%x ifzero=true ifsucc=eq01&gt;&gt;
+&lt;:def &lt;:eq01 _&gt; false&gt;
+</code></pre>
+<p>However, what are <code>true</code> and <code>false</code>?  We can define them in the same
+way, as functions that invoke different continuations:</p>
+<pre><code>&lt;:def &lt;:true iftrue iffalse&gt; %iftrue&gt;
+&lt;:def &lt;:false iftrue iffalse&gt; %iffalse&gt;
+</code></pre>
+<p>Now we can compare two naturals with the same recursive approach we
+used for addition.  If the left argument is zero, then we get the
+result by checking to see if the right argument is zero:</p>
+<pre><code>&lt;:def &lt;:eq x y&gt; &lt;:%x ifzero=&lt;:eq0 %y&gt; ifsucc={eq2 %y}&gt;&gt;
+</code></pre>
+<p>Otherwise,</p>
+<pre><code>&lt;:def &lt;:eq2 y x1&gt; &lt;:%y ifzero=false ifsucc={eq %x1}&gt;&gt;
+
+&lt;:def &lt;:nil ifnil ifpair&gt; %ifnil&gt;
+&lt;:def &lt;:pair car cdr ifnil ifpair&gt; &lt;:%ifpair %car %cdr&gt;&gt;
+&lt;:def &lt;:mapcar f list&gt; &lt;:%list nil {mapcar2 %f}&gt;
+&lt;:def &lt;:mapcar2 f car cdr&gt; &lt;:pair &lt;:%f %car&gt; &lt;:mapcar %f %cdr&gt;&gt;&gt;
+&lt;:def &lt;:append xs ys&gt; &lt;:%xs %ys {append2 %ys}&gt;&gt;
+&lt;:def &lt;:append2 ys car cdr&gt; &lt;:pair %car &lt;:append %cdr %ys&gt;&gt;&gt;
+</code></pre><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming-languages.html">Programming languages</a> (8 notes)
+</li><li><a href="../topics/end-user-programming.html">End user programming</a> (6 notes)
+</li><li><a href="../topics/m4.html">m4</a> (2 notes)
+</li><li>Macros</li></ul></div></html>

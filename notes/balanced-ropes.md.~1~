@@ -1,0 +1,77 @@
+I wrote [a simple implementation of ropes last night in 45
+minutes][0]:
+
+    #!/usr/bin/python3
+    from collections import namedtuple
+    from functools import cached_property  # 3.8 or later
+
+
+    def as_rope(obj):
+        return obj if isinstance(obj, Rope) else Leaf(obj)
+
+
+    class Rope:
+        def __add__(self, other):
+            return Concat(self, as_rope(other))
+
+        def __radd__(self, other):
+            return as_rope(other) + self
+
+        def __str__(self):
+            return ''.join(self.walk())
+
+
+    class Leaf(Rope, namedtuple("Leaf", ('s',))):
+        def __getitem__(self, slice):
+            return Leaf(self.s[slice])
+
+        def __len__(self):
+            return len(self.s)
+
+        def walk(self):
+            yield self.s
+
+
+    class Concat(Rope, namedtuple("Concat", ('a', 'b'))):
+        def __len__(self):
+            return self.len
+
+        @cached_property
+        def len(self):
+            return len(self.a) + len(self.b)
+
+        def walk(self):
+            yield from self.a.walk()
+            yield from self.b.walk()
+
+        def __getitem__(self, sl):
+            if sl.start is None:
+                sl = slice(0, sl.stop)
+
+            if sl.stop is None:
+                sl = slice(sl.start, len(self))
+
+            if sl.start < 0:
+                sl = slice(len(self) + sl.start, sl.stop)
+            if sl.stop < 0:
+                sl = slice(sl.start, len(self) + sl.stop)
+
+            # Important special case to stop recursion:
+            if sl.start == 0 and sl.stop == len(self):
+                return self
+
+            a_len = len(self.a)
+            if sl.start >= a_len:
+                return self.b[sl.start - a_len : sl.stop - a_len]
+
+            if sl.stop <= a_len:
+                return self.a[sl]
+
+            # At this point we know we need part of a and part of b.
+            # Since slicing a leaf creates a Rope, we can blithely just do this:
+            result = self.a[sl.start:] + self.b[:sl.stop - a_len]
+            # Avoid making Concat nodes for lots of tiny leaves:
+            return Leaf(str(result)) if len(result) < 32 else result
+
+
+[0]: https://news.ycombinator.com/item?id=28885929

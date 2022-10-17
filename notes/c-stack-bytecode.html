@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html><title>A compact bytecode sketch that should average about 3 bytes per line of C ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>A compact bytecode sketch that should average about 3 bytes per line of C</h1><div class="metadata">Kragen Javier Sitaker, 02021-08-17 (updated 02021-09-13)
+(66 minutes)</div><blockquote>
+<p>From Table I we see that the assignment, IF, CALL, RETURN and FOR
+statements together account for 96 percent of the source statements.
+Therefore we will design an instruction set to handle the object
+code from these statements efficiently.  To push local variables
+(including parameters) onto the stack, we propose 12 distinct 1-byte
+(format 1) opcodes, one each for offsets 0-11.  Twelve instructions
+allow access to all the locals (and parameters) in 94.6 percent of
+the procedures, and to more than 50 percent of the locals in the
+remaining procedures.  For example, opcodes 114-125 might be used
+for PUSH LOCAL 0, PUSH LOCAL 1..., PUSH LOCAL 11.</p>
+</blockquote>
+<p>(<a href="https://research.vu.nl/ws/files/110789436/11056" title="Implications of Structured Programming for Machine Architecture, by Andrew S. Tanenbaum, 01978, CACM volume 21, number 3, 10.1145/359361.359454">Tanenbaum 01978</a>, §5, p. 243)</p>
+<p>What would a compact stack bytecode for C look like?  I think you
+could usually manage to compile to about 3 bytes per line of C code,
+which would enable you to run C programs of about 10kloc on an Arduino
+or about 300kloc on an Ambiq Apollo3, in exchange for nearly an order
+of magnitude worse power usage and runtime for the interpreted code.
+This could expand the uses of such small computers dramatically.</p>
+<h2>Why?</h2>
+<p>There are two major reasons to do this: to pack more functionality
+into less memory and to improve in-application programmability.</p>
+<h3>To pack more functionality into less memory</h3>
+<p>There are lots of microcontrollers around now, but for traditional
+personal computing purposes they have more speed than needed and less
+memory.  The 3¢ Padauk microcontrollers (the PMS150 family) as
+described in file <code>minimal-cost-computer.md</code> in Derctuo has “512-4096
+words of program memory and 64-256 bytes of RAM, all running at up to
+16 MHz (normally 8 MIPS) ... running on 2.2–5 volts at 750 μA/MHz,”
+though they’re out of stock everywhere last I saw.  As mentioned in
+<a href="../notes/wearable-ekg.html">A bargain-basement Holter monitor with a BOM under US$2.50</a>, the ATTiny1614 costs 82¢ from Digi-Key; it has
+16KiB of program memory (8192 words) and 2048 bytes of RAM and runs at
+20 MHz (≈20 MIPS).  (The formerly cheaper ATTiny25V-15MT is now out of
+stock due to the Chipocalypse and its price has shot up enormously to
+US$1.82 in quantity 1000.)  The <a href="https://www.digikey.com/en/products/detail/stmicroelectronics/STM32F051C8T6/3064610">STM32F051C8T6 is still out of stock
+at Digi-Key with a standard lead time of 52 weeks</a>, and now the
+<a href="https://lcsc.com/product-detail/Other-Processors-and-Microcontrollers-MCUs_CKS-CKS32F051C8T6_C556574.html">CKS32F051C8T6 is out of stock at LCSC too</a>, but at least they have
+the <a href="https://lcsc.com/product-detail/GigaDevice_GigaDevice-Semicon-Beijing-GD32F130C8T6_C80735.html">GD32F130C8T6</a>: 64KiB program memory, 8KiB RAM, 72 MHz
+Cortex-M3 (80 DMIPS?), US$3.25.  And the Ambiq Apollo3 mentioned in
+<a href="../notes/energy-autonomous-computing.html">Energy autonomous computing</a> has 1MB Flash and 384KiB SRAM
+and is a 48MHz Cortex-M4F, running at about 10 μA/MHz at 3.3 volts.</p>
+<p>In <a href="../notes/microlisp.html">How do you fit a high-level language into a microcontroller? Let’s look at BBN Lisp</a> and <a href="../notes/energy-autonomous-computing.html">Energy autonomous computing</a> I’ve
+written about how to effectively use off-chip memory in order to kind
+of bridge this gap somewhat.  Swapping in code or data from off-chip
+Flash is a great deal faster than swapping from a spinning-rust disk
+drive or loading overlays from a floppy, so it can be a lot more
+transparent.</p>
+<p>However, an alternative approach is to make more frugal use of the
+internal memory, and in <a href="../notes/microlisp.html">How do you fit a high-level language into a microcontroller? Let’s look at BBN Lisp</a> (and in file
+<code>tiny-interpreters-for-microcontrollers</code> in Dercuano) I explored
+compact bytecode formats a bit.</p>
+<p>The Microsoft Excel team wrote their own C compiler in the 01980s for
+this purpose; as I understand it, to fit more functionality into PCs
+of the time, such as the Macintosh, their compiler allowed them to
+choose for each function whether to compile it to bytecode or to
+native code.</p>
+<p><a href="https://www.microsoft.com/en-us/research/uploads/prod/2018/07/lctes18main-p12-p.pdf">The MakeCode VM</a> reportedly consists of about 500 bytes of AVR
+machine code:</p>
+<blockquote>
+<p>MicroPython and similar environments cannot run on the [Arduino] Uno
+due to flash [32 KiB] and RAM [2 KiB] size limitations.  We also ran
+into these limitations, and as a result, developed two compilation
+modes for AVR.  One compiles STS [Static TypeScript, a JS-like
+language] to AVR machine code, and the other (MakeCode VM) generates
+density-optimized byte code for a tiny (~500 bytes of code)
+interpreter.  The native strategy achieves code density of about
+60.8 bytes per statement, which translates into space for 150 lines
+of STS user code.  The VM achieves 12.3 bytes per statement allowing
+for about 800 lines.  For comparison, the ARM Thumb code generator
+used in other targets achieves 37.5 bytes per statement, but due to
+the larger flash sizes we did not run into space issues.</p>
+</blockquote>
+<p>In exchange for this 4.9× code compression, they accepted about a 6.4×
+interpretive slowdown.</p>
+<p>The <a href="http://www.clipshop.ca/Aztec/docs/AztecC_minimanual.txt" title="Manx Aztec C mini-manual, 01983">Aztec C compiler for the Apple</a> (<a href="http://aztecmuseum.ca/intro.htm">available for free
+download</a>)included a bytecode mode to reduce space, and you could
+compile only part of your program with it:</p>
+<blockquote>
+<p>As an alternative, the pseudo-code C compiler, CCI, produces machine
+language for a theoretical machine with 8, 16 and 32 bit
+capabilities.  This machine language is interpreted by an assembly
+language program that is about 3000 bytes in size.</p>
+<p>The effects of using CCI are twofold.  First, since one instruction
+can manipulate a 16 or 32 bit quantity, the size of the compiled
+program is generally more than fifty percent smaller than the same
+program compiled with C65 [the Aztec C native code compiler for the
+6502].  However, interpreting the pseudo-code incurs an overhead
+which causes the execution speed to be anywhere from five to twenty
+times slower.</p>
+</blockquote>
+<p>Chuck McManis <a href="http://www.mcmanis.com/chuck/robotics/stamp-decode.html">famously reverse-engineered the Parallax BASIC
+Stamp</a>, based on a PIC16C56, and found that it used a
+variable-bit-length “bytecode” system to take maximum advantage of the
+2048 bytes of its serial EEPROM.  Most of the “tokens” in the
+“bytecode” corresponded straightforwardly to BASIC tokens, but some of
+them were significantly swizzled around; <code>NEXT B0</code> compiles to <code>10111
+CCCVVV VVVVVV F CCCVVV CCCVVV AAAAAAAAAAA</code> where CCCVVV encodes the
+increment 1, VVVVVV encodes B0, F encodes +, the second CCCVVV encodes
+the ending counter value (255, say), the third CCCVVV encodes the
+starting counter value (0, say), and the final AAAAAAAAAAA encodes the
+address of the statement to jump to (the first statement inside the
+loop).  This is 41 bits, plus 16 in the FOR token, for a total of 57
+bits per loop.</p>
+<p>How big is, uh, functionality?  The original <a href="https://www.folklore.org/StoryView.py?project=Macintosh&amp;story=The_Grand_Unified_Model_The_Finder.txt" title="The Grand Unified Model.  CC-BY-NC">MacOS Finder was 46KiB</a>
+and fit on a 400KiB floppy with MacOS (“System”) and an application
+and a few documents, making it possible to use the Macintosh with a
+single floppy, though drawing on the <a href="https://en.wikipedia.org/wiki/Macintosh_128K">64KiB of ROM</a> including
+<a href="https://www.folklore.org/StoryView.py?project=Macintosh&amp;story=MacPaint_Evolution.txt&amp;sortOrder=Sort+by+Date&amp;topic=QuickDraw" title="MacPaint Evolution.  CC-BY-NC">LisaGraf/QuickDraw</a> (the <a href="https://www.folklore.org/StoryView.py?project=Macintosh&amp;story=Font_Manager.txt&amp;sortOrder=Sort+by+Date&amp;topic=QuickDraw" title="Font Manager Redux.  CC-BY-NC">128KiB ROM didn’t arrive until
+the Mac Plus?</a>); MacPaint was under 50 KB and consisted of
+<a href="https://computerhistory.org/blog/macpaint-and-quickdraw-source-code/" title="MacPaint and QuickDraw source code, licensed for non-commercial use.">5804 lines of Pascal and 2738 lines of assembly</a>, but that
+includes blank lines and comments and excludes MyHeapAsm.a and
+MyTools.a.  A more reliable figure is 4688 lines of Pascal and 2176
+lines of assembly, which is according to David A. Wheeler’s
+“SLOCCount”.  If we figure that a line of Pascal is about 5 lines of
+assembly, according to the folklore.org figures, that’s the equivalent
+of 6351 lines of Pascal, and under 7.9 bytes of compiled code per
+line; or, using SLOCCount figures, 5123 Pascal-equivalent lines and
+under 9.8 bytes of compiled code per line.</p>
+<p>If you could get 4 bytecode bytes per Pascal-level line of code, which
+seems plausible but difficult, you could fit MacPaint into about
+20 KB.  The same 2.5× compression would reduce the Mac ROM to 26 KB.</p>
+<p>There’s a nonlinear benefit to this kind of thing, too: the
+functionality of software comes more from interactions among the
+components than from individual components.  If you can fit 12000 lines
+of code into your Arduino, there are nine times as many potential
+pairwise interactions as if you can only fit 4000 lines of code in.
+At least potentially, it's an order-of-magnitude increase in system
+functionality.</p>
+<h3>To facilitate programmability</h3>
+<p>So, the primary objective is to fit more functionality into less
+memory.  But a secondary objective is to improve “in-application
+programmability” (that is, reprogrammability without popping the
+microcontroller out of its ciruit and into a PROM burner) and thus
+flexibility.</p>
+<p>Such a bytecode can help overcome several different obstacles to
+in-application programmability.</p>
+<p>One-time-programmable devices like the PMS150C can only have code
+burned into them once; any further changes requires either making that
+code do different things based on what’s in RAM, or replacing the chip
+with a fresh, unburned chip (3.18¢ according to file
+<code>minimal-cost-computer.md</code> in Derctuo — but taking advantage of that
+potentially involves desoldering and/or waiting for a package in the
+mail).  It has 1024 words of PROM but only 64 bytes of RAM, but like
+the AVR and the GD32VF, it’s a Harvard-architecture device, so it
+can’t execute native code from RAM.  Only some kind of interpreter can
+make it programmable.</p>
+<p>Moreover, RAM is often small, but loading code into RAM is easier than
+loading code into program memory, when that is possible at all.  The
+PMS150C’s 64 bytes of RAM is enough for about 15 or 20 lines of C
+using a compact bytecode, but would be only about 5 lines of C using
+native code.  (And in practice you probably only have about 48 of
+those bytes, since you need a few for stack and variables.)  The 82¢
+ATTiny1614 I mentioned earlier has 16384 bytes of Flash but only 2048
+bytes of RAM; 2048 bytes is enough for 500—800 lines of C.</p>
+<p>Finally, compiling to bytecode can be considerably easier than
+compiling to native code, which makes it more feasible to include a
+compiler in the device itself.  Its input format doesn’t necessarily
+have to be C; it might be something like ladder logic,
+scientific-calculator formulas, keyboard macros, Lisp, or Forth.</p>
+<h2>How?</h2>
+<p>Probably the right thing to do, to be able to run existing
+microcontroller-friendly code, which is mostly written in C, C++, or
+the Arduino dialect of C++, is to write a C compiler to some kind of
+very compact bytecode, along with a bytecode interpreter for it.</p>
+<p>A virtual machine designed for C probably needs a frame-pointer
+register, but otherwise a registerless stack architecture will
+probably result in more compact code.  A lot of the usual C compiler
+optimizations aren’t useful on a stack machine, though dead-code
+elimination, constant folding, and common subexpression elimination
+may be valuable.</p>
+<p>There’s a tradeoff between interpreter size and code size.  In the
+MakeCode case, they evidently had about 9–10 KiB left for STS user
+code, and by using 500 bytes of it for the interpreter they were
+effectively able to increase the functionality that fit in memory by
+almost a factor of 5.  But this is probably far from the optimum; if
+by doubling the size of the interpreter they were able to increase the
+code density from 12.3 to 10 bytes per statement, then instead of 800
+statements, they would be able to fit 930 statements into the same
+space.  How much further could you take that approach?</p>
+<p>So it’s quite plausible that the right tradeoff for minimum space is
+to use the <em>majority</em> of program memory for a really elaborate
+interpreter.  But we can’t do this simply by adding common subroutines
+as built-in interpreter instructions written in native code; we can
+certainly vector some built-in interpreter instructions to common
+subroutines, but if we want to use minimum space, we should still
+encode that common subroutine in bytecode, not native code.  (For the
+most part, anyway — for example, while you could implement
+multiplication in terms of addition and bit tests, for example,
+invoking a multiply instruction is going to be a lot simpler, and
+similarly for most functionality commonly provided as part of the CPU
+instruction set.)  So what should we put in the interpreter proper?
+Other than optimizations, of course.</p>
+<p>Probably a big part of the answer is “weird addressing modes”.</p>
+<p>For really tiny chips like the PMS150C with its 1024 instructions of
+ROM, probably only 512-768 instructions or so of interpreter are
+affordable; obviously 1024 instructions would not be.  So I think it’s
+worthwhile to think about what kind of kernel bytecode interpreter you
+could fit inside that kind of constraint, even on an 8-bit machine,
+before decorating it with richer functionality for machines with
+larger memory.</p>
+<p>Elisp and Smalltalk bytecodes commonly have an operand field within
+the byte, 3–5 bits of operand.  Often these operands are indexes into
+tables (of constants, selectors, or functions) that are associated
+with the method or function, and which can contain more data than the
+bytecode itself.</p>
+<p>I tend to think that variable-bit-length instructions like the BASIC
+Stamp are hard to justify, particularly on machines like the AVR where
+you apparently need to write a 5-iteration loop to shift a 16-bit word
+by 5 bits.  But variable-byte-length instructions are probably easy to
+justify, where perhaps you have 3 bits of operand within the
+instruction byte, perhaps another operand byte following, and perhaps,
+with a different opcode, two operand bytes following.</p>
+<p>Making a global table of all subroutines is probably a win.  Talking
+to solrize about the subject, they made the observation that if a
+subroutine is called zero times, it can be omitted from the compiled
+program; if it is called once, it can be inlined; and if it is called
+twice or more, then it is quite plausibly a savings to put its address
+into a global table of subroutines, and refer to it elsewhere only
+with an index into this subroutine table.  For example, on the
+ATMega328 in the Arduino Uno, a word-aligned address anywhere in the
+32-KiB program memory requires 14 bits, but if you can only fit 800
+lines of user code in there, you can’t plausibly have more than 160
+user subroutines, so you only need 8 bits for a subroutine-table
+index.  Or 7.32 bits, really.  So by putting a 16-bit address into the
+subroutine table, you can invoke the subroutine with an 8-bit operand
+instead of a 14-bit operand, which probably saves you the 2 bytes that
+it cost to put it into the subroutine table.  If there are more than 2
+calls to it, you’re in the black.</p>
+<p>Exceptions might include where there was one reference to the
+subroutine, but you were passing its address rather than invoking it,
+so it can’t be inlined; or where the alternative to a global table of
+subroutines is a local table (like the ones Smalltalk and Elisp use)
+that can be indexed with fewer bits, like 3–5 instead of 7.32.</p>
+<p>If a subroutine table is too large for a compact operand field to
+index into it, the subroutines can be sorted so that the ones with the
+most callsites come first, and the losers who drew the long addresses
+can’t be invoked without a 2-byte calling sequence.</p>
+<p>We can improve in density over Elisp bytecode to the extent that we
+can exclude K&amp;R C’s generic variadic calling convention, where the
+caller knows how many parameters are passed but the callee doesn’t,
+and every function returns a value — because we don’t have to encode
+the number of arguments at the callsite, and we don’t have to
+explicitly discard void return values.  A function header can specify
+how many arguments there are, automatically moving them from the
+operand stack into the function’s stack frame.</p>
+<p>C is pretty thorough about having byte-oriented memory.  IIRC you can
+do pointer arithmetic between nested struct members.  You’re not
+supposed to do pointer arithmetic between different things in the same
+stack frame.  On the other hand, you could very reasonably allocate
+word-sized local variables in a separate area, even if you take their
+addresses.</p>
+<h2>A sketch with a low-level bytecode</h2>
+<p>Let’s look at some examples of what bytecode-compiled subroutines
+might look like.  My examples so far, with a strawman bytecode I made
+up as I went along, are respectively 3.4,
+3.1, 7.5, 3.4, 2.4, and 2.3 bytes per
+source line of code.  I think this is a compelling argument that 4
+bytes per line of code is usually achievable and 3 bytes might be.</p>
+<h3>DrawTxScrap</h3>
+<p>Here’s a Pascal subroutine from MacPaint; C and this Pascal are almost
+identical.</p>
+<pre><code>{$S        }
+PROCEDURE DrawTxScrap(dstRect: Rect);
+VAR i:          INTEGER;
+    myProcs:    QDProcs;
+BEGIN
+  KillMask;   { not enough room in heap for mask and font }
+  ClipRect(dstRect);
+  EraseRect(dstRect);
+  InsetRect(dstRect,2,0);
+  dstRect.right := Max(dstRect.right,dstRect.left + txMinWidth);
+  dstRect.bottom := Max(dstRect.bottom,dstRect.top + txMinHeight);
+  SetStdProcs(myProcs);
+  thePort^.grafProcs := @myProcs;
+  myProcs.textProc := @PatchText;
+  i := CharWidth('A');  { swap in font }
+  HLock(txScrapHndl);
+  TextBox(txScrapHndl^,txScrapSize,dstRect,textJust);
+  HUnlock(txScrapHndl);
+  ClipRect(pageRect);
+  thePort^.grafProcs := Nil;   { restore to normal }
+END;
+</code></pre>
+<p>What would this ideally look like in bytecode?</p>
+<p>This only has three local variables, but two of them are structs
+(records in Pascal).  <code>dstRect</code> evidently has <code>.top</code>, <code>.bottom</code>,
+<code>.left</code>, and <code>.right</code> members, which are probably integers, and it’s
+evidently being modified by <code>InsetRect</code>, which I guess must take it as
+a var parameter.  The <code>@</code> operator, an Apple extension, takes the
+address of a variable like <code>&amp;</code> in C, just as passing a var parameter
+does implicitly.  <code>thePort</code> is a global variable imported from
+elsewhere; <code>txMinHeight</code>, <code>txMinWidth</code>, <code>txScrapHndl</code>, <code>textJust</code>, and
+<code>pageRect</code> are five of the 128 global variables in this file; and
+<code>PatchText</code> is a procedure defined just above.</p>
+<p>The repeated use of the same <code>txScrapHndl</code> and <code>thePort</code> globals makes
+me think that maybe a function could have an associated vector of
+referenced global variable indices so that such repeated references
+only cost one byte.</p>
+<p>Maybe in idealized bytecode assembly this would look something like this:</p>
+<pre><code>; This next line compiles to a procedure header structure with bit
+; fields.  This procedure takes 8 bytes of “blob arguments” and
+; has another 18 bytes of local blobs immediately after them; both
+; of these are in the blob part of the activation record.  It also
+; takes 1 word of word (register-sized) arguments, which go into
+; the word part of the activation record.
+PROCEDURE DrawTxScrap argblob=8 localblob=18 localwords=1
+globals txScrapHndl, thePort
+    call KillMask
+    lea_blob 0       ; load address of offset 0 into stack frame blobs
+    call ClipRect
+    lea_blob 0
+    call EraseRect
+    ;      InsetRect(dstRect,2,0);
+    lea_blob 0
+    tinylit 2        ; push constant 2 (coded in a 3-bit field in the bytecode)
+    tinylit 0
+    call InsetRect
+    ;       dstRect.right := Max(dstRect.right,dstRect.left + txMinWidth);
+    loadword_blob 1  ; load word from stack frame blobs at offset 1 word (.right)
+    loadword_blob 0  ; load .left
+    loadglobal txMinWidth
+    add
+    max
+    storeword_blob 1 ; store max result into .right
+    ;       dstRect.bottom := Max(dstRect.bottom,dstRect.top + txMinHeight);
+    loadword_blob 3  ; load .bottom
+    loadword_blob 2  ; load .top
+    loadglobal txMinHeight
+    add
+    max
+    storeword_blob 3
+    lea_blob 8          ; load @myProcs (@myProcs)
+    call SetStdProcs
+    lea_blob 8          ; load @myProcs (@myProcs)
+    loadglobal thePort
+    storeword_offset 5  ; using thePort value from top of stack, offset 5 words and store result
+    ;       myProcs.textProc := @PatchText;
+    loadfuncptr PatchText
+    lea_blob 8
+    storeword_offset 3  ; let’s say .textProc is the fourth word of myProcs
+    ;      i := CharWidth('A');  { swap in font } (oddly this return value i is not used, but let’s compile it anyway)
+    lit8 65             ; 'A'
+    call CharWidth
+    storeword 0         ; store into i, in the stack frame word-sized variables (rather than blobs)
+    loadglobal txScrapHndl
+    call HLock
+    ;      TextBox(txScrapHndl^,txScrapSize,dstRect,textJust);
+    loadglobal txScrapHndl  ; not sure if this is a var parameter, I’ll assume so
+    loadglobal_long txScrapSize  ; this variable is 32 bits
+    lea_blob 0
+    loadglobal textJust
+    call TextBox
+    loadglobal txScrapHndl
+    call HUnlock
+    lea_global pageRect     ; again, assuming this is a var parameter; if not we must memcpy
+    call ClipRect
+    ;      thePort^.grafProcs := Nil;   { restore to normal }
+    tinylit 0
+    loadglobal thePort
+    storeword_offset 0
+    ret
+</code></pre>
+<p>That’s 47 bytecode instructions, so 47 opcode bytes; how many operand
+bytes?  All but 5 of them have immediate operands, but probably none
+of those operands need to be more than 1 byte, so we have at most 39
+operand bytes.  10 of them are call instructions (or 12 if we count
+the <code>max</code> instances); there are 211 functions and procedures declared
+in this file, including EXTERNAL procedures, and each of them is only
+called once in this function, so plausibly those 10 call operations do
+need an operand byte to index into a global table of subroutines.
+Another 10 operands are global variables; of these half (thePort twice
+and and txScrapHndl three times) are referenced more than once and
+could thus be usefully listed in the function’s global-references
+vector so they could be referenced in a single byte; the other 5 would
+require a separate operand byte.  loadfuncptr requires a separate
+operand byte, too.  Of the other 21 operands, most are
+small integers between -3 and 3 or between 0 and 6, so they could be
+packed into a 3-bit immediate field; the only exceptions are 8, 8, 8, and
+65, so there would be 4 more bytes of operands, and 17 bytecodes with
+embedded operands.</p>
+<p>So that’s 4 numeric operand bytes, 5 global-index operand bytes,
+10 function-call operand bytes, and one
+loadfuncptr operand byte, for 20 operand bytes, and 44+20 = 64
+bytes of bytecode.  The procedure header is probably 2 bytes, the
+procedure's address in the global subroutine table is another 2 bytes,
+and then you have two global-variable offset bytes, so all in all the
+subroutine is probably about 64 + 2 + 2 + 2 = 70 bytes.  This corresponds to 20
+non-comment non-blank source lines of Pascal code, or 3.5 bytes per
+line, which is about 2.8 times the density of the original MacOS
+compiled program.</p>
+<p>All this is assuming that there are few enough bytecode operations to
+fit into a single byte.  The above code already uses <code>call</code>,
+<code>lea_blob</code>, <code>tinylit</code>, <code>loadword_blob</code>, <code>loadglobal</code>, <code>add</code>, <code>max</code>,
+<code>storeword_blob</code>, <code>lit8</code>, <code>storeword</code>, <code>storeword_offset</code>, and <code>ret</code>,
+which is 12, to 9 of which we are imputing this 3-bit operand field
+(let’s call these heavyweight opcodes “baryonic”);
+furthermore supersymmetry implies the existence of such undiscovered
+massive particles as <code>storeglobal</code>, <code>loadbyte_blob</code>, <code>storebyte_blob</code>,
+<code>loadword_offset</code>, <code>storebyte_offset</code>, and <code>loadbyte_offset</code>, which
+bring us to 15 of the 32 major-opcode slots filled, plus leptons such
+as <code>subtract</code>, <code>multiply</code>, <code>divide</code>, <code>mod</code>, <code>bitand</code>, <code>bitor</code>, <code>xor</code>.
+So I think it’s pretty plausible that we’ll have plenty of opcode
+space, but it’s something to watch.</p>
+<p>(If we wanted the bytecodes to be <em>printable ASCII</em> things might get
+more difficult: from 32 to 128 we only have room for 11 baryons and 8
+leptons, or 10 baryons and 16 leptons, with one of the baryons missing
+the DEL character.  But that’s probably too strict a restriction; text
+in ISO-8859-1 (24 baryons instead of 12) or Windows CP1252 (most of
+26, though maybe the A0 control characters would be best as leptons
+due to the holes) would be more reasonable, and conceivably UTF-8
+would work well if operand bytes were trailing 10xx xxxx bytes.
+Cyrillic and Greek codepages have many more homoglyphs.)</p>
+<p>It’s a little bit unclear how blob parameters are supposed to get
+passed here.  Do we pass them in word-sized chunks on the operand
+stack, or is there a separate blob stack or something?  If we assume
+that the bytecode interpreter is equipped to go look at the function
+header in memory when it’s interpreting a call, it might be reasonable
+to put the <code>call</code> bytecode <em>before</em> the arguments so that the
+interpreter can allocate the callee’s stack frame, allowing arguments
+to be poked directly into it in the appropriate places instead of
+needing to be copied there on subroutine entry.</p>
+<h3>strlcpy</h3>
+<p>Here’s <code>strlcpy</code>, originally from OpenBSD, but this version is the
+copy from avr-libc, for which SLOCCount reports 26 lines of code,
+condensed down to 14 lines for ease of reading:</p>
+<pre><code>size_t strlcpy (char *dst, const char *src, size_t siz) {
+        register char *d = dst;
+        register const char *s = src;
+        register size_t n = siz;
+
+        if (n != 0 &amp;&amp; --n != 0) {
+                do { if ((*d++ = *s++) == 0) break; } while (--n != 0);
+        }
+
+        if (n == 0) {
+                if (siz != 0) *d = '\0';
+                while (*s++)
+                        ;
+        }
+
+        return(s - src - 1);
+}
+</code></pre>
+<p>Unlike the straight-line Pascal code above, this has a bunch of
+control flow, seven conditional jumps.  (Normally a <code>while</code> would also
+involve an unconditional jump, but in this case the body is empty.)</p>
+<p>This has six local variables, all word-sized, but only five of them
+are live at once; <code>dst</code> passes the torch to <code>d</code> early on, which can be
+eliminated by the compiler.</p>
+<p>If we try encoding it in the same bytecode as before with a fairly
+traditional compilation strategy, I think it looks like this:</p>
+<pre><code>PROCEDURE strlcpy argwords=3 localwords=2
+    loadword 1       ; load argument 1, src
+    storeword 3      ; store into word variable 3, s
+    loadword 2       ; load siz (argument 2)
+    storeword 5      ; n
+    jz 5, 1f         ; jump to label 1 if word variable 5 is 0
+    decrword 5       ; decrement word variable 5
+    jz 5, 1f
+2:  loadword 0       ; d, preparation for *d++
+    incrword 0       ; d++
+    loadbyte_offset 0 ; dereference pre-incremented pointer
+    dup              ; this will be used in an assignment whose result value is used
+    loadword 3       ; s
+    incrword 3
+    storebyte_offset 0
+    jztos 1f
+    decrword 5       ; --n
+    jnz 5, 2b        ; repeat do loop if word variable 5 still isn’t 0
+1:  jnz 5, 1f        ; if (n == 0)
+    jz 2, 3f         ; if (siz != 0) using word variable 2
+    tinylit 0        ; '\0'
+    loadword 0       ; d
+    storebyte_offset 0 ; *d =
+3:  loadword 3       ; s
+    incrword 3       ; ++
+    loadbyte_offset 0
+    jnztos 3b
+1:  loadword 3       ; s
+    loadword 1       ; src
+    subtract
+    tinylit 1
+    subtract
+    ret
+</code></pre>
+<p>That’s 32 bytecode instructions.  4 of these are zero-operand leptons
+(dup, subtract, subtract, ret), 7 are conditional jumps (6 with 2
+arguments), and the other 21 are the same kind of one-operand one-byte
+operations that dominated DrawTxScrap.  Maybe <code>jnz 5, 2b</code> gets encoded
+with 5 in the 3-bit immediate field, indicating that it’s looking at
+local register-sized variable 5, and jumping to label 2, looking
+backwards, if it is Not Zero.  The byte offset to label 2 is encoded
+in a following operand byte, within the range ±127; if it’s -128 then
+two more operand bytes follow giving the real jump offset.  <code>jnztos</code>
+jumps if the top of stack is 0 instead of if a local variable is zero;
+I think the way to do this is that if the 3-bit immediate field is 0
+through 6, it tests that variable, but if it’s 7, it tests the top of
+stack (and pops it).  By contrast, in the other baryonic operations, I
+was thinking 7 would indicate that the immediate parameter is in the
+following byte, but if you want to test a local variable that’s higher
+than 6, then you could just <code>loadword</code> it and then <code>jztos</code>.</p>
+<p>So, in addition to demonstrating the previously speculative
+<code>loadbyte_offset</code> and <code>storebyte_offset</code> operations, this imposes new
+baryonic opcodes on us: <code>incrword</code>, <code>decrword</code>, <code>jz</code>, <code>jnz</code>, and
+probably <code>js</code>, <code>jns</code>, and <code>jmp</code>, bringing the total from 15 to 22 out
+of 32.</p>
+<p>So with the above-suggested encodings, we have 7 jump-offset argument
+bytes, 2 bytes of procedure header, and 2 bytes of global subroutine
+table entry, for a total of 32+7+2+2 = 43 bytes.  That’s 1.7 bytes of
+bytecode per SLOCCount line or 3.1 bytes per physical non-blank line
+in the above.</p>
+<p>You could very plausibly squeeze this down a bit more.  The 8086’s
+LOOP instruction provides the decrword/jnz functionality, its LODSB
+instruction provides the <code>loadword/incrword/loadbyte_offset</code>
+functionality, and its STOSB instruction provides
+<code>loadword/incrword/storebyte_offset</code>.  And of course the final
+expression being returned admits all sorts of optimizations, including
+a decrement-top-of-stack operation or an increment or decrement to one
+of the variables being subtracted.</p>
+<p>In an alternative direction, note that this code has 7 jump
+instructions, comprising 14 bytes, but only 4 labels; following Henry
+Baker’s COMFY-65, if we could use a 1-byte instruction to set the
+destination to jump to on failure or success, maybe we’d only need 4
+bytes of jump destinations instead of 7.</p>
+<h3><code>proc_get_cam_register_3</code></h3>
+<p>Let’s look at something a little less nice and pretty:
+<code>proc_get_cam_register_3</code> from
+<code>linux-2.6/drivers/staging/rtl8192e/rtl_debug.c</code>:</p>
+<pre><code>static int proc_get_cam_register_3(char *page, char **start,
+                          off_t offset, int count,
+                          int *eof, void *data)
+{
+        struct net_device *dev = data;
+        u32 target_command = 0;
+        u32 target_content = 0;
+        u8 entry_i = 0;
+        u32 ulStatus;
+        int len = 0;
+        int i = 100, j = 0;
+
+        /* This dump the current register page */
+        len += snprintf(page + len, count - len,
+                        "\n#################### SECURITY CAM (22-31) ######"
+                        "############\n ");
+        for (j = 22; j &lt; TOTAL_CAM_ENTRY; j++) {
+                len += snprintf(page + len, count - len, "\nD:  %2x &gt; ", j);
+                for (entry_i = 0; entry_i &lt; CAM_CONTENT_COUNT; entry_i++) {
+                        target_command = entry_i + CAM_CONTENT_COUNT * j;
+                        target_command = target_command | BIT31;
+
+                        while ((i--) &gt;= 0) {
+                                ulStatus = read_nic_dword(dev, RWCAM);
+                                if (ulStatus &amp; BIT31)
+                                        continue;
+                                else
+                                        break;
+                        }
+                        write_nic_dword(dev, RWCAM, target_command);
+                        target_content = read_nic_dword(dev, RCAMO);
+                        len += snprintf(page + len, count - len, "%8.8x ",
+                                        target_content);
+                }
+        }
+
+        len += snprintf(page + len, count - len, "\n");
+        *eof = 1;
+        return len;
+}
+</code></pre>
+<p>This is 36 lines of code, which I think is maybe a little too much for
+a sketch, so I’ll try just the first half of it, plus enough cleanup
+to get it to compile, which brings it to 22 lines:</p>
+<pre><code>static int proc_get_cam_register_3(char *page, char **start,
+                          off_t offset, int count,
+                          int *eof, void *data)
+{
+        struct net_device *dev = data;
+        u32 target_command = 0;
+        u32 target_content = 0;
+        u8 entry_i = 0;
+        u32 ulStatus;
+        int len = 0;
+        int i = 100, j = 0;
+        len += snprintf(page + len, count - len,
+                        "\n#################### SECURITY CAM (22-31) ######"
+                        "############\n ");
+        for (j = 22; j &lt; TOTAL_CAM_ENTRY; j++) {
+                len += snprintf(page + len, count - len, "\nD:  %2x &gt; ", j);
+                for (entry_i = 0; entry_i &lt; CAM_CONTENT_COUNT; entry_i++) {
+                        target_command = entry_i + CAM_CONTENT_COUNT * j;
+                }
+        }
+        return len;
+}
+</code></pre>
+<p>Let’s say our C is a 16-bit-pointer platform, like Arduino, so the
+<code>u32</code> items all go into blobland instead of wordland.  As before, I’ll
+elide the copy from <code>data</code> to <code>dev</code>.  And I’ll assume that the
+interpreter by default initializes all local variables to zero, which
+is a reasonable thing for a C implementation to do.</p>
+<pre><code>PROCEDURE proc_get_cam_register_3 argwords=6 localwords=4 localblob=16
+const "\n#################### SECURITY CAM (22-31) ##################\n "
+const "\nD:  %2x &gt; "
+    lit8 100
+    storeword 8  ; i.  note that this implies a separate operand byte with 3-bit immediate fields
+    loadword 0   ; page *
+    loadword 7   ; len
+    add
+    loadword 3   ; count *
+    loadword 7
+    subtract
+    loadconst 0  ; the string *
+    call snprintf
+    loadword 7
+    add          ; len +=
+    storeword 7
+    ; for (j = 22; j &lt; TOTAL_CAM_ENTRY; j++) {
+    lit8 22
+    storeword 9
+1:  loadword 9
+    lit8 32      ; TOTAL_CAM_ENTRY
+    subtract
+    jstos 1f     ; if result negative, skip loop
+    incrword 9
+    loadword 0   ; *
+    loadword 7
+    add
+    loadword 3   ; *
+    loadword 7
+    subtract
+    loadconst 1  ; the other string *
+    call snprintf
+    loadword 7
+    add
+    storeword 7
+    tinylit 0    ; *
+    storebyte_blob 0  ; entry_i = 0.  In the blob because u8 *
+2:  loadbyte_blob 0   ; *
+    lit8 8            ; CAM_CONTENT_COUNT
+    subtract
+    jstos 1f
+    loadbyte_blob 0   ; *
+    tinylit 1         ; *
+    add
+    storebyte_blob 0  ; *
+    ; target_command = entry_i + CAM_CONTENT_COUNT * j;        
+    loadbyte_blob 0   ; *
+    lit8 8            ; CAM_CONTENT_COUNT
+    loadword 9        ; j
+    multiply
+    storelong_blob 0  ; target_command = *
+    jmp 2b
+1:  loadword 7
+    ret
+</code></pre>
+<p>This is a mess!  But a workable mess.  49 bytecode instructions.  Of
+these, 11 have no operands at all; another 14, marked with <code>*</code> above,
+have operands that can be packed into a 3-bit field; the remaining 24
+each need an operand byte.  73 bytes of bytecode!  But by itself that
+would be pretty okay for 21 lines of code (3.8 bytes per line).  What
+really kills us here is the 64-byte literal string and the other
+12-byte literal string, plus a constant vector (probably two 16-bit
+pointers).  All that, plus the 2-byte procedure header and 2-byte
+entry in the global subroutine table, adds up to 73 + 64 + 12 + 4 + 2
++ 2 = 157 bytes.  That’s 7.5 bytes per line of code!  Those two string
+literals <em>doubled</em> the space this truncated subroutine needs.</p>
+<p>I think that if I were to add in the missing 15 lines of code, this
+would get slightly less ugly, maybe another 64 bytes, which would get
+the total down to about 4.4 bytes per line of code.  But it would be
+easy for someone to write code that really does have that many quoted
+<code>#</code> signs in it.</p>
+<p>Of course, this <em>particular</em> code probably has no business running on
+a microcontroller, even if I hadn’t snipped out the <code>read_nic_dword</code>
+call that does the real work; it’s part of a Linux device driver for a
+Wi-Fi card that I think requires a PCI bus to operate at all.  But I
+think it’s a good representative of workaday C code.</p>
+<h3><code>File_pipe2file</code></h3>
+<p>This is from <code>php5-5.4.4/ext/fileinfo/libmagic/compress.c</code>:</p>
+<pre><code>protected int
+file_pipe2file(struct magic_set *ms, int fd, const void *startbuf,
+    size_t nbytes)
+{
+        char buf[4096];
+        ssize_t r;
+        int tfd;
+#ifdef HAVE_MKSTEMP
+        int te;
+#endif
+
+        (void)strlcpy(buf, "/tmp/file.XXXXXX", sizeof buf);
+#ifndef HAVE_MKSTEMP
+        {
+                char *ptr = mktemp(buf);
+                tfd = open(ptr, O_RDWR|O_TRUNC|O_EXCL|O_CREAT, 0600);
+                r = errno;
+                (void)unlink(ptr);
+                errno = r;
+        }
+#else
+        tfd = mkstemp(buf);
+        te = errno;
+        (void)unlink(buf);
+        errno = te;
+#endif
+        if (tfd == -1) {
+                file_error(ms, errno,
+                    "cannot create temporary file for pipe copy");
+                return -1;
+        }
+</code></pre>
+<p>It... goes on for another 36 lines from there; that’s 30 lines.  It’s
+not super plausible that we could fit the PHP interpreter into an
+Arduino, but we could surely fit it into an Ambiq Apollo3.  The
+<code>protected</code> suggests that this is not actually C at all but C++, but
+it’s pretty close.  Let’s see what this would look like in the
+strawman bytecode assembly.  Let’s imagine we <em>do</em> <code>HAVE_MKSTEMP</code>.</p>
+<pre><code>PROCEDURE file_pipe2file argwords=4 localwords=3 localblob=4096
+const "/tmp/file.XXXXXX"
+const "cannot create temporary file for pipe copy"
+const 4096
+globals errno
+    lea_blob 0     ; buf
+    loadconst 0    ; filename template
+    loadconst 2    ; 4096, sizeof buf
+    call strlcpy
+    drop           ; discard result, because of course that makes sense when calling strlcpy
+    ; #ifndef HAVE_MKSTEMP drops the next N lines
+    lea_blob 0     ; tfd = mkstemp(buf); 
+    call mkstemp
+    storeword 6
+    loadglobal errno ; te = errno
+    storeword 7
+    lea_blob 0
+    call unlink
+    drop
+    loadword 7       ; errno = te
+    storeglobal errno
+    loadword 6
+    tinylit -1
+    subtract
+    jnz 1f
+    loadword 1
+    loadglobal errno
+    loadconst 1
+    call file_error
+    tinylit -1
+    ret
+1:
+</code></pre>
+<p>So that’s 25 bytecodes, of which the four <code>call</code>s and the two
+references to <code>te</code> require an operand byte.  The others can all
+reasonably be 1 byte each, so we have 31 bytes of bytecode, plus 43 +
+17 = 60 bytes of literal strings, 6 bytes of constant table, 1 byte of
+global vector, 2 bytes of procedure header, and 2 bytes of global
+subroutine table entry, 31 + 60 + 6 + 1 + 2 + 2 = 102 bytes, nearly ⅔
+in those two stupid strings.  Still, that’s 102 bytes for 30 lines of
+code: 3.4 bytes per line.  But only because 12 of those 30 lines were
+discarded by the preprocessor!</p>
+<p>Like most of the PHP interpreter, this is a good example of really
+pretty shitty C code that people nevertheless want to run, and run
+correctly.</p>
+<h3>Insertion sort</h3>
+<p>Here’s an excerpt from the latest .c file I wrote in my dev3
+directory, which does an insertion sort on an array of ints (obviously
+a programming exercise):</p>
+<pre><code>static inline void
+swap (int *x, int *y)
+{
+  int tmp = *x;
+  *x = *y;
+  *y = tmp;
+}
+
+void
+isort(int *a, size_t n)
+{
+  for (size_t i = 1; i &lt; n; i++) {
+    for (size_t j = i; j &gt; 0; j--) {
+      if (a[j-1] &gt; a[j]) swap(&amp;a[j], &amp;a[j-1]);
+    }
+  }
+}
+</code></pre>
+<p>This counts as 16 lines of source code, although that’s pretty
+generous!  Let’s suppose our compiler does in fact inline <code>swap</code> and
+cancel out the resulting <code>*&amp;</code>:</p>
+<pre><code>void
+isort(int *a, size_t n)
+{
+  for (size_t i = 1; i &lt; n; i++) {
+    for (size_t j = i; j &gt; 0; j--) {
+      if (a[j-1] &gt; a[j]) {
+         int tmp = a[j];
+         a[j] = a[j-1];
+         a[j-1] = tmp;
+      }
+    }
+  }
+}
+</code></pre>
+<p>This is the first example we’ve seen that does real pointer
+arithmetic, the kind where you have to multiply by the size of the
+pointer.  Using just the strawman bytecode above and no CSE I think it
+looks something like this:</p>
+<pre><code>PROCEDURE isort argwords=2 localwords=3
+    tinylit 1
+    storeword 2    ; i
+1:  loadword 2
+    loadword 1     ; n
+    subtract
+    jstop 2f
+    loadword 2
+    storeword 3    ; j
+3:  jz 3, 4f       ; if j == 0, exit loop
+    loadword 0     ; a for a[j-1]
+    loadword 3     ; j-1
+    tinylit 1
+    subtract
+    tinylit 2      ; sizeof int
+    multiply
+    add
+    loadword_offset 0
+    loadword 0      ; a[j]
+    loadword 3
+    tinylit 2
+    multiply
+    add
+    loadword_offset 0
+    subtract          ; if &gt;
+    js 5f
+    loadword 0        ; tmp = a[j]
+    loadword 3
+    tinylit 2
+    multiply
+    add
+    loadword_offset 0
+    storeword 4       ; tmp
+    loadword 0        ; a[j] = a[j-1]
+    loadword 3
+    tinylit 1
+    subtract
+    tinylit 2
+    multiply
+    add
+    loadword_offset 0
+    loadword 0
+    loadword 3
+    tinylit 2
+    multiply
+    add
+    storeword_offset 0
+    loadword 4        ; a[j-1] = tmp
+    loadword 0
+    loadword 3
+    tinylit 1
+    subtract
+    tinylit 2
+    multiply
+    add
+    storeword_offset 0
+5:  decrword 3     ; j--
+    jmp 3b
+4:  incrword 2
+    jmp 1b
+2:  ret
+</code></pre>
+<p>This is 61 bytecode instructions, which I think is pretty horrific.  5
+of them are jumps which take an operand byte, so 66 bytecode bytes in
+all, plus the usual 4 bytes of per-subroutine overhead, for 70 bytes.
+That’s 4.4 bytes per line of code.</p>
+<p>However, there are a couple of directions to go to improve this.  One
+is that, despite the examples above, neither <code>a[j-1]</code> nor <code>for (...; i
+&lt; expr; i++)</code> is actually at all unusual in C.  We could support the
+first one with leptonic bytecodes to decrement top of stack and to do
+base+index addressing:</p>
+<pre><code>    loadword 0       ; a[
+    loadword 4       ; j
+    decrtos          ; -1
+    loadword_indexed ; ]
+</code></pre>
+<p>You’d also have <code>storeword_indexed</code>, <code>loadbyte_indexed</code>,
+<code>storebyte_indexed</code>, <code>leaword_indexed</code>, and maybe <code>leabyte_indexed</code>,
+though that last one is really just <code>add</code>.</p>
+<p>And we could support the loop with a baryonic bytecode similar to the
+8086 LOOP instruction mentioned earlier, but for up-counting loops; if
+at the bottom of the loop:</p>
+<pre><code>    loadword 1       ; n
+    countup 2, 1b    ; i &lt; n? if so increment and jump back to label 1
+</code></pre>
+<p>For the full C semantics, which loops zero times when n is 0, you’d
+need to initialize the counter to one <em>less than</em> the initial value
+and then unconditionally jump to that loop trailer;
+5 bytes per loop in total.  Alternatively you
+could reverse the sense of the conditional jump, put it at the top of
+the loop, and put the unconditional jump at the end of the loop.</p>
+<p>The Forth way to handle counting loops is different; it stores the
+loop counters, limits, and increments on the return stack instead.
+This would require more analysis from the compiler (it has to verify
+that the loop limit is a constant expression and that the loop counter
+is only read from, insert an UNLOOP instruction at breaks) but it
+would allow you to write the outer loop with two new leptonic
+instructions as follows:</p>
+<pre><code>    tinylit 1        ; start value
+    loadword 1       ; n, loop limit
+    fortoloop        ; stash loop counters and loop address on the loop stack
+    ...
+    continue         ; update loop counter, maybe jump to address after fortoloop
+</code></pre>
+<p>And the inner loop as follows:</p>
+<pre><code>    i                ; get outer loop counter as start value
+    0                ; loop limit
+    tinylit -1       ; step
+    fortosteploop
+    ...
+    continue
+</code></pre>
+<p>These are respectively 4 bytes (32 bits) and 5 bytes (40 bits), which
+are significantly less than the BASIC Stamp’s 57 bits despite using a
+byte-oriented encoding.</p>
+<p>Instead of having Forth-like i, j, and k instructions, you could maybe
+stick the loop counter in a regular word-sized local variable, using a
+baryonic for-loop instruction.  But suppose we go with the leptonic
+approach above:</p>
+<pre><code>PROCEDURE isort argwords=2 localwords=1
+    tinylit 1
+    loadword 1
+    fortoloop
+    i               ; outer loop counter, currently topmost
+    tinylit 0
+    tinylit -1
+    fortosteploop
+    loadword 0
+    i               ; inner loop counter, called j in the code, now topmost
+    decrtos
+    loadword_indexed
+    loadword 0
+    i
+    loadword_indexed
+    subtract        ; if not &lt;
+    jns 1f          ; skip body
+    loadword 0      ; a[j] → tmp
+    i             
+    loadword_indexed
+    storeword 2
+    loadword 0      ; a[j-1] → a[j]
+    i
+    decrtos
+    loadword 0
+    i
+    storeword_indexed
+    loadword 2      ; tmp → a[j-1]
+    loadword 0
+    i
+    decrtos
+    storeword_indexed
+1:  continue
+    continue
+    ret
+</code></pre>
+<p>That gets us down to 34 bytecode instructions and 35 bytes of
+bytecode, 39 bytes in all, 2.4 bytes per line of code.</p>
+<p>Finally, you could actually do common subexpression elimination and
+stack-allocate the value of <code>tmp</code>:</p>
+<pre><code>PROCEDURE isort argwords=2 localwords=2
+    tinylit 1
+    loadword 1
+    fortoloop
+    i
+    0
+    tinylit -1
+    fortosteploop
+    loadword 0      ; &amp;a[j-1]
+    i
+    decrtos
+    leaword_indexed
+    storeword 2
+    loadword 0
+    i
+    leaword_indexed
+    storeword 3     ; &amp;a[j]
+    loadword 2
+    loadword_offset 0
+    loadword 3
+    loadword_offset 0
+    subtract
+    jns 1f          ; if
+    loadword 3      ; swap
+    loadword_offset 0
+    loadword 2
+    loadword_offset 0
+    loadword 3
+    storeword_offset 0
+    loadword 2
+    storeword_offset 0
+1:  continue
+    continue
+    ret
+</code></pre>
+<p>That gets it down to 33 bytecode instructions, 34 bytes of bytecode,
+38 bytes in all, still 2.4 bytes per line.  It’s surprising, though,
+how little space those complicated compiler optimizations actually
+bought us: one measly byte!</p>
+<p>However, we did need <em>some</em> complicated compiler optimizations to use
+the above version.</p>
+<p>XXX what if we use the dumber loop operations?  how about if we don’t
+inline?</p>
+<p>Rob Kendrick mentions that DSP loop instructions are often implemented
+as Intercal’s “COMEFROM”, which seems like another approach that might
+be worth investigating — a for-loop instruction that encodes the
+length of the loop, so that instead of</p>
+<pre><code>    tinylit 1
+    loadword 1
+    fortoloop
+    ...
+    continue
+    ret
+</code></pre>
+<p>you would write</p>
+<pre><code>    tinylit 1
+    loadword 1
+    fortoloop 2f
+    ...
+2:  ret
+</code></pre>
+<p>so that interpreting each instruction would require first checking to
+see if you had hit the address of the end of the innermost for-loop.
+This would improve compression over having a <code>continue</code> bytecode only
+if the loop extent could be packed into the <code>fortoloop</code> byte, which
+limits us to fairly short loops.</p>
+<p>Also, it might be worthwhile to have a special short form for <code>for
+(int i = 0; i &lt; x; i++)</code> where <code>x</code> and the loop end are the only
+varying parameters, so the starting index doesn’t eat up a bytecode.
+Here’s a random sampling of 16 for loops in C codebases I have handy,
+divided into loops that fit that pattern and loops that don’t:</p>
+<pre><code>9base_6.orig/rc/trap.c: while(ntrap) for(i = 0;i!=NSIG;i++) while(trap[i]){
+cmusphinx/multisphinx/sphinxbase/feat.c:        for (i = 0; i &lt; start_pad; ++i)
+emacs24_24.5+1.orig/src/coding.c:  for (reg = 0; reg &lt; 4; reg++)
+exopc/lib/libtermlib/mkinfo.c:    for (i = 0; i &lt; numcaps; i++)
+flashlight-firmware/ToyKeeper/crescendo/crescendo.c:    for(i=0;i&lt;32;i++) {
+gmp-5.0.5+dfsg/mpn/generic/mu_divappr_q.c:      for (i = 0; i &lt;= err_rec; i++)
+linux-2.6/drivers/watchdog/sbc8360.c:           for (i = 0; i != count; i++) {
+linux-2.6/sound/soc/soc-dapm.c:     for (i = 0; i &lt; ARRAY_SIZE(dapm_up_seq); i++)
+puzzles-20200513.c9b3c38/bridges.c:        for (x = 0; x &lt; params-&gt;w; x++) {
+
+exopc/bin/less/charset.c:   for (p = charsets;  p-&gt;name != NULL;  p++)
+exopc/bin/less/opttbl.c:    for (o = option;  o-&gt;oletter != '\0';  o++)
+exopc/bin/sh/show.c:    for (p = arg-&gt;narg.text ; *p ; p++) {
+exopc/sys/ubb/dependency.c: for(e = l_first(a-&gt;out); e; e = l_next(e, out_next))
+gawk_4.2.1+dfsg.orig/cint_array.c:  for (i = NHAT; i &lt; INT32_BIT; i++) {
+linux-2.6/drivers/atm/eni.c:            for (*pre = 3; *pre &gt;= 0; (*pre)--)
+maru-2.4/eval.c:    for (;;) {
+</code></pre>
+<p>9 of these, the majority, though barely, fit that pattern, more or
+less.  Saving a <code>tinylit 0</code> byte on half of all for loops seems like
+it would be worthwhile.  There’s substantial diversity in the
+termination condition — <code>&lt;</code>, <code>&lt;=</code>, <code>!=</code> — though in many cases <code>&lt;=
+err_rec</code> is equivalent to <code>&lt; err_rec + 1</code> or <code>!= err_rec + 1</code>.</p>
+<h3>Anduril <code>config_state_base</code></h3>
+<p>Let’s look at some BudgetLightForum flashlight firmware, because
+Anduril now compiles to over 8 KiB and so won't fit in some of the
+smaller AVRs.  Here’s a random 27-line function from
+<code>flashlight-firmware/ToyKeeper/spaghetti-monster/anduril/anduril.c</code>,
+with internal comments removed:</p>
+<pre><code>// ask the user for a sequence of numbers, then save them and return to caller
+uint8_t config_state_base(Event event, uint16_t arg,
+                          uint8_t num_config_steps,
+                          void (*savefunc)()) {
+    static uint8_t config_step;
+    if (event == EV_enter_state) {
+        config_step = 0;
+        set_level(0);
+        return MISCHIEF_MANAGED;
+    }
+    else if (event == EV_tick) {
+        if (config_step &lt; num_config_steps) {
+            push_state(number_entry_state, config_step + 1);
+        }
+        else {
+            savefunc();
+            save_config();
+            pop_state();
+        }
+        return MISCHIEF_MANAGED;
+    }
+    else if (event == EV_reenter_state) {
+        config_state_values[config_step] = number_entry_value;
+        config_step ++;
+        return MISCHIEF_MANAGED;
+    }
+    return EVENT_HANDLED;
+}
+</code></pre>
+<p><code>Event</code> is <code>uint8_t</code>.  <code>config_step</code> is a “global variable” that no
+other functions use.  <code>EV_enter_state</code> is <code>(B_SYSTEM|0b00001000)</code>.
+<code>B_SYSTEM</code> is just 0, so <code>EV_enter_state</code> is just 8.
+<code>MISCHIEF_MANAGED</code> is <code>EVENT_HANDLED</code> which is 0. <code>EV_tick</code> is
+<code>(B_SYSTEM|0b00000001)</code> or 1.  <code>EV_reenter_state</code> is
+<code>(B_SYSTEM|0b00001010)</code>, or 10.  <code>config_state_values</code> is an array of
+3 <code>uint8_t</code>.  <code>number_entry_value</code> is a volatile global <code>uint8_t</code>.  So
+maybe that function would look something like this:</p>
+<pre><code>; event and num_config_steps are two argument blob bytes; arg and
+; savefunc are two word args.
+PROCEDURE config_state_base argwords=2 argblob=2
+globals config_step
+    loadbyte_blob 0     ; event
+    lit8 8              ; EV_enter_state
+    subtract
+    jnz 1f              ; if ==
+    tinylit 0
+    storeglobal_byte config_step
+    tinylit 0
+    call set_level
+    tinylit 0
+    ret
+1:  loadbyte_blob 0
+    tinylit 1           ; EV_tick
+    subtract
+    jnz 3f
+    loadglobal_byte config_step
+    loadbyte_blob 1     ; num_config_steps
+    subtract
+    jns 1f              ; if &lt;
+    loadfuncptr number_entry_state
+    loadglobal_byte config_step
+    incrtos
+    call push_state
+    jmp 2f
+1:  call savefunc
+    call save_config
+    call pop_state
+2:  tinylit 0
+    ret
+3:  loadbyte_blob 0
+    lit8 10             ; EV_reenter_state
+    subtract
+    jnz 1f
+    loadglobal_byte number_entry_value  ; config_state_values[config_step] = number_entry_value
+    leaglobal config_state_values
+    loadglobal_byte config_step
+    add
+    storeword_offset 0
+    loadglobal_byte config_step
+    incrtos
+    storeglobal_byte config_step
+    tinylit 0           ; return MISCHIEF_MANAGED
+    ret
+1:  tinylit 0           ; return EVENT_HANDLED
+    ret
+</code></pre>
+<p>That’s 44 bytecode instructions.  5 of these are calls, 2 are lit8s, 5
+are jumps, and 1 is loadfuncptr, and those 13 instructions will need a
+separate operand byte.  I think all the others can be single-byte
+instructions, so this would be 57 bytes of bytecode.  There would
+additionally be 2 bytes of procedure header, 2 bytes of subroutine
+table entry, and 1 or 2 bytes of global vector (to enable the function
+to refer to <code>config_step</code> with a 3-bit immediate index field), for a
+total of 63 bytes, which is about 2.3 bytes per line of code.</p>
+<p>(There’s questions here of how this kind of thing affects the
+instruction set, and whether there might be opcode space contention,
+but I feel like there was enough headroom previously that I shouldn’t
+worry about that.)</p>
+<p>I asked what this function looks like in AVR machine code; solrize
+generously provided the following assembler output listing for a
+slightly different version of the code, which I’ve edited down for
+readability:</p>
+<pre><code> 4121                   config_state_base:
+ 4134 0fc0 8830                 cpi r24,lo8(8)                    ;     config_step = 0;
+ 4135 0fc2 01F4                 brne .L348
+ 4138 0fc4 1092 0000            sts config_step.2502,__zero_reg__ ;     set_level(0);
+ 4141 0fc8 80E0                 ldi r24,0
+ 4142 0fca 0E94 0000            call set_level
+ 4145 0fce 8091 0000            lds r24,button_last_state         ;         config_step ++;
+ 4146 0fd2 8111                 cpse r24,__zero_reg__
+ 4147 0fd4 00C0                 rjmp .L350
+ 4150 0fd6 81E0                 ldi r24,lo8(1)
+ 4151 0fd8 8093 0000            sts config_step.2502,r24          ;         push_state(number_entry_state, 0);
+ 4152 0fdc 00C0                 rjmp .L362
+ 4154 0fde 982F         .L348:  mov r25,r24
+ 4155 0fe0 907F                 andi r25,lo8(-16)
+ 4158 0fe2 903B                 cpi r25,lo8(-80)                  ;     if (config_step &lt;= num_config_steps) {
+ 4159 0fe4 01F4                 brne .L351
+ 4162 0fe6 2091 0000            lds r18,config_step.2502          ;         if (2 == (arg % (TICKS_PER_SECOND*3/2))) {
+ 4163 0fea 4217                 cp r20,r18
+ 4164 0fec 00F0                 brlo .L352
+ 4167 0fee CB01                 movw r24,r22                      ;             config_step ++;
+ 4168 0ff0 6DE5                 ldi r22,lo8(93)
+ 4169 0ff2 70E0                 ldi r23,0
+ 4170 0ff4 0E94 0000            call __udivmodhi4
+ 4171 0ff8 0297                 sbiw r24,2
+ 4172 0ffa 01F4                 brne .L353
+ 4175 0ffc 2F5F                 subi r18,lo8(-(1))
+ 4176 0ffe 2093 0000            sts config_step.2502,r18
+ 4179 1002 4217                 cp r20,r18                        ;                 set_level(RAMP_SIZE * 3 / 8);
+ 4180 1004 00F0                 brlo .L350
+ 4183 1006 88E3                 ldi r24,lo8(56)                   ;         }
+ 4184 1008 00C0                 rjmp .L360
+ 4188 100a 82E1         .L353:  ldi r24,lo8(18)                   ;         }
+ 4189 100c 00C0                 rjmp .L360
+ 4193 100e 80E0         .L352:  ldi r24,0                         ;     }
+ 4195 1010 0E94 0000    .L360:  call set_level
+ 4196 1014 00C0                 rjmp .L350
+ 4200 1016 903E         .L351:  cpi r25,lo8(-32)
+ 4201 1018 01F4                 brne .L355
+ 4204 101a 8091 0000            lds r24,config_step.2502          ;         push_state(number_entry_state, 0);
+ 4205 101e 8823                 tst r24
+ 4206 1020 01F0                 breq .L361
+ 4209 1022 4817                 cp r20,r24                        ;         push_state(number_entry_state, 0);
+ 4210 1024 00F0                 brlo .L361
+ 4214 1026 60E0         .L362:  ldi r22,0                         ;     }
+ 4215 1028 70E0                 ldi r23,0
+ 4216 102a 80E0                 ldi r24,lo8(gs(number_entry_state))
+ 4217 102c 90E0                 ldi r25,hi8(gs(number_entry_state))
+ 4218 102e 0E94 0000            call push_state
+ 4219 1032 00C0                 rjmp .L350
+ 4223 1034 8A30         .L355:  cpi r24,lo8(10)
+ 4224 1036 01F4                 brne .L350
+ 4227 1038 6091 0000            lds r22,number_entry_value
+ 4228 103c 8091 0000            lds r24,config_step.2502
+ 4229 1040 F901                 movw r30,r18
+ 4230 1042 0995                 icall
+ 4233 1044 0E94 0000            call save_config                  ;     pop_state();
+ 4237 1048 0E94 0000    .L361:  call pop_state                    ; }
+ 4241 104c 80E0         .L350:  ldi r24,0
+ 4242 104e 0895                 ret
+</code></pre>
+<p>That’s 58 instructions, and with the 16-bit immediate address
+arguments for instructions like <code>sts</code> and <code>call</code>, it turns out to be
+144 bytes of AVR machine code, 5.3 bytes per line of code, 2.3 times
+the size of as the strawman bytecode above.</p>
+<p>The Anduril repo is fairly large; it draws from the 1703 SLOCCount
+lines of code in its parent directory and contains 2814 SLOCCount
+lines itself.  But the majority of these lines are <code>#ifdef</code>fed out in
+most configurations or are declarations or preprocessor directives.  A
+typical configuration might have 1200 logical lines of code (with
+semicolons) that actually make it through the preprocessor, a quarter
+of which are declarations.  But that still compiles to over 8 KiB of
+AVR code.  So, although I could be mistaken, I tentatively think that
+this sort of bytecode trick could be useful even for existing embedded
+projects that have gone to substantial trouble to fit into the
+limitations of tiny microcontrollers.</p>
+<h2>A sketch with an AST bytecode</h2>
+<p>The above design corresponds pretty closely to machine operations,
+although in some cases several of them.  But, for example,
+<code>loadbyte_blob 0</code> pushes a byte onto the stack from the beginning of
+blob space.</p>
+<p>A disadvantage of this is that, in a way, the type of every variable
+is encoded redundantly all over the program.  Every time <code>config_step</code>
+is loaded or stored, the <code>loadglobal_byte</code> or <code>storeglobal_byte</code>
+instruction repeats the fact that it’s a byte.  This is fast but uses
+up a lot of the 32 possible baryonic opcodes: you need the cross
+product of {lea, load, store}, {global, local}, and {word, byte},
+which is 12, and at some point you need to handle longs too, which
+I’ve given short shrift to above, and maybe long longs, at which point
+you’d be at 24.  (The load and store instructions that use computed
+pointers on the operand stack could be leptonic, although in the above
+sketch they contain a rarely-used offset in their operand field, but
+the global and local instructions need an operand field to specify
+which global or local variable they’re referring to.  Potentially you
+could supply the long (or short, on a 32-bit system) and long long
+versions only in leptonic form so they always take a pointer from the
+stack.)</p>
+<p>But you could imagine storing the fact that <code>config_step</code> is a byte
+just once, in the <code>config_step</code> object, and just having <code>loadglobal</code>
+consult that information.  Moreover, you could even eliminate the
+distinct types of <code>storeword_offset</code> etc. if the pointers on the stack
+carried a data type with them (which could be overridden by an
+explicit cast operation).</p>
+<p>In a sense, your virtual machine ends up being dynamically typed,
+purely in order to reduce the number of distinct opcodes; it mirrors
+the structure of the C source code, where type information is confined
+to variable declarations rather than replicated across all uses of the
+variables.  Aside from potentially making more efficient use of opcode
+space (and thus getting a more compact bytecode) such dynamic typing
+might be beneficial in two other ways: it might be friendlier for
+interactive use, and it might allow library functions to be
+polymorphic, so you could just invoke a linear-search function rather
+than writing a linear-search loop.</p>
+<p>Self took this approach further; because its bytecode was intended for
+JIT-compiling rather than direct interpretation, it was very nearly
+just an abstract syntax tree of the Self program.  Could this provide
+a more compact representation?  Consider my isort example above:</p>
+<pre><code>void
+isort(int *a, size_t n)
+{
+  for (size_t i = 1; i &lt; n; i++) {
+    for (size_t j = i; j &gt; 0; j--) {
+      if (a[j-1] &gt; a[j]) {
+         int tmp = a[j];
+         a[j] = a[j-1];
+         a[j-1] = tmp;
+      }
+    }
+  }
+}
+</code></pre>
+<p>As an S-expression, its abstract syntax tree might look like this:</p>
+<pre><code>(function isort ((pointer int) unsigned) ; argument types, words 0 and 1
+                (unsigned unsigned int)  ; local types, words 2, 3, 4
+   (forto (word 2) (const 1) (word 1)    ; i is word 2, n is word 1
+      (fortostep (word 3) (word 2) (const 0) (const -1)
+         (if (&gt; (aref (word 0) (- (word 3) (const 1))) (aref (word 0) (word 3)))
+            (progn
+                (setf (word 4) (aref (word 0) (word 3)))
+                (setf (aref (word 0) (word 3)) (aref (word 0) (- (word 3) (const 1))))
+                (setf (aref (word 0) (- (word 3) (const 1))) (word 4))))))))
+</code></pre>
+<p>Most of the node types here have a fixed arity; the exceptions are
+<code>progn</code> and the function arguments and locals.  So if we wanted to
+build up this tree in RPN, we could use a setf operation that pops two
+expressions off the stack and pushes a setf node, and so on, but for
+<code>progn</code> we’d need some kind of marker.  A dumb way of writing this
+down might be:</p>
+<pre><code>isort:
+    [        ; begin list
+    int
+    pointer  ; make pointer of int
+    unsigned
+    ]        ; end argument type list
+    [        ; begin local variable type list
+    unsigned
+    unsigned
+    int
+    ]
+    word 2   ; (for) i =
+    const 1  ; 1 to
+    word 1   ; n
+    word 3   ; (for) j =
+    word 2   ; i to
+    const 0  ; 0 step
+    const -1 ; -1
+    word 0   ; a[
+    word 3
+    const 1
+    -
+    aref     ; ]
+    word 0   ; a[
+    word 3
+    aref     ; ]
+    &gt;
+    [        ; progn
+    word 4   ; tmp =
+    word 0   ; a[
+    word 3   ; j
+    aref     ; ]
+    setf
+    word 0
+    word 3
+    aref
+    word 0
+    word 3
+    const 1
+    -
+    aref
+    setf
+    word 0
+    word 3
+    const 1
+    -
+    aref
+    word 4
+    setf
+    ]progn
+    if
+    fortostep
+    forto
+</code></pre>
+<p>By my count, this is 52 AST-node building operations, each quite
+plausibly encodable in a byte; <code>const 1</code> corresponds rather closely to
+<code>tinylit 1</code>, <code>word 3</code> to <code>loadword 3</code>, etc.  It’s pretty hard to read,
+as stack-machine code often is, because the context that gives meaning
+to the for-loop stuff at the beginning isn't provided until half a
+page later.  The type-building operations could conceivably use a
+separate encoding from the expression-building operations like <code>aref</code>
+and <code>-</code>, which could conceivably use a separate encoding from the
+statement-building operations like <code>if</code>, <code>forto</code>, and <code>]progn</code>, but
+that would probably also require a REBOL-like or LOGO-like non-reverse
+Polish notation approach.  That might look like this.  The <code>.</code> token
+represents a byte that terminates a variable-length thing like a
+progn; <code>word.2</code> represents a byte with <code>2</code> packed into the low 3 bits.</p>
+<pre><code>function isort pointer int unsigned .
+               unsigned unsigned int .
+   forto word.2 const.1 word.1
+      fortostep word.3 word.2 const.0 const.-1
+         if &gt; aref word.0 - word.3 const.1  aref word.0 word.3
+            progn
+                setf word.4 aref word.0 word.3
+                setf aref word.0 word.3  aref word.0 - word.3 const.1
+                setf aref word.0 - word.3 const.1  word.4
+            .
+</code></pre>
+<p>(I’m not suggesting that writing in this format would be a good way to
+program, just trying to write out the contents of the sketched
+bytecode in a way that’s easy to run through <code>wc</code> and easy to see if I
+left something out of.)</p>
+<p>These 52 tokens are almost the same tokens as before, but in a
+different order.  My earlier lower-level sketch of this using
+fortoloop and fortosteploop and no CSE was more compact for the
+following reasons:</p>
+<ul>
+<li>It doesn’t have 8 or more bytes of procedure header.</li>
+<li>It doesn’t specify where to store the loop counters; instead they
+  are stored on a loop counter stack, saving 2 bytes.</li>
+<li>Instead of saying <code>- word.3 const.1</code> it uses <code>decrtos</code>, saving 3
+  bytes.</li>
+<li>Instead of <code>if &gt;</code> it uses <code>subtract; jns</code>, but that's a wash.</li>
+<li>Instead of <code>setf aref</code>, it uses <code>storeword_indexed</code>, and instead of
+  <code>setf word</code>, it uses <code>storeword</code>, saving 3 bytes.</li>
+<li>Instead of using <code>progn ... .</code> to delimit the innermost block, it
+  uses <code>continue; continue; ret</code>, which ought to use one <em>more</em> byte.</li>
+</ul>
+<p>So it was 34 bytes, and 34 + 8 + 2 + 3 + 3 - 1 = 51, which I think is
+everything but the “function isort” at the beginning.</p>
+<p>If we apply the applicable improvements from the above, we get:</p>
+<pre><code>function isort pointer int unsigned .
+               int .
+   forto const.1 word.1
+      fortostep i const.0 const.-1
+         if &gt; aref word.0 1- i  aref word.0 i
+            progn
+                setword.4         aref word.0 i
+                aset word.0 i     aref word.0 1- i
+                aset word.0 1- i  word.4
+            .
+</code></pre>
+<p>This gets us down to, say, 40 bytes, which is still worse than the
+low-level bytecode version.</p>
+<p>It’s a little annoying that <code>aref</code> needs to be explicit; in Forth you
+can define and use an array-creating word as follows:</p>
+<pre><code>: array create cells allot does&gt; swap cells + ;  ok
+5 array myarray  ok
+57 0 myarray !  68 1 myarray !  ok
+0 myarray ?  1 myarray ? 57 68  ok
+</code></pre>
+<p>Here we have defined a 5-entry array called <code>myarray</code> and stored 57 in
+its entry 0 and 68 in its entry 1.  No explicit <code>aref</code> is needed, but
+this being Forth, an explicit <code>?</code> or <code>@</code> is needed to fetch from it in
+rvalue context anyway!  But we could imagine avoiding that in an AST
+format designed for C, somehow.</p>
+<p>However, aside from being (it seems) bulkier than the low-level
+approach, this structure seems like it would be much more difficult to
+interpret.</p>
+<h2>Notes on <a href="https://research.vu.nl/ws/files/110789436/11056" title="Implications of Structured Programming for Machine Architecture, by Andrew S. Tanenbaum, 01978, CACM volume 21, number 3, 10.1145/359361.359454">Tanenbaum 01978</a></h2>
+<p>Tanenbaum and his students tackled this idea in 01978, with the idea
+of implementing the interpreter as microcode and making their computer
+faster and cheaper.  Since they couldn’t measure how fast
+unimplemented microcode was, they settled for measuring how small
+their programs were, which was under the streetlight and is vaguely
+related.  The paper is sometimes cited as inspiring RISC, due to its
+emphasis on measuring the frequencies of real operations in real
+programs, but the actual “EM-1” instruction set they arrived at is
+about as far from RISC as it is possible to be.</p>
+<p>Where RISCs have many general-purpose registers, EM-1 has none, not
+even a single accumulator, instead using an operand stack (which is
+also the call stack and storage for globals).  Where RISCs have a
+single instruction width, EM-1 has instructions of 1, 2, 3, and 4
+bytes.  Where RISC instructions typically have 3 operand fields, EM-1
+instructions have 0 or 1.  Where RISCs have carefully laid out bit
+fields to minimize instruction decoding latency, EM-1 declares, “There
+is no need to have distinct “opcode” and “address” bits.”  Where RISCs
+are, like nearly all CPUs, untyped, and strive to keep all
+instructions constant-time so that they can be implemented without
+microcode, EM-1 has hardware support for bounds-checked Numpy-like
+arbitrary-dimensional array descriptors and for “accessing
+intermediate lexicographical levels in block structured languages”,
+which latter seems to be defined handwavily and buggily, and involves
+a single load or store instruction following an arbitrarily long
+linked list through RAM.</p>
+<p>However, the EM-1 <em>is</em> RISC-like in that it’s roughly a load-store
+machine: ALU operations operate strictly on the stack, not even
+including the add-immediate instruction, which is included even in the
+very frugal RV32E, except that the EM-1 has 14 increment instructions,
+including one for TOS.  And, like the EM-1, the Berkeley RISC-I and
+-II (and their demon offspring SPARC) are designed around reducing the
+cost of procedure call and return.</p>
+<p>The strawman bytecode outlined earlier is remarkably similar to the
+EM-1!  The biggest differences are:</p>
+<ul>
+<li>the EM-1 is a single-stack design.</li>
+<li>the EM-1 is substantially less aggressive about packing operands
+  into single-byte instructions.</li>
+<li>the EM-1 is not designed to be able to execute C, which makes
+  demands on pointer arithmetic that the EM-1’s array descriptors are
+  ill-suited to fulfill.</li>
+<li>the EM-1 apparently entirely lacks structs or records.</li>
+</ul>
+<p>The EM-1’s instruction set consists of the following:</p>
+<ul>
+<li>12 one-byte pushlocal opcode bytes (“all the locals in 94.6% of
+  procedures”);</li>
+<li>8 one-byte pushglobal opcodes;</li>
+<li>3 one-byte pushconst opcodes (0, 1, and 2);</li>
+<li>12 one-byte poplocal opcodes;</li>
+<li>8 one-byte popglobal opcodes;</li>
+<li>4 two-byte {push,pop}{global,local} opcodes;</li>
+<li>2 two-byte pushconst opcodes for numerical constants in [-256, 255];</li>
+<li>4 one-byte ALU opcodes (+, -, ×, ÷);</li>
+<li>24 one-byte opcodes and 2 two-byte opcodes for zeroing and
+  incrementing locals;</li>
+<li>4 two-byte local and global array-access opcodes (pushelement,
+  popelement);</li>
+<li>1 two-byte lealocal opcode “for call-by-reference”;</li>
+<li>1 two-byte dereference opcode, for the same reason;</li>
+<li>3 one-byte “mark” opcodes for starting to set up a parameter list
+  for a subroutine call, which increment, decrement, or leave
+  unchanged the static nesting levels (for nested subroutines);</li>
+<li>1 two-byte subroutine-call opcode for programs containing up to 256
+  subroutines, though they suggest that in most cases the special
+  context following a “mark” operation would allow some 200 opcodes to
+  context-dependently specify which subroutine to call;</li>
+<li>1 two-byte opcode for allocating a stack frame, which is odd since
+  the destination of the call instruction is a “procedure descriptor”
+  and not a raw code address;</li>
+<li>2 three-byte opcodes for FOR (one counting up and one down; the
+  second byte tells which variable to use, and the third gives the
+  branch offset), though you additionally need an unconditional jump
+  back at the end of the loop;</li>
+<li>14 (?) two-byte opcodes for conditional branches;</li>
+<li>141 unallocated opcode bytes;</li>
+<li>lots of other three- and four-byte instructions whose first byte is
+  255; they propose “accessing intermediate lexicographical levels”,
+  “multiple precision arithmetic, floating point, shifting, rotating,
+  Boolean operations, etc.”</li>
+</ul>
+<p>I seem to have omitted 10 opcode bytes somewhere.  Unfortunately they
+didn’t include an opcode table.</p>
+<p>Discussion of records (structs) is, bizarrely, completely lacking; in the
+EM-1 design it seems to be impossible to heap-allocate linked list nodes.
+Perhaps multidimensional arrays were the only data-structuring
+mechanism contemplated, but 01978 is about 10 years too late for such
+an omission.  Even arrays were accessed via “descriptors” in the stack
+frame, suggesting that the EM-1’s stack frames were considered to be
+homogeneous vectors of machine words.</p>
+<p>There are lots of good ideas in this paper.  They mention that 95% of
+FOR loops have steps of +1 or -1, so maybe it’s best to support those
+two with special for-loop instructions, and relegate other steps to
+compilation as <code>while</code> loops.  Their conditional branches combine
+testing with jumping, like RISC-V, for example, and they propose an
+assembler that sorts local variables by number of references.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/history.html">History</a> (24 notes)
+</li><li><a href="../topics/performance.html">Performance</a> (22 notes)
+</li><li><a href="../topics/lisp.html">Lisp</a> (11 notes)
+</li><li><a href="../topics/asm.html">Assembly-language programming</a> (11 notes)
+</li><li><a href="../topics/compilers.html">Compilers</a> (10 notes)
+</li><li><a href="../topics/virtual-machines.html">Virtual machines</a> (9 notes)
+</li><li><a href="../topics/c.html">C</a> (8 notes)
+</li><li><a href="../topics/microcontrollers.html">Microcontrollers</a> (6 notes)
+</li><li><a href="../topics/instruction-sets.html">Instruction sets</a> (6 notes)
+</li><li><a href="../topics/forth.html">FORTH</a> (5 notes)
+</li><li><a href="../topics/bytecode.html">Bytecode</a> (5 notes)
+</li><li><a href="../topics/rpn.html">Reverse Polish notation (RPN)</a> (4 notes)
+</li><li><a href="../topics/pascal.html">Pascal</a> (4 notes)
+</li><li><a href="../topics/sorting.html">Sorting</a> (3 notes)
+</li><li><a href="../topics/avr.html">AVR8 microcontrollers</a> (2 notes)
+</li><li><a href="../topics/arduino.html">Arduino</a> (2 notes)
+</li><li><a href="../topics/ambiq.html">Ambiq</a> (2 notes)
+</li></ul></div></html>

@@ -1,0 +1,3 @@
+Normally finite elements are constant, linear, quadratic, or cubic, so
+you have a relatively limited number of trial functions, and a
+relatively large number of elements.

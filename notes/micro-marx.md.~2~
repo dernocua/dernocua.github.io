@@ -1,0 +1,308 @@
+It occurred to me that a back-biased red or green LED or base-emitter
+junction might make an interesting substitute for a spark gap in a
+tiny Marx generator.  These often break down in avalanche mode with
+minimal or no damage to the semiconductor, often at voltages under 10
+volts.  So you could easily produce a pulse train at 100 volts or
+more, perhaps from a 5-volt source using only tiny surface-mount
+components.
+
+The average achievable power of the device probably will not be large,
+since especially base-emitter junctions are not optimized for power
+dissipation, and, according to folklore, high-power LEDs generally do
+not tolerate avalanche breakdown well.  Moreover, the properties the
+device relies on here (avalanche energy tolerance, reverse breakdown
+voltage) are not among the properties the manufacturer normally
+specifies, except I guess on JFETs.  But JFETs are tiny high-precision
+devices, so JFET gate junctions are probably even worse for this
+application.
+
+I suspect that, at least with silicon, you won’t get a good avalanche
+effect until 7 volts or more; below that, the less abrupt Zener effect
+will dominate.  Purpose-built “zener” avalanche diodes might also
+work, but since they’re sold as voltage references, they might be
+designed to spike as little as possible — the spikes we’re after here
+are troublesome noise in voltage-reference applications.  At least
+you’d have a well-characterized and optimized power rating.  And of
+course diacs would definitely work and have been used in production
+Marx generators in the past.  (Can you get MOS latchup out of power
+MOSFETs?  Probably not.)
+
+Looking at file `pick-and-place.md`, I see that 5% 1k resistors
+occupying half an 0402-equivalent cost 0.385¢ soldered (and a few
+other values are available); discrete 1% 0402s are 0.305¢ in a wide
+variety of sizes; 0402 MLCCs are 0.4¢, while 1206 MLCCs are 1.3¢; NPN
+S9013 transistors are 1.58¢ and MMBT3904 is 1.32¢; red 0805 LEDs are
+1.54¢; zeners only come in 5.6V and 3.3V and cost 1.35¢; 5.8V TVSs
+cost 2.91¢.  Each Marx stage requires an avalanche element, a cap, and
+two resistors, so maybe an MMBT3904 (3 mm × 3 mm?), an 0402 cap (1 mm
+× ½ mm), and two 0402 resistors, for a total of 2.33¢ and 10½ mm²,
+probably 25 mm² in practice.
+
+A particularly interesting question is how fast the device completes
+its avalanche discharge and recovers (through recombination of the
+freed-up charge carriers).  It wouldn’t surprise me to find a
+transistor was capable of producing higher frequencies in this
+avalanche-diode mode than when being used as a real transistor.  But
+are we talking about potential pulse repetition rates of 10 kHz,
+100 kHz, 1 MHz, 10 MHz, 100 MHz, 1 GHz, 10 GHz?  How high do the
+harmonics go?  I’m guessing that they’re much faster than a
+corona-stabilized spark gap (≈20 kHz repetition rate) but I don’t know
+how much.  Even high-voltage SCRs typically manage 10 kHz.
+
+Possible applications:
+
+- Pulsed power for operating LEDs at higher power without time for
+  thermal runaway through current hogging.  Probably very inefficient.
+- Neuron-style spike-train computation, in which a stimulus pulse can
+  produce a much larger (synchronized) response pulse if the “neuron”
+  is currently charged up enough — so you get implicit addition of
+  spikes that arrive nearby in time;
+- Phase-locked spike-train computation, in which a “clock” spike train
+  defines 2–5 phases at which “slave” oscillators can run; depending
+  on their charging rate, their phase can be advanced by feeding them
+  one or more additional stimulus pulses at the right time.  Although
+  the hardware is different, higher-level logic design out of such
+  devices might be similar to the bistable elements described in file
+  `snap-logic-ii.md` and in my Derctuo note about “majority DRAM
+  logic”.
+- There’s no need for all the slaves to have the same period; this
+  would result in nonstop phase displacement among them.  Three slaves
+  of periods 3, 4, and 5 produce a period-60 counter, spiking at the
+  same time once every 60 clock spikes.
+- Low-jitter pulse amplification for trigger pulses for larger devices.
+- RF signal generation, either for UWB communication and ranging, or
+  to produce a crude high-voltage VCO (CCO?) that can then be filtered
+  to a band of interest.  Because the time-domain comb signal from an
+  idealized free-running Marx includes equal amounts of all harmonics
+  (dc, f, 2f, 3f, etc.) the actual frequency of interest may be far
+  above the spike frequency.
+- If you drive two divide-by-2 slave generators from the same master
+  clock, then the *difference* between them will only contain the odd
+  harmonics of the slave frequency: f, 3f, 5f, etc., notably excluding
+  dc.
+- Pulse density modulation, in which the device is either triggered or
+  not triggered every microsecond or so.  This is appealing not only
+  because of power gain (which it might or might not provide) but also
+  because of the potential for driving high-impedance analog loads
+  like piezoelectrics.
+- RF demodulation: by keeping the Marx generator charged to the
+  instantaneous voltage of a poorly filtered radio signal, then
+  reliably triggering it with a “sampling-comb” pulse train at some
+  harmonic of the desired frequency (say, 2×, 3×, or 4×), you will
+  selectively amplify the subharmonics of the pulse-train frequency,
+  effectively multiplying it by a sampling comb in the time domain,
+  and therefore convolving it with a comb in the frequency domain,
+  converting every subharmonic of the sampling frequency to baseband.
+  For this application, the Marx generator itself is a somewhat
+  suboptimal many-pole RC low-pass filter, which should mitigate the
+  aliasing problem.  This requires avalanche times an order of
+  magnitude or more above the frequency of interest.  Honestly a
+  regular S&H is probably a lot better for this unless you can’t get a
+  fast enough transistor.
+- Polyphase analog filtering: by running multiple slave oscillators at
+  the same period and different phase shifts, you can generate spike
+  trains to multiple different analog samplers.
+- Similarly for CDMA-type time-domain communication applications,
+  where instead of “sampling” at regular intervals, you sample at
+  times pooped out by an LFSR or something.  If you have two such
+  sampling devices, each powering an integrator (or one charging an
+  integrating cap and one discharging it), you ought to be able to
+  decode your signal of interest from the difference.  This of course
+  requires extreme temporal synchronization, but that might be doable
+  in a simple PLLish way, letting the sequence generator run free at a
+  slightly wrong speed until it detects a signal, and then running two
+  detectors off it at a slight delay to get the phase error to drive
+  the PLL.
+- Powering a Cockcroft–Walton generator, for example, to fire a xenon
+  strobe lamp on a camera.
+- RF switching: if the capacitors in the Marx are reverse-biased
+  diodes, their capacitance goes down and their impedance goes up as
+  they charge up.  Every time you erect the Marx, they will discharge
+  and briefly be low impedance to RF signals, before charging up
+  again.  This potentially allows you to sample more than just a point
+  on a signal.  It probably requires inductors on the avalanche
+  elements in order to slow the edge and remove interference it would
+  otherwise create in the band of interest, plus of course bias tees
+  to couple the RF signal in and out.
+- Generating magnetic pulses for magnetoforming, for example, aluminum
+  foil.
+
+One particularly amusing hackish thought: the avalanche elements can
+be back-biased diodes, the capacitors can be beefier back-biased
+diodes, and the charging speed limiters could also maybe be tiny
+diodes instead of resistors, though that’s a trickier proposition;
+this would enable you to do digital logic entirely out of diodes!  If
+it’s possible, and fast, this seems like it would have been a killer
+advantage in the 01950s and early 01960s, when transistors were
+expensive and hard to get, and vacuum tubes more so; some Russian
+electronics were “ferrite/diode” systems in which the diodes took care
+of the combinational logic and (square-loop?) ferrite transformers
+handled memory and inversion.
+
+When I was 9, I proposed solid-state switching elements for
+computation that worked on the neon-lamp-like principle of avalanche
+breakdown in ionic solids.  Those probably are not practical, because
+the device would require very high voltages, and its crystal structure
+would rapidly lose integrity.  But avalanche discharge in solid-state
+semiconductors is commonplace; it’s the way diacs, triacs, and other
+thyristors and SCRs work.
+
+Notes on other people’s work
+----------------------------
+
+### Kerry Wong’s minimal 2N3904 pulse generator ###
+
+[Kerry Wong built a 2N3904-based pulse generator][1], running it off
+120V (!!) and back-biasing the *collector*—base junction, which he
+says consistently avalanches around 100V, saying:
+
+> Avalanche transistors can be used to generate fast rise time
+> pulses. Their usage in the hobby world was made popular following an
+> application note ([Linear] [AN72][2] [[now at Analog][9]]) by Jim
+> Williams and was further publicized via [this EEVBlog video][3]. ...
+> 
+> R2, C1 along with the NPN transistor form a relaxation oscillator.
+> The capacitor gets charged via R2 and then rapidly discharges when
+> the collector-emitter voltage reaches the avalanche voltage.  The
+> discharge current flows through R1 during the avalanche and forms a
+> fast-rise pulse between ground and the emitter.  The choice of R2
+> and C1 is pretty liberal.  In general, C1 can range from a few pF’s
+> to tens of pF’s and R2 can range from 100K to 1M.  The larger the
+> value of C1, the wider the avalanche pulses due to increased
+> discharging RC (R1C1) constant.  But C1 cannot be too large as the
+> energy released during the short avalanche period could cause the PN
+> junction to fail.  The RC constant (R2C1) determines the operation
+> frequency.  For the values given [220kΩ and 22pF], the pulsing
+> frequency is at roughly 30 kHz.  R1 is chosen to match the
+> characteristic impedance of the load. ...
+> 
+> During my build process, I sampled a large batch of 2N3904’s, and
+> found that most can avalanche pretty consistently at around 100V. ...
+> 
+> ...The following picture shows the same pulse observed on a
+> Tektronix 2445 (150MHz bandwidth) with matching input impedance. The
+> measured rise time is around 1.5 ns which corresponds to a bandwidth
+> of approximately 230 Mhz [0.35/Tᵣ].
+
+[1]: http://www.kerrywong.com/2013/05/18/avalanche-pulse-generator-build-using-2n3904/
+[2]: http://cds.linear.com/docs/en/application-note/an72f.pdf "A Seven Nanosecond Comparator for Single Supply Operation (broken link)"
+[3]: http://www.eevblog.com/2012/07/06/eevblog-306-jim-williams-pulse-generator/ "EEVBlog #306"
+[9]: https://www.analog.com/media/en/technical-documentation/application-notes/an72f.pdf "A Seven Nanosecond Comparator for Single Supply Operation, by Jim Williams, 01998, 44 pp."
+
+His pulses look like only 50 volts, though, suggesting that they might
+actually be much faster than 1.5 ns, and being limited by the
+oscilloscope’s 150MHz input bandwidth.  Oddly, log(120V/100V)/(220kΩ
+22pF) works out to about 16 kHz, not 30 kHz.
+
+Using the huge collector-base junction instead of the teensy
+emitter-base junction probably means you can handle a lot more power,
+and it is at least a somewhat controlled process parameter, since
+people actually do often require that their transistors resist a back
+bias on the base-collector junction; [ST’s 2N3904 datasheet][5]
+specifies a minimum of 60 V for the base-collector reverse breakdown
+and, surprisingly, provides a minimum value for the base-emitter
+reverse breakdown voltage as well: 6 V.  Interestingly, its delay time
+and rise time (for normal transistor operation) are specced as 35 ns,
+with 200 ns for storage time and 50 ns for fall time, and a 270 MHz
+transition frequency.
+
+This means that the pulse’s rise time is more than 20 times faster
+than the pulse you’d get using the transistor *as* a transistor
+*switch*, but maybe no faster or even a bit slower than if you were
+using it in its linear region.  But probably the transistor is not the
+limiting feature here.
+
+[5]: https://www.sparkfun.com/datasheets/Components/2N3904.pdf
+
+He also cites [a 01997 paper by Kilpelä and Kostamovaara][4] and [a
+pulse generator project by Andrew Holme][6].
+
+### Holme’s 2N3904 pulse generator ###
+
+Holme used a 2N3904 and an open coax transmission line rather than a
+22-pF cap to get a rectangular pulse with about a 400-ps rise time,
+which he says is limited by his oscilloscope.  Astonishingly, he did
+this with through-hole components.
+
+The coax transmission line suggests how to get arbitrarily high gain
+from such a circuit, considered as an amplifier: an arbitrarily short
+input pulse can produce an arbitrarily long output pulse, as long as
+the current is high enough to maintain the avalanche but not high
+enough to overheat the transistor.  (I think you can do this with a
+capacitor too — it’s just messier.)
+
+Holme mentions that you can trigger the circuit by applying short
+pulses to the base, which is a thing I hadn’t thought of; both Wong
+and Holme are taking their main signal from the emitter and just tying
+the base to ground through a big resistor.  I suppose that you’d pull
+the base *negative* to trigger it in that case, thus increasing
+|V<sub>CB</sub>| enough to cause an avalanche — just treating the
+transistor as a pair of back-to-back diodes?  (This is wrong; see
+below.)
+
+Holme also cites Jim Williams’s Linear AN72 and [AN94][7].  I guess
+when Analog bought Linear they broke the link, but [I found it
+anyway][10].
+
+[4]: http://icecube.wisc.edu/~kitamura/NK/Flasher_Board/Useful/research/RSI02253.pdf "Laser pulser for a time-of-flight laser radar, by Ari Kilpelä and Juha Kostamovaara, Rev. Sci. Instrum. 68 (6), June 01997, p. 2253"
+[6]: http://www.aholme.co.uk/Avalanche/Avalanche.htm
+[7]: http://www.linear.com/pc/downloadDocument.do?navId=H0,C1,C1154,D4183 "Linear AN94 Slew Rate Verification for Wideband Amplifiers - The Taming of the Slew. (broken link)"
+[10]: https://www.analog.com/media/en/technical-documentation/application-notes/an94f.pdf "Linear Technology AN94 Slew Rate Verification for Wideband Amplifiers: The Taming of the Slew, by Jim Williams, May 02003"
+
+### AN94: The Taming of the Slew ###
+
+[Jim Williams’s AN94][10] is about measuring an amplifier slew rate at
+2.8 GV/s, for which he had to build a 360ps-rise-time 15–20V pulse
+generator for this purpose, because his fancy 1-ns rise-time pulse
+generator was too slow for the amplifier he was measuring, but
+subnanosecond-rise-time pulse generators cost US$10k–30k.  So he used
+a 2N2501 (or maybe a 2N2369) as an avalanche transistor, biasing its
+collector to 70 volts above ground.  Interestingly, my understanding
+of triggering with a base pulse is incorrect, at least for this
+circuit: he uses a *positive-going* trigger pulse into the base of the
+avalanche transistor to trigger the avalanche, which I’d’ve thought
+would be counterproductive.  He AC-couples the trigger pulse with a
+5pF cap and protects the avalanche transistor’s base with a Schottky
+up from ground.
+
+The 2N2501 looks like a perfectly ordinary (but old) small-signal NPN
+transistor: 350 MHz, β≈50 (or >3.5 for small signals), 40V minimum
+V<sub>(BR)CBO</sub>, 1.2 W, 100 mA; the 2N2369 is pretty similar, but
+maybe 500 MHz and 200 mA.  The datasheets show them in a 01960s-style
+TO-18 metal can rather than a modern TO-220 or similar epoxy package;
+[an advertisement for the 2N2501 appeared in the May 4, 01964 issue of
+*Electronics*][11], though with only 20V “BV<sub>CBO</sub>”, and both
+transistors appear in the [1965 Motorola Semiconductor Data
+Manual][12], with ratings more like the 40V I mentioned earlier.
+Neither is billed as an avalanche transistor or has a datasheet with
+avalanche characteristics, and there’s nothing to suggest that they
+can in any way be used to generate 400-picosecond edges.
+
+I wonder if Williams used them even in 02003 instead of more modern
+parts because the modern parts were “much improved” — in the sense of
+having an inconveniently higher base-collector breakdown voltage.
+Williams comments that not every transistor of this model was
+suitable:
+
+> Q5 requires selection for optimal avalanche behavior. Such behavior,
+> while characteristic of the device specified, is not guaranteed by
+> the manufacturer. A sample of 30 2N2501s, spread over a 17-year date
+> code span, yielded 90%. All "good" devices switched in less than
+> 475ps with some below 300ps.⁶ In practice, Q5 should be selected for
+> "in-circuit" rise time under 400 picoseconds.
+>
+> ***
+>
+> Note 6: 2N2501s are available from Semelab plc. Sales@semelab.co.uk;
+> Tel. 44-0-1455-556565 A more common transistor, the 2N2369, may also
+> be used but switching times are rarely less than 450ps. See also
+> Footnotes 10 and 11.
+
+[11]: https://www.rfcafe.com/references/electronics-mag/motorola-transistors-electronics-mag-may-4-1964.htm
+[12]: https://archive.org/details/1965MotorolaSemiconductorDataManual "1965 Motorola Semiconductor Data Manual, p. 8-104 (448/916) and p. 8-112 (456/916)"
+
+### AN72: A Seven-Nanosecond Comparator ###
+
+Previously Williams wrote [AN72][9], which also covers the technique,
+but at less length; most of AN72 is a primer on the basics of working
+with VHF and faster circuits.

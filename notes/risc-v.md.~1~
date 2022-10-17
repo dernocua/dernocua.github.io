@@ -1,0 +1,13 @@
+I’m looking at [the RISC-V instruction set][0].  It seems kind of
+boring, on purpose, in a good way, kind of like C and Golang.  There’s
+intentionally very little that’s clever.
+
+[0]: https://riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf
+
+I’m surprised that it has no condition-code flags.  The authors
+explain that this was one of their reasons for not using the OpenRISC
+1000 instruction set (p. 15, 24 of 145):
+
+> OpenRISC has condition codes and branch delay slots, which
+> complicate higher performance implementations.
+

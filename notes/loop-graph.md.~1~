@@ -1,0 +1,9 @@
+Occurred to me that if you have a loop in machine code:
+
+    loop: add r0, r1, r2
+          mul r3, r2, r4
+          sd r3, foo(r0)
+          subi r0, 1
+          beq r0, zero, loop
+
+you can 

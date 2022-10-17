@@ -1,0 +1,2 @@
+For software emulation, instructions trailed with variable-length
+operands are no problem, but bitfields are a terrible problem.

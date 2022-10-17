@@ -1,0 +1,40 @@
+Writing [rpneact](http://canonical.org/~kragen/sw/dev3/rpneact.py) I
+realized that there are some straightforward ways to extend such a
+system toward Bicicleta and the principled variant of APL I was
+thinking about, as well as to do performance work.
+
+One is that inheritance is relatively straightforward:
+
+    class Var(namedtuple('Var', ('name',)), Expr):
+        def eval(self, vars):
+            return vars[self.name].eval(vars)
+
+If the second `vars` were a different object, we’d have the equivalent
+of invoking an inherited method — any vars referred to by the formula
+would come from the different object.  (And this is exactly how
+inheritance works in Bicicleta and in the ς-calculus it’s based on.)
+And of course in Python such inheritance is straightforward to
+implement in the `vars` object by having its `__getattr__` delegate to
+one or more different mappings.
+
+There’s code in rpneact for the solver that evaluates a loss formula
+at various points along a design variable; it works as follows:
+
+    def find_zero(design_var, objective, vars):
+        "Try to find a zero using the method of secants."
+        var = design_var.name
+        original = vars[var]
+        ...
+
+        try:
+            ...
+                    vars[var] = Const(b)
+                    b_obj = objective.eval(vars)
+            ...
+        finally:
+            vars[var] = original
+
+This could be done in a purely functional way by the inheritance
+mechanism described above.
+
+For caching, you’d like to 

@@ -1,0 +1,29 @@
+How could you safely store files “in the cloud”?  The idea is that you
+have a large file and you would like storage servers to be
+incentivized to store it for you so you can retrieve it in the future.
+
+Of course, you could just send a hosting service some bitcoin every
+month.
+
+
+19:01 < muurkha> well, for the solution I described to meet the "trustless" bar, you need the proper incentive structure for auditors
+19:02 < muurkha> you could of course randomly audit your data yourself as long as the storage nodes don't have a way to know it's you
+19:02 < muurkha> and cut off a payment stream to them if they fail
+19:02 < muurkha> but doing that after you die is more difficult
+19:07 < muurkha> to elaborate, the "nearly storing the file itself" problem is addressed as follows.  to safely store a file, you break 
+                 it up into M Shamir shares, which you store unsafely.  to unsafely store a file, you break it up into pieces of, say, 
+                 64K, compute the SHA-256 of each pieces (32 bytes, 2048 times smaller than the pieces) and concatenate those chunks 
+                 into another file called the "piece table" of the 
+19:07 < muurkha> larger file; then, if that piece table is bigger than 32 bytes, you safely store the piece table, and then you just 
+                 stick each of the pieces in some sort of distributed storage system
+19:09 < muurkha> periodically you audit a storage node by asking it for a piece; when it sends you the purported piece, you check it 
+                 against the SHA-256 from the piece table
+19:10 < muurkha> if it arrives and matches, the node is verified; otherwise the node failed verification, and if that happens too often, 
+                 the node stops getting paid (and possibly forfeits some sort of bond it had posted previously)
+19:11 < muurkha> the piece table is just a single SHA-256 if the file is under the piece size (64KiB in the example above); otherwise 
+                 you have to retrieve the piece table from the storage system to verify pieces of the file
+19:12 < sbp> "She intended to finish the book, but was interrupted by wars and marriage and farming."
+19:12 < sbp> — Wikipedia on A Tale of Kitty in Boots by Beatrix Potter
+19:13 < muurkha> you only need to be able to retrieve N of M shares of a piece to be able to reconstruct it, but as long as the nodes 
+                 storing those shares don't have a way to find out what those M shares are, they can't cheat by retrieving N other 
+                 shares at query time and reconstructing the piece on demand

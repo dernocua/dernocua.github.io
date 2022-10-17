@@ -1,0 +1,27 @@
+Silver is 
+
+16:47:53 <xentrac> https://pubs.usgs.gov/periodicals/mcs2020/mcs2020-silver.pdf is where I usually look for basic overviews of things like this, but I'm not sure it is very informative in this case
+16:48:05 <atman> huh. well you wouldn't use copper if aluminum suffices. same with silver and copper
+16:48:09 <xentrac> photography, 3%, oof!
+16:48:28 <xentrac> I think photography used to be like 60%
+16:48:40 <atman> to this day? that's wild
+16:50:45 <xentrac> no, 3% in 02020
+16:51:01 <xentrac> https://s3-us-west-2.amazonaws.com/prd-wret/assets/palladium/production/mineral-pubs/silver/880300.pdf says that in 02000 (or 01999) it was 28%
+16:51:22 <xentrac> which is less than 60% and possibly as high as it ever had been
+16:52:02 <atman> oh I meant that 3% seems high for an incredibly niche hobby
+16:52:18 <xentrac> 4500 tonnes apparently consumed in the US in 01999, 6500 tonnes in 02020
+16:52:16 <atman> it would be like finding out that 3% of vinyl chloride goes into LPs...
+16:53:32 <xentrac> oh, yeah, that makes sense.  3% of 6500 tonnes is 195 tonnes of silver used in the US for photography in 02019 (it was 02019, not 02020; 02020 is just the publication date)
+17:06:04 <xentrac> there must be non-hobby uses for film photography to account for so much photographic use.  possibilities that occur to me include X-ray film (maybe for checking welds rather than looking for lung cancer), microfilm archival (surely this still survives in some niches), and ortho litho film for photolithography (to make photomasks, not trying to use silver as an etch resist, which wouldn't work)
+17:06:24 <atman> X-ray was my first thought as well
+17:07:43 <xentrac> I'm not totally sure about X-ray.  semiconductor sensors have higher resolution and higher sensitivity and have much lower operational expenses than film
+17:07:53 <xentrac> but they also have much, much higher capital expenses
+17:08:32 <xentrac> especially when we're talking about meter-scale things like structural bridge welds rather than millimeter or centimeter scale things like molars
+17:09:11 <atman> last time I was x-rayed they put a sensor thing in my mouth. time before that it was a pack of film. so who knows
+17:11:20 <xentrac> three things that are kind of insane about this USGS report are that US silver consumption is a quarter of total world silver production; that the COMEX silver stocks sitting in warehouses are four months of total world silver production; and that the COMEX stocks are a year and a half of US silver consumption
+17:18:39 <xentrac> aha, it's conductive silver paste used to make electrical connections to the cells: https://www.pv-magazine.com/2018/07/06/amount-of-silver-needed-in-solar-cells-to-be-more-than-halved-by-2028-silver-institute-says/
+17:21:35 <xentrac> 130 mg Ag per 4.7-watt cell; at almost 800 GWp installed by now, that's a bit over 20,000 tonnes of silver locked up in the world's solar panels
+17:22:06 <xentrac> perhaps more significantly about 140 GWp of that capacity was installed in 02020: https://en.wikipedia.org/wiki/Growth_of_photovoltaics
+17:22:23 <xentrac> so that's almost 4000 tonnes of silver
+17:23:00 <xentrac> which is about 14% of global silver production!
+17:32:36 <Sending...> now, maybe some of the reduction in silver intensity they're talking about in that 02018 article has already happened, so maybe it's only like 8% now, but it's clearly a significant percentage of global silver production.  thanks for turning me on to this!

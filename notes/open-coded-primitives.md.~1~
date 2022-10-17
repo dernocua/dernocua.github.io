@@ -1,0 +1,3 @@
+My toy compiler Ur-Scheme got surprisingly good performance (about 20%
+of GCC on the dumb fibonacci microbenchmark, and about 250% of
+Chicken’s performance) without compromising dynamic type-safety by

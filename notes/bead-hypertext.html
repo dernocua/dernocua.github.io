@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><title>Bead hypertext ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Bead hypertext</h1><div class="metadata">Kragen Javier Sitaker, 02021-06-22 (updated 02021-12-30)
+(1 minute)</div><p>The PDF standard (since PDF 1.1) has the amusing terminology of
+“beads” on a “thread” of “articles”.  I think “bead” might be better
+than “line” or “card” or “page” for my card-based hypertext thing
+(suggesting perhaps its intellectual descent from wampum).</p>
+<p>And indeed the meaning in PDF is closely related:</p>
+<blockquote>
+<p>Some types of documents may contain sequences of content items that
+are logically connected but not physically sequential.</p>
+<p>EXAMPLE 1: A news story may begin on the first page of a newsletter
+and run over onto one or more nonconsecutive interior pages.</p>
+<p>To represent such sequences of physically discontiguous but
+logically related items, a PDF document may define one or more
+articles (PDF 1.1). The sequential flow of an article shall be
+defined by an article thread; the individual content items that make
+up the article are called beads on the thread. Conforming readers
+may provide navigation facilities to allow the user to follow a
+thread from one bead to the next.</p>
+</blockquote>
+<p>The beads are “chained” with “N (next) and V (previous) [attributes]”,
+while they link to their actual contents with “P” for the page object
+and “R” for the rectangle on the page.</p>
+<p><em>My</em> intent, of course, is to eliminate or ephemeralize the physical
+sequence entirely, rather than to simply superimpose a secondary
+sequence on it.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/hci.html">Human-computer interaction</a> (22 notes)
+</li><li><a href="../topics/guis.html">GUIs</a> (6 notes)
+</li><li><a href="../topics/pdf.html">The Portable Document Format (PDF)</a> (5 notes)
+</li><li><a href="../topics/hypertext.html">Hypertext</a> (3 notes)
+</li></ul></div></html>

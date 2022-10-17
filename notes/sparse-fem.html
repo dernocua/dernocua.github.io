@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><title>Finite element analysis with sparse approximations ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Finite element analysis with sparse approximations</h1><div class="metadata">Kragen Javier Sitaker, 02021-10-20 (updated 02021-12-30)
+(2 minutes)</div><p>Normally finite elements are constant, linear, quadratic, or cubic, so
+you have a relatively limited number of trial functions per element,
+and a relatively large number of elements.  In a three-dimensional
+element, an arbitrary scalar cubic polynomial has 20 degrees of
+freedom (coefficients).  In three dimensions, the number of
+coefficients ((<em>d</em>+1)(<em>d</em>+2)(<em>d</em>+3)/6, see <a href="../notes/polynomial-pascal.html">Binomial coefficients and the dimensionality of spaces of polynomials</a>) grows as the cube of the degree, which gets
+annoying quickly, so normally instead of adding more coefficients you
+just use smaller elements.  (Also, as I understand it, normally you
+impose continuity conditions which reduce this dimensionality greatly,
+as with cubic splines in one dimension.)</p>
+<p>(There are lots of sets of 20 polynomials you can use as a basis for
+this 20-dimensional space, even a convenient orthogonal basis.)</p>
+<p>But suppose that, instead of using low-degree piecewise polynomials,
+we use a smaller number of larger elements, each with a
+much-higher-dimensionality function space, and then try to keep things
+computationally tractable by seeking a <em>sparse</em> approximation in that
+larger space, or at least, a sparse state evolution rule over time?</p>
+<p>In a sense this is the farthest thing from a new idea; it’s how
+Fourier solved the heat equation and Wiener solved everything, by
+lumping the entire system into a single element and picking basis
+functions that were eigenfunctions of temporal evolution, so the
+system evolves independently in each of these “vibrational modes”,
+making computation enormously easier.</p>
+<p>Fourier space is of course a useful space to seek a sparse
+approximation of lots of things, but there are numerous other
+alternatives, including chirplets and all kinds of wavelets.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/math.html">Math</a> (11 notes)
+</li><li><a href="../topics/numerical-modeling.html">Numerical modeling</a> (5 notes)
+</li><li>Sparsity</li><li>Finite-element methods (FEM)</li></ul></div></html>

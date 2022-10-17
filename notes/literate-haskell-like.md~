@@ -1,0 +1,3 @@
+Watching a demo of Keras in TensorFlow in IPython, I thought a Python
+comment was a Markdown header.  And it occurred to me: why *not* have
+formatted text comments in your code?

@@ -1,0 +1,31 @@
+00:12 <@oriansj> danderson: the distinction between stage0 and stage0-posix is that stage0 is bare metal only and stage0-posix is only 
+                 depending on a POSIX kernel that supports the following syscalls: exit, execve, fork, waitpid, brk, open, close, read, 
+                 write, lseek, chmod for up to M2-Planet+mescc-tools (excluding Kaem) but mescc-tools-extra+Kaem needs fchmod, access, 
+                 chdir, fchdir, mkdir, mknod, getcwd, umask and uname. Mes also needs unlink, ioctl,
+00:12 <@oriansj> stat and fsync (assuming I didn't miss anything janneke )
+00:14 < stikonas> tcc probably wouldn't add any new syscalls...
+00:14 < stikonas> since tcc uses mes libc
+00:14 < stikonas> so maybe one can just go to tcc instead of mescc
+00:15 <@oriansj> And the initial kernel could be written in Assembly or in the C subset that M2-Planet running on bare metal supports
+00:15 <@oriansj> stikonas: mes-m2 doesn't use all of the syscalls in meslibc but TCC supposdedly does
+01:18 <@oriansj> danderson: well the Kaem shell does only execute serially but it doesn't support pipes (as they aren't needed until 
+                 after TCC)
+01:20 <@oriansj> And multitasking doesn't need to extend beyond process runs until it forks or exits. If forked, just sleep until forked 
+                 process is done. (as it is just doing waitpid)
+01:22 <@oriansj> but yes, such a kernel wouldn't be designed to be usable by humans but rather the bare subset of perfect programs that 
+                 never have bugs or problems bootstrapping a more advanced kernel.
+01:27 < fossy> pipes are an intentional non feature
+01:27 < fossy> to reduce kernel requirements
+01:40 <@oriansj> exec, exit, fork and waitpid are the minimal subset required for having processes spawned from a shell to do work. brk 
+                 is needed if you want a non-fixed amount of memory. open, close, read, write, lseek are the minimal subset required for 
+                 working with files. chmod is only needed on filesystems that require the executable bit to be set to execute binaries. 
+                 chdir and getcwd are needed for the shell to change directories and not have
+01:40 <@oriansj> everything be done in absolute addresses. uname is needed to have architecture/OS specific behaviors (get_machine not 
+                 absolutely required) mkdir needed for mkdir and untar. The remainder could be removed with some effort should it come 
+                 down to that.
+14:35 < stikonas> xentrac: where is ioctl used?
+14:35 < stikonas> I didn't find any usage of it
+14:38 < stikonas> oh, there is one call isatty
+14:38 < stikonas> that's probably not important...
+14:42 < stikonas> xentrac: I think it's only used to determine whether mes should start interactive hsell or not
+14:43 < stikonas> can easily stub it out

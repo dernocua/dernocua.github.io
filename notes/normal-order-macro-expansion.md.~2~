@@ -1,0 +1,189 @@
+:fq0zl, a normal-order text macro language
+==========================================
+
+m4 is notoriously hard to use, although it’s often effective.  Part of
+the problem is that data is re-executed both on its way into and on
+its way out of macro invocations, so you often need
+quoting — confusingly, multiple levels thereof.  Worse, if you are
+missing a level of quoting, your code will often appear to work until
+some previously inert data happens to have a macro invocation in it.
+
+m4’s design has a number of other avoidable defects.  It’s
+whitespace-sensitive in a way that impairs readability.  Often m4
+macros collide with ordinary words, resulting in accidental macro
+invocations that corrupt the text.  Since it was defined, the ASCII
+apostrophe has been redefined as a terrible symmetrical typewriter
+glyph, depriving m4’s default quote characters of their symmetry.  And
+m4’s parameter-passing mechanism is so purely positional that, as in
+Forth, you can’t even name your arguments.
+
+Can we define a text macro language that retains the basic processing
+paradigm of m4, m6, and cpp, but has a better balance of power and
+usability?  TeX is perhaps the most successful attempt, but I suspect
+we can do better.
+
+Normal-order macro expansion
+----------------------------
+
+If macro *output* is not subject to macro expansion, we have
+“applicative-order macro expansion”, and m4 loses its
+Turing-completeness, making it much more comprehensible (all the macro
+invocations that will be expanded are explicitly present in the input
+file) but also much less useful.
+
+On the other hand, if macro *input* is not subject to macro expansion,
+much of the need for quoting disappears, but Turing-completeness
+remains.  This is “normal-order macro expansion”.  Done naïvely, there
+are cases where it will take exponentially longer than m4’s strategy,
+but I think these can be mostly avoided in practice, and a more
+sophisticated implementation can optimize them away.
+
+Lexical syntax for :fq0zl
+-------------------------
+
+m4’s predecessor m6†, which was included with early versions of Unix,
+used “warning characters” to delimit macro invocations, a feature that
+is present in a certain sense in cpp and has been added again in GNU
+m4.  In standard m4 we can write this and get 6:
+
+    define(`mylen',`ifelse($1,,0,`eval(1+mylen(substr($1,1)))')')
+    mylen(kanawa)
+
+But, in m6, where the quote characters were `<>` and the default
+warning characters were `#:`, I think you would have written:
+
+    #def,mysize,<#if,#seq,$1,:,0,1,<#add,1,#mysize,#substr,$1,1:::>:>:
+    #mysize,kanawa:
+
+Here `#seq,$1,:` tests whether the first argument to mylen was
+string-equal to the empty string, in which case the invocation of the
+builtin `#if` macro returns 0; otherwise it invokes `#eval` to
+recurse.  I think the inner `<>` are necessary to prevent the
+recursion from being evaluated infinitely before invoking `#if`.
+
+In GNU m4, if `changeword` is enabled, I think we can get a similar
+effect like this, but I don’t have m4 compiled with that at the
+moment to test:
+
+    changequote(<,>)changeword(<#\([_a-zA-Z0-9]*\)>)
+    #define(<mylen>,<#ifelse($1,,0,<#eval(1+#mylen(#substr($1,1)))>)>)
+    #mylen(kanawa)
+
+Overall this is all pretty nasty and unreadable to my eyes.  I'd
+rather separate arguments with arbitrary amounts of whitespace and use
+an explicit, nestable, and visually symmetrical circumfix syntax for
+macro invocation.  Single ASCII characters only offer a few choices:
+
+    <mylen kanawa>
+    [mylen kanawa]
+    (mylen kanawa)
+    {mylen kanawa}
+    ‘mylen kanawa’  # formerly ASCII, now sabotaged by aping MS-DOS
+
+Of these, I like `<mylen kanawa>` best — it most strongly implies that
+it's a placeholder — but that would run into a lot of trouble if you
+started trying to macro-expand C programs that say things like
+`#include <string.h>` and `for (size_t i=0; i<result->len; ++i)` all
+over the place, not to mention PDF files with hex strings like
+`<668531e8e73e8ee1503359167219ef43>`, and of course SGML, HTML, and
+XML — unless you pass undefined macro invocations through unchanged.
+But I want undefined macro invocations to crash.
+
+So, to avoid these problems, with SGML, HTML, and XML, you must
+precede the macro name with `:`, as in `<:mylen kanawa>`.
+
+Just as in m4 and m6, there’s the problem of how to embed the argument
+separator within an argument, which is more urgent when the separator
+is whitespace.  You *could* use the same delimiters in such a case, or
+something like `<:q this text is a single argument>`, but I think it’s
+best to expropriate more delimiters in a way analogous to m6’s use of
+`<>` — but *only in the context of macro arguments*.  And I think the
+best delimiters to use here are braces `{}`, backslashing } and
+backslash inside them if you need unbalanced braces.
+
+And I think named arguments are pretty important.  So instead of
+
+    define(`mylen',`ifelse($1,,0,`eval(1+mylen(substr($1,1)))')')
+
+we might write
+
+    <:def <:mylen s>
+        <:ifelse %s {} 0 <:eval 1+<:mylen <:substr %s 1>>> >
+    >
+
+No quoting is needed here because we’re using normal-order
+macro-expansion; the `<:mylen s>` and `<:ifelse ...>` calls are parsed
+so we can see where they end, avoiding the need for extra `{}`, but
+they aren’t macro-expanded until and unless they end up in a strict
+context, such as a top-level output stream or the argument of `<:eval
+...>`.  And `%s` expands to the parameter `s`, as in MS-DOS batch
+files or in SGML parameter entities:
+
+    <!ENTITY crap "#PCDATA | %font | %phrase | %special | %formctrl"> 
+
+However, in :fq0zl, the substitution is only carried out on the text
+of a macro definition, and only using the parameters that are
+lexically within scope — it’s not done throughout the rest of the
+file, as in an SGML DTD (the above SGML defines `&crap;` to expand to
+all that crap, with `%font` and the like additionally expanded,
+anywhere in any document ruled by this DTD).
+
+As in SGML, you can optionally terminate the parameter name with a
+`;`, which is useful for contexts that would otherwise be a problem:
+
+    <:def <:mylen s>
+        <:ifelse %s; {} 0 <:eval 1+<:mylen <:substr %s; 1>>> >
+    >
+
+Consider, for example, this definition from the Hammer parsing library:
+
+    #define HAMMER_FN_DECL_NOARG(rtype_t, name)             \
+      rtype_t name(void);                                   \
+      rtype_t name##__m(HAllocator* mm__)
+
+We can define the equivalent in :fq0zl as follows:
+
+    <:def <:hammer_fn_decl_noarg rtype_t name> {
+        %rtype_t %name(void);
+        %rtype_t %name;__m(HAllocator* mm_);
+    }>
+
+Without the disambiguating `;` we would have `%name__m`, which would
+abort with an error, since there is no parameter in scope named
+`name__m`.
+
+Named parameters can have defaults, and you can pass parameters by
+name.  So, for example, corresponding to this MediaWiki markup with
+its named parameters:
+
+    {{Infobox laboratory equipment
+    |name         = Holter monitor
+    |image        = HolterAFT1000.jpg
+    |caption      = Holter monitor
+    |inventor     = [[Norman Holter]] and Bill Glasscock at Holter Research Laboratory
+    }}
+
+we might have
+
+    <:infobox-laboratory-equipment
+        name = {Holter monitor}
+        image = {HolterAFT1000.jpg}
+        caption = {Holter monitor}
+        inventor = {[[Norman Holter]] and Bill Glasscock at Holter Research Laboratory}
+    >
+
+The spaces around the `=` are optional, so parsing this from left to
+right requires retconning `name` from being a parameter *value* “name”
+to being a parameter *name*.
+
+It’s reasonable to question having two separate replacement
+mechanisms, one for macros `<:s>` and the other for parameters `%s`.
+You could of course provide parameters as locally-defined macros, but
+my intuition is that bloating references to what are really just local
+variables to a minimum of four characters is excessive and would make
+:fq0zl clumsy.
+
+______  
+† “the program contains about 25 subroutines, totaling about 600
+executable statements,” according to the Bell Labs Computing Science
+Technical Report #2 about m6 in 01971

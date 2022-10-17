@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html><title>PEG-like flexibility for parsing right-to-left? ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>PEG-like flexibility for parsing right-to-left?</h1><div class="metadata">Kragen Javier Sitaker, 02021-06-16 (updated 02021-07-27)
+(2 minutes)</div><p>Looking at PDF, whose syntax derives from PostScript, I’m struck by
+the fact that a lot of its constructs are most easily parsed right to
+left.  An object reference like <code>16 0 R</code> starts with an integer
+object, and so you end up having to backtrack if you’re using a PEG
+parser.</p>
+<p>If instead you parse it right to left, you don’t have this problem as
+much; the R announces that you are looking at an object reference, and
+it contains the following two integers.  Similarly, in a content
+stream, you may encounter a text object like Example 1 from §9.2.2 of
+the PDF 1.7 spec, ISO 32000-1:2008:</p>
+<pre><code>BT
+   /F13 12 Tf
+   288 720 Td
+   (ABC) Tj
+ET
+</code></pre>
+<p>As an S-expression, this is <code>(text (font 'F13 12) (pos 288 720) (paint
+"ABC"))</code>; <code>Tf</code> is the operator that sets the font, <code>Td</code> is the
+operator that sets the position, and <code>Tj</code> is an operator that draws
+text.  Reading this backwards, it’s trivial to predict what you’re
+going to have to parse; reading it forwards, you either need to
+maintain a stack of pending values like 288 and 720, or do a lot of
+backtracking.</p>
+<p>However, individual tokens in here are more easily read forwards;
+<code>/F13</code> looks like an integer if you look at its last 0, 1, or 2
+characters, and perhaps like an operator if you only look at its last
+3.</p>
+<p>Is there a way to get PEG-like memoization for an asymptotic
+performance guarantee and flexibility, while maintaining a LALR-like
+stack of bottom-up items that can tell us what parses to even attempt?
+Is that even a meaningful question?</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/algorithms.html">Algorithms</a> (14 notes)
+</li><li><a href="../topics/pdf.html">The Portable Document Format (PDF)</a> (5 notes)
+</li><li><a href="../topics/parsing.html">Parsing</a> (5 notes)
+</li><li><a href="../topics/pegs.html">Parsing expression grammars (PEGs)</a> (2 notes)
+</li></ul></div></html>

@@ -1,0 +1,14 @@
+Consider this chunk of code from Ur-Scheme:
+
+    (define interned-symbol-list '())
+    (define (intern symbol)
+      (interning symbol interned-symbol-list))
+    (define (interning symbol symlist)
+      (cond ((null? symlist) 
+             ;; XXX isn't this kind of duplicative with the global variables stuff?
+             (set! interned-symbol-list 
+                   (cons (list symbol (new-label)) interned-symbol-list))
+             (car interned-symbol-list))
+            ((eq? symbol (caar symlist)) (car symlist))
+            (else (interning symbol (cdr symlist)))))
+    (define (symbol-value symbol) (cadr (intern symbol)))

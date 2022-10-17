@@ -1,0 +1,140 @@
+PBKDF content addressing: a non-blockchain attack on Zooko’s Triangle
+=====================================================================
+
+Writing file `drama-word-list.md`, I realized that a password using a
+reasonable PBKDF can be a lot shorter than a secure content hash, even
+one that's only secure against second-preimage attacks.  For example,
+in [“How you should set up a full-disk-encryption passphrase on a
+laptop”][0], I recommended encrypting your disk with 2¹⁶ iterations of
+PBKDF2 (because LUKS doesn’t support scrypt, though [apparently LUKS2
+has since added argon2i support][1]) and a 72-bit-of-entropy six-word
+passphrase.
+
+[0]: http://canonical.org/~kragen/cryptsetup.html
+[1]: https://news.ycombinator.com/item?id=21793705 "Comment on the orange website by loeg on 2019-12-15T01:13:26"
+
+This suggests the idea: can we use a PBKDF for content-addressing by
+hash?
+
+It turns out that not only can you use a PBKDF like scrypt to expand a
+human-memorable password into a larger, strong hash; you can also use
+a PBKDF to compress a larger, strong hash into a human-memorable
+“password”.  This gives you a decentralized, human-*memorable*, secure
+naming system, but the resulting names are generally not
+human-*meaningful*.
+
+Using a PBKDF for content-addressing by hash
+--------------------------------------------
+
+You hash a massive blob of content, or maybe somebody’s public key,
+using something fast like SHA-256 or BLAKE3, then run the result
+through a memory-hard PBKDF like scrypt or Argon2, then encode the
+result with some kind of human-readable word list.  This could
+potentially greatly reduce the human effort involved in using such
+hashes, at the expense of computer effort.
+
+Right now a 4 GiB RAM stick costs US$15 and is normally depreciated
+over 3 years, so US$5 per year, so that’s about 160 nanodollars per
+second for 4 GiB or 4.6 attodollars per bit-second.  Suppose we assume
+that crypto works as advertised, and we’re willing to demand that a
+legitimate participant in the system employ 4 GiB of RAM for 128
+seconds to verify a hash, which is 20 microdollars for an attacker
+with warehouse-scale computers stuffed full of RAM cracking hashes.
+Suppose we are content with resisting up to a quadrillion dollars’
+worth of attack (many years of current human economic productivity), a
+quadrillion dollars buys you 2.2 × 10³² bit-seconds of RAM, or
+4.9×10¹⁹ of these 128-second-4-GiB hashes.  That’s about 2⁶⁵·⁴ hashes.
+So to resist a second-preimage attack, a hash would only need 66 bits.
+
+So 2⁷² possible human-readable hash identifiers would be adequate to
+resist a quadrillion-dollar attack.  A random 72-bit number like
+3943234810267769014593 can be represented in many different ways,
+including the following:
+
+    In hex: d5c3 603f c8fd 3889 41
+    In the first half of the alphabet to avoid cusswords, like Chrome: cjakmgljchceddegilkk
+    In lowercase letters, ideal for a cellphone keyboard: cjdhebmuvttqrjlx
+    In lowercase letters and digits: n46ukw493t154x
+    In letters and digits: 1dMffgtrOWF5T
+    In letters, digits, hyphen, and underscore, like YouTube: RsdwfYzZe8B1
+    In printable ASCII: j4l'/~4%s6t
+    In 12-bit words of 5 letters or less: todd guide port ros iron tubes
+    In the S/Key word list: BEE DEAF MULL WIRE FEAT SONG MEN
+
+I think that, of these, at least “Todd guide port ROS iron tubes” and
+“bee deaf mull wire feat song men” are things that a person could
+reasonably memorize, though not without effort.
+
+If instead of a quadrillion dollars we’re willing to succumb to
+single-target second-preimage attacks of a billion dollars or more, we
+can drop 20 bits.  46 bits of hash instead of 66 bits: “pork bring
+extra asset” or “ni death col batty”, say.
+
+I’m assuming here that the work factor of the PBKDF in question (the
+number of iterations or whatever) is fixed up front and doesn't have
+to be incorporated into the human-memorized key.  But it wouldn’t have
+to be; you could reserve, for example, 4 bits of the human-memorable
+key for the natural logarithm of the amount of work required in
+gigabyte-seconds, thus permitting adjustment of the time required to
+try a single hash from 1 gigabyte-second to 3269000 gigabyte-seconds.
+This involves making the phrases longer on average, but note that my
+“46-bit” phrases above already have 2 bits of slack, and my 72-bit
+phrases have 6 bits of slack.
+
+In many scenarios, the document being identified by such an identifier
+is necessarily public, and so is the algorithm, so that anyone can
+spend 128 seconds to verify that the document produces the correct
+hash.  This means that an attacker knows not only the desired
+(truncated) PBKDF *output* but also the PBKDF *input*, which is the
+file’s hash using BLAKE3 or SHA-256 or whatever.  If the attacker can
+find a collision at that point, they don’t need to run the PBKDF even
+once, just run the other, much faster hash function, potentially a
+much larger number of times.  But the 256-bit output size of BLAKE3
+and SHA-256 is large enough to make that infeasible, more than
+compensating for the enormously higher speed of these hash functions.
+
+Weaknesses
+----------
+
+### Attacking many hashes at once ###
+
+If there are many unsalted hashes, the attacker might attack them all
+simultaneously.  For example, if there are 2⁴⁰ public keys in use, or
+2⁴⁰ documents, and the attacker wins if they succeed in counterfeiting
+any one of them, their attack speeds up by a factor of 2⁴⁰.  And
+salting is not really a solution, since the salt would have to be part
+of the human-memorized authenticator; it’s equivalent to just
+truncating the hash at a longer length.  I think the best defense for
+this is to use the human-memorable hash for only the root of some kind
+of large Merkle DAG, containing for example a public key for everyone
+in the world, or the entire corpus of Project Gutenberg or Wikipedia.
+
+Large granularity is probably a necessity for another reason, too: you
+want intermediaries to be able to verify the hash as they are passing
+the file along, which costs 512 GiB-seconds of work.  If that's too
+expensive relative to just copying the file, they won’t do it, and
+fake files will spread around the network even though their hashes
+don’t match.  Tree hashing modes like the Bao mode embodied in BLAKE3
+may help ameliorate this problem.
+
+If the hashed data is some kind of efficiently traversable namespace,
+it can assign human-memorable names to particular documents, including
+public keys, IP addresses, and other identifiers.  So instead of
+identifying someone as pb://ni-death-col-batty/ we 
+
+To some extent this reintroduces the potential problem that
+decentralized naming systems are supposed to guard against: if 
+
+### Collision attacks ###
+
+In some circumstances, second-preimage attacks are not the only
+attack; collision attacks have been demonstrated in practice against
+TLS, for example, where an attacker generates two certificate signing
+requests: one for their legitimate domain, and one for the domain they
+want to spoof, which hash to the same hash.  The certifying authority
+signs the legitimate one, but the CA signature enables them to
+masquerade as the other domain.
+
+Resisting such collision attacks would require twice as many bits, and
+would thus double the length of the passphrase, so this scheme should
+probably not be used to defend against a second-preimage attack.

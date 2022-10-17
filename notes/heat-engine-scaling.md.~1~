@@ -1,0 +1,57 @@
+15:35 < xentrac> CloudEvil: hmm, what about the physical scaling laws?
+15:35 < kludge> magic_ninja: If you are in the US: 
+https://www.parts-express.com/pro-audio/Commercial-70V-Speaker-Systems/Commercial-Surface-Mount-Speakers/configuration/2~way
+15:35 < kludge> magic_ninja: and buy the step-up transformer from edcor.
+15:35 < magic_ninja> we are recessing them
+15:35 < CloudEvil> xentrac: That's part of the issue, pipe friction gets worse with size, as does length/area for piston rings and such.
+15:35 < CloudEvil> xentrac: Contamination and surface finish start to matter enormously.
+15:36 < xentrac> CloudEvil: is heat flow part of the problem?  I'd think you'd have more heat leakage at the 1-mm scale than at the 
+                 100-mm scale
+15:36 < CloudEvil> yes.
+15:36 < kludge> magic_ninja: I don't know of any recessed ones that are waterproof... tannoy used to make some but they are gone, but 
+                you can look on the parts express site.
+15:37 < magic_ninja> kludge, it is a dry-area. A good 7' to 8' from edge. I'm comfortable putting non-rated speakers out there.
+15:37 < kludge> magic_ninja: you can also add a 70V distribution transformer onto the back of an 8 ohm speaker.
+15:37 < magic_ninja> lol just a second. I'm trying to get caught up with you here.
+15:37 < xentrac> what you're saying about piston rings is that your displacement falls as f³, I guess?  how does the piston ring 
+                 friction fall?
+15:37 < magic_ninja> So, I won't be able to get the AVR with a built-in stepup
+15:38 < kludge> magic_ninja: these are kind of beamy and not horrible: 
+                https://www.parts-express.com/Yorkville-C165W-Coliseum-Mini-Series-6-Coaxial-Ceiling-Speaker-70V-White-245-957
+15:38 -!- joerg is now known as nicksrv
+15:38 < CloudEvil> xentrac: piston ring friction is linear with diameter mostly.
+15:37 < xentrac> what you're saying about piston rings is that your displacement falls as f³, I guess?  how does the piston ring 
+                 friction fall?
+15:37 < magic_ninja> So, I won't be able to get the AVR with a built-in stepup
+15:38 < kludge> magic_ninja: these are kind of beamy and not horrible: 
+                https://www.parts-express.com/Yorkville-C165W-Coliseum-Mini-Series-6-Coaxial-Ceiling-Speaker-70V-White-245-957
+15:38 -!- joerg is now known as nicksrv
+15:38 < CloudEvil> xentrac: piston ring friction is linear with diameter mostly.
+15:38 < kludge> magic_ninja: probably not, but I would use a separate mono amp anyway.  That would also allow you to send two audio 
+                signals to two places at once.  Amplifiers are cheap these days.
+15:38 -!- nicksrv is now known as joerg
+15:39 < magic_ninja> Alright. You just dropped a lot of knowledge on me. I'm just a bit lost.
+15:39 < kludge> magic_ninja: you want to send a mono sum to the outside feed... you don't want people to hear the strings and not the 
+                horns.
+15:39 < xentrac> CloudEvil: what about piston ring leakage?
+15:39 < kludge> magic_ninja: get the yamaha sound reinforcement book and read the 70V section, it is very useful!
+15:39 < CloudEvil> xentrac: As long as oil is involved, it's not an issue
+15:40 < xentrac> hm
+15:40 < magic_ninja> So, if I have a 5.1 channel amp for the speakers, are you saying that I should connect the outside speakers to one 
+                     of the channels?
+15:40 < CloudEvil> xentrac: But oil+steam is its own issue
+15:40 < xentrac> oh?
+15:40 < magic_ninja> I just want to step back just a tad bit if that's okay.
+15:40 < kludge> magic_ninja: but what I am thinking is:  line level source --> power amp w/70v output --> cable --> L-pad --> more cable 
+                --> speakers
+15:40 < xentrac> I wonder if tesla turbines would make more sense at these extremely small scales than they do at larger scales, since 
+                 they prefer laminar airflow, which becomes the default and then unavoidable as you move into the microfluidic regime
+15:42 < xentrac> or muscle-wire motors, which are totally impractical at large scales both because the materials are costly and because 
+                 they take forever to cool down
+15:42 -!- jury_rigger [~warsztat@user-5-173-10-166.play-internet.pl] has joined ##electronics
+15:42 < magic_ninja> kludge, my thought was to just train the customer to change it over to stereo output when they want to use the 
+                     outside speakers. They want to leave the outside speakers off most of the time.
+15:43 -!- jury_rigger [~warsztat@user-5-173-10-166.play-internet.pl] has left ##electronics []
+15:43 -!- Leonarbro [~Leonet@S01067824af93741c.cg.shawcable.net] has joined ##electronics
+15:44 < xentrac> I'd think the transition to the laminar-flow regime would help with the pipe-friction issue, but I guess you only earn 
+                 that bonus once

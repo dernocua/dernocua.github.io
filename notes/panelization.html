@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html><title>Panelization in PCB manufacturing ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Panelization in PCB manufacturing</h1><div class="metadata">Kragen Javier Sitaker, 02021-02-25 (updated 02021-02-26)
+(7 minutes)</div><p>PCB contract manufacturers like JLCPCB (“CMs”) can not only cut out
+your circuit board to specified shapes with a router (2-mm endmill),
+but also score it with V-grooves on one or both sides, so you can
+break it into panels.  Looking at the Boréas Technology evaluation
+board, I see that it’s scored this way on one side to be able to break
+it into three boards, but has traces across the scoring on the
+opposite side of the board, so <em>until</em> you <em>do</em> break it into panels
+this way, it’s a single board; but once you do, you can reconnect the
+previously-connected pieces at a distance using a cable, or use them
+separately.  Among other things, this approach is useful for
+testability.</p>
+<p>Other forms of panelization include routing that leaves tabs
+(“tab-routing”) and drilling a series of holes, called “mouse bites,”
+most often used to weaken a tab, avoiding the need to score it with a
+knife, cut with diagonal cutters, or use a <a href="https://www.eevblog.com/forum/projects/snap-off-pcb-sections-mouse-bites-vs-solid-tabs/msg3383966/">depaneling nibbler</a>.
+Mouse bites in particular can create curved breakaway edges, and they
+leave a rough edge on the board after breaking, which can be useful or
+harmful.  JLCPCB in particular is willing to do some amount of
+tab-routing without increasing their price of US$2 for 10 boards of
+100 mm × 100 mm.  There are <a href="https://www.electronicdesign.com/technologies/boards/article/21801451/pcb-designers-need-to-know-these-panelization-guidelines">established panelization guidelines</a>.</p>
+<p>SparkFun has a whole “ProtoSnap” product line based on this idea;
+<a href="https://www.sparkfun.com/products/retired/10889">their ProtoSnap Pro Mini</a>, for example, had an Arduino Pro Mini
+SBC already wired up to a USB-to-serial converter, two actuators, two
+sensors, and a prototyping area, and their <a href="https://www.sparkfun.com/products/14346">LilyPad ProtoSnap Plus</a>
+has a LilyPad similarly preconnected to several sensors and actuators
+and conductive-thread connectors, which can then be broken apart at
+the tabs and reconnected elsewhere, like in your clothes.</p>
+<p>LED tape often comes with similar cut points, where you can cut it
+with scissors to a given length, but if you don’t, the whole tape can
+be hooked up to from 2–4 wires.  (Such tapes might cost <a href="https://articulo.mercadolibre.com.ar/MLA-787222000-tira-de-led-pixel-5v-5050-30-ledxm-inteligente-ws2812-ip20-_JM">US$19 for
+5 m</a>, <a href="https://articulo.mercadolibre.com.ar/MLA-787221816-tira-de-led-pixel-5v-5050-60-ledxm-inteligente-ws2812-ip20-_JM">US$43 for 5 m</a>, or <a href="https://articulo.mercadolibre.com.ar/MLA-825408790-tira-led-luces-colores-autoadhesivas-exterior-control-remoto-_JM">US$17 for 4½ m</a> at retail here in
+Argentina.)  “Flat flex PCBs” are printed on thin Kapton and commonly
+used as connector cables, and can be cut with scissors in a similar
+fashion.</p>
+<p>And, of course, prototyping perfboard is pretty easy to cut along the
+perforation lines.</p>
+<p>There’s also <a href="https://www.youtube.com/watch?v=V5BDcEqEaKg">a technique to allow electrical continuity across
+V-scores cut on both sides of a board: a plated-through hole</a> that
+the V-score runs through, so the plating in the hole electrically
+bridges the V-score.</p>
+<p>Circuit board “edge connectors” are interesting to mention in this
+connection: ISA cards, PCI cards, DIMMs, and many USB-A devices have
+no separate connector, just exposed copper, either on one side of the
+board or both.  (Zebra-strip, Z-tape, and pogo-pin “connectors” on
+PCBs are also commonly just exposed copper.)  Such connectors can be
+provided at a place that’s exposed by snapping at such V-grooves.</p>
+<p>You could imagine designing a circuit board that works as a whole, but
+can also be broken into smaller circuit boards, or cut with scissors,
+to get more reconfigurability.</p>
+<p>Custom PCB manufacturing is amazingly cheap; <a href="https://www.eevblog.com/forum/projects/jlcpcb-opinions-and-more/">TrickyNekro reports €10
+for 100 boards of 38 mm × 18 mm each</a>, plus normally US$20 for
+“shipping”.  And if the panel size is <em>exactly</em> 100 mm × 100 mm, they
+used to not charge <em>anything</em> for V-scoring (though <a href="https://www.youtube.com/watch?v=iYrUztOn3dU" title="How to manually panelize PCBs, 02018-11-21">reportedly that
+was only if all the boards in the panel were identical, and they now
+charge something like US$8 for V-scoring</a>, while <a href="https://old.reddit.com/r/PrintedCircuitBoard/comments/a9mgfk/how_to_indicate_vcuts_for_jlcpcb/">others report
+problems getting JLC to V-score</a>), although I don’t know if there
+was a limit to how many lines you could request on your “board outline
+layer (*.GKO)”.  In the same thread, georges80 reports 3–4 day
+turnaround to the US West Coast, paying:</p>
+<ul>
+<li>US$20 for “the protos” (???)</li>
+<li>US$32 for “10 pieces with 3 [2-layer] boards on a panel with ‘jlpcb’
+  panelization which is v-scored”</li>
+<li>US$68 for 25 165 mm × 75 mm panels of 10 [2-layer] boards each,
+  including paying extra white solder mask</li>
+</ul>
+<p>And blazini36 reports getting 10 100 mm × 75 mm prototyping boards for
+US$27, including shipping and an extra US$8 for the boards being blue,
+in 3 days, on several occasions, while OSH Park wanted to charge them
+US$300 and delay 12 days.  Battlecoder reports that they paid US$12
+for 10 prototype boards, and had to wait a month, because JLCPCB
+doesn’t have free shipping to their (unspecified) country.</p>
+<p>Nobody in the thread is sure if they can do V-scores at arbitrary
+angles as well as straight across.</p>
+<p>It occurs to me that this sort of thing might also be useful for
+<em>mechanical</em> construction, although the shapes you can V-score are
+even more limited than the shapes you can laser-cut — no sharp curves
+or inside corners.  JLCPCB uses a cutting wheel to cut the V-scores so
+you can’t even do curves.  But if you can get some slots routed out in
+addition to the V-scores, you could get a pretty productive
+“construction set” pretty cheap.  (You’d have to wear gloves to keep
+the fiberglass out of your fingers.)  And then you can solder the
+joints to hold the assembled pieces in place, like the FR4 mill.</p>
+<p>If you could get a 100-mm-square panel panelized with V-scores into a
+hundred 10-mm-square pieces, which would take 18 V-scores (higher than
+the usual 5 or so, but not by that much) it seems like you could get a
+pretty large set of circuit components.  With 2.54-mm-spaced holes
+along the edge (which I think normally costs extra) you could have six
+breadboard-compatible/Dupont-cable-compatible pins on each such
+microboard.  Backing off a little bit, if you only panelized the panel
+into 50 10 mm × 20 mm pieces (13 V-scores), you could have 6
+breadboard pins along each edge and a 4-pin USB-A connector at one end
+of the board.</p>
+<p>Going to the extreme, <a href="https://www.sparkfun.com/products/13268">SparkFun sells a US$8 perfboard totally
+crisscrossed with V-scores</a> so you can break it into 1250 pieces.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/contrivances.html">Contrivances</a> (45 notes)
+</li><li><a href="../topics/electronics.html">Electronics</a> (39 notes)
+</li><li><a href="../topics/pricing.html">Pricing</a> (35 notes)
+</li><li><a href="../topics/manufacturing.html">Manufacturing</a> (29 notes)
+</li><li><a href="../topics/composability.html">Composability</a> (9 notes)
+</li></ul></div></html>

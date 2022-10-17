@@ -1,0 +1,4 @@
+In some sense the simplest LED blinker is two red LEDs in antiseries,
+in parallel with a capacitor and resistor, in series with another
+resistor, powered by a voltage around 9–48 V.  That is, 
+9V-R-(->|-|<- || R-C)-GND.

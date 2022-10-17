@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html><title>Dernocua version 020211231</title><meta charset="utf-8"></meta><link href="liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Dernocua</h1><p style="text-align: center; margin: 4em"><i><br/>
+⁘⁛⁛⁘<br/>
+Kragen Javier Sitaker<br />
+Buenos Aires<br />
+December, 02021<br />
+Public domain work<br />
+⁘⁛⁛⁘</i><br /><br /></p>
+
+<p>Dernocua is my notebook from 02021 CE, the second year of the covid
+pandemic.  It’s the sequel to <a href="http://canonical.org/~kragen/dercuano">Dercuano</a> and
+<a href="http://canonical.org/~kragen/derctuo">Derctuo</a>.  It contains about 410000 words, about 1100 pages, in 267
+notes on various different topics: programming, machining,
+electronics, digital fabrication, math, physics, economics, history,
+and so on.  These are mostly notes I made while I was figuring things
+out, so they have a lot of errors in them because of things I
+understood incorrectly, and many of them are incomplete.</p>
+<p>Dernocua’s canonical form is <a href="http://canonical.org/~kragen/dernocua/dernocua-020211231.tar.gz">a downloadable tarball of HTML
+files</a>.  For computers that can’t handle tarballs of HTML,
+I’ve also hacked together <a href="http://canonical.org/~kragen/dernocua/dernocua-020211231.pdf">an inferior PDF rendering of it</a>,
+formatted for comfortable reading on small screens like those on hand
+computers.  (In particular, a lot of the Unicode-art stuff is screwed
+up in the PDF, and so are tables.)  Errata will be published at <a href="https://gitlab.com/kragen/dernocua">the
+GitLab repository</a>.</p>
+<h2>Public-domain dedication</h2>
+<p>As far as I’m concerned, everyone is free to redistribute Dernocua, in
+whole or in part, modified or unmodified, with or without credit; I
+waive all rights associated with it to the maximum extent possible
+under applicable law.  Where applicable, I abandon its copyright to
+the public domain.  I wrote and published Dernocua in Argentina in
+02021 (more conventionally called 2021, or 2021 AD).</p>
+<p>The exception to the above public-domain dedication is the ET Book
+font family used, licensed under <a href="liabilities/LICENSE.ETBook">the X11
+license</a>.  This doesn’t impede you from
+redistributing or modifying Dernocua but does prohibit you from
+removing the font’s copyright notice and license (unless you also
+remove the font).  The PDF embeds part of FreeFont and of the DejaVu
+fonts, <a href="liabilities/dejavu-copyright">whose copyright notices are also
+included</a>, but DejaVu and FreeFont are
+not used in the HTML tarball.</p><h2>Notes</h2><h3>02021-01</h3><ol><li><a href="notes/intermittent-fan.html">Fan noise would be less annoying if intermittent</a>
+02021-01-03 (updated 02021-01-04) (1 minute)
+</li><li><a href="notes/principled-apl-redux.html">Principled APL redux</a>
+02021-01-03 (updated 02021-12-31) (12 minutes)
+</li><li><a href="notes/first-class-locations.html">First class locations</a>
+02021-01-04 (3 minutes)
+</li><li><a href="notes/layout-typescript.html">Layout typescript</a>
+02021-01-04 (5 minutes)
+</li><li><a href="notes/fibonacci-scan.html">Fibonacci scan</a>
+02021-01-10 (updated 02021-01-15) (1 minute)
+</li><li><a href="notes/relayout-with-heaps.html">Relayout with heaps</a>
+02021-01-10 (updated 02021-01-15) (6 minutes)
+</li><li><a href="notes/transactional-editor.html">Transactional editor</a>
+02021-01-14 (updated 02021-01-15) (73 minutes)
+</li><li><a href="notes/trie-pegs.html">Trie PEGs</a>
+02021-01-15 (4 minutes)
+</li><li><a href="notes/ccn-chat.html">Chat over a content-centric network</a>
+02021-01-15 (updated 02021-01-16) (3 minutes)
+</li><li><a href="notes/parson-rpn.html">Some notes on compiling and notations for grammars, starting from the inspiring RPN example in Parson</a>
+02021-01-15 (updated 02021-12-31) (15 minutes)
+</li><li><a href="notes/transactions-n%252B1.html">Can transactions solve the N+1 performance problem on web pages?</a>
+02021-01-16 (8 minutes)
+</li><li><a href="notes/zvs-converter.html">Notes on simulating a ZVS converter (Baxandall converter)</a>
+02021-01-16 (6 minutes)
+</li><li><a href="notes/ghetto-linreg.html">A ghetto linear voltage regulator from discrete components</a>
+02021-01-21 (updated 02021-01-27) (10 minutes)
+</li><li><a href="notes/intel-dollar-auction.html">Intel engineering positions considered as a dollar auction</a>
+02021-01-21 (updated 02021-01-27) (1 minute)
+</li><li><a href="notes/putty.html">Duplicating Durham’s Rock-Hard Putty</a>
+02021-01-22 (updated 02021-01-27) (1 minute)
+</li><li><a href="notes/fast-camera.html">iPhone replacement cameras as 6-μs streak cameras</a>
+02021-01-22 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/loop-graph.html">Compiling machine-code loops to pipelined dataflow graphs</a>
+02021-01-23 (updated 02021-01-27) (2 minutes)
+</li><li><a href="notes/risc-v.html">Some preliminary notes on the amazing RISC-V architecture</a>
+02021-01-24 (updated 02021-07-27) (29 minutes)
+</li><li><a href="notes/schmitt-oscillators.html">Trying to design a simple switchmode power supply using Schmitt-trigger relaxation oscillators</a>
+02021-01-26 (updated 02021-01-27) (32 minutes)
+</li><li><a href="notes/tag-bdd-index.html">Trying and failing to design an efficient index for folksonomy data based on BDDs</a>
+02021-01-26 (updated 02021-01-27) (7 minutes)
+</li></ol><h3>02021-02</h3><ol><li><a href="notes/silver-solar-cells.html">The use of silver in solar cells</a>
+02021-02-02 (updated 02021-09-11) (8 minutes)
+</li><li><a href="notes/snap-logic-ii.html">Snap logic, revisited, and four-phase logic</a>
+02021-02-08 (9 minutes)
+</li><li><a href="notes/ghz-dds.html">Can you do direct digital synthesis (DDS) at over a gigahertz?</a>
+02021-02-08 (updated 02021-02-24) (30 minutes)
+</li><li><a href="notes/unicode-graphics.html">ASCII art, but in Unicode, with Braille and other alternatives</a>
+02021-02-10 (updated 02021-02-24) (9 minutes)
+</li><li><a href="notes/skew-tilesets.html">Skew tilesets</a>
+02021-02-14 (updated 02021-02-24) (7 minutes)
+</li><li><a href="notes/threechet.html">Threechet</a>
+02021-02-16 (updated 02021-02-24) (4 minutes)
+</li><li><a href="notes/thumbraille.html">Thumbnail views in a Unicode character-cell terminal with Braille</a>
+02021-02-17 (updated 02021-02-24) (1 minute)
+</li><li><a href="notes/energy-autonomous-computing.html">Energy autonomous computing</a>
+02021-02-18 (updated 02021-12-30) (58 minutes)
+</li><li><a href="notes/microlisp.html">How do you fit a high-level language into a microcontroller? Let’s look at BBN Lisp</a>
+02021-02-23 (updated 02021-08-18) (76 minutes)
+</li><li><a href="notes/panelization.html">Panelization in PCB manufacturing</a>
+02021-02-25 (updated 02021-02-26) (7 minutes)
+</li></ol><h3>02021-03</h3><ol><li><a href="notes/ipl-vi.html">Some notes on IPL-VI, Lisp’s 01958 precursor</a>
+02021-03-02 (4 minutes)
+</li><li><a href="notes/slow-flash-refresh.html">Refreshing Flash memory periodically for archival</a>
+02021-03-02 (1 minute)
+</li><li><a href="notes/variable-length-unaligned-bytecode.html">Variable length unaligned bytecode</a>
+02021-03-02 (updated 02021-03-03) (4 minutes)
+</li><li><a href="notes/veskeno-exploration.html">A survey of imperative programming operations’ prevalence</a>
+02021-03-02 (updated 02021-09-11) (61 minutes)
+</li><li><a href="notes/pratt-control-flow.html">Vaughan Pratt and Henry Baker’s COMFY control-flow combinators</a>
+02021-03-04 (updated 02021-03-20) (8 minutes)
+</li><li><a href="notes/letter-frequencies.html">Generating novel unique pronounceable identifiers with letter frequency data</a>
+02021-03-10 (updated 02021-03-22) (11 minutes)
+</li><li><a href="notes/allocation-performance.html">Garbage-collected allocation performance on current computers</a>
+02021-03-13 (updated 02021-04-08) (4 minutes)
+</li><li><a href="notes/lao-yuxi.html">How Lao Yuxi painted a cock</a>
+02021-03-19 (updated 02021-04-14) (7 minutes)
+</li><li><a href="notes/bench-supply.html">Bench supply</a>
+02021-03-19 (updated 02021-12-30) (25 minutes)
+</li><li><a href="notes/recursive-rns.html">Recursive residue number systems?</a>
+02021-03-20 (updated 02021-03-22) (8 minutes)
+</li><li><a href="notes/brute-force-speech.html">Brute force speech</a>
+02021-03-21 (updated 02021-03-22) (7 minutes)
+</li><li><a href="notes/electron-speed.html">When is it better to compute by moving atoms rather than electrons?</a>
+02021-03-21 (updated 02021-03-22) (5 minutes)
+</li><li><a href="notes/fantasy-platform.html">Veskeno is a “fantasy platform” like TIC-80</a>
+02021-03-21 (updated 02021-03-22) (3 minutes)
+</li><li><a href="notes/truffleruby.html">Some notes on reading Chris Seaton’s TruffleRuby dissertation</a>
+02021-03-21 (updated 02021-03-22) (16 minutes)
+</li><li><a href="notes/xosm.html">.xosm: experimental obvious stack machine</a>
+02021-03-21 (updated 02021-03-24) (20 minutes)
+</li><li><a href="notes/open-coded-primitives.html">Open coded primitives</a>
+02021-03-22 (26 minutes)
+</li><li><a href="notes/opamp-oscillators.html">Failing to stabilize the amplitude of an opamp phase-delay oscillator</a>
+02021-03-23 (updated 02021-03-24) (10 minutes)
+</li><li><a href="notes/framescript.html">Running scripts once per frame for guaranteed GUI responsivity</a>
+02021-03-23 (updated 02021-10-12) (7 minutes)
+</li><li><a href="notes/terser-pattern-match.html">Minor improvements to pattern matching</a>
+02021-03-24 (updated 02021-04-08) (10 minutes)
+</li><li><a href="notes/bitcoin-puzzling.html">Why Bitcoin is puzzling to people in rich countries</a>
+02021-03-31 (updated 02021-07-27) (10 minutes)
+</li></ol><h3>02021-04</h3><ol><li><a href="notes/china-energy-future.html">Statistics on the present and future of energy in the People’s Republic of China</a>
+02021-04-01 (updated 02021-04-08) (10 minutes)
+</li><li><a href="notes/geneva-wheel-stopwork.html">Geneva wheel stopwork</a>
+02021-04-07 (updated 02021-04-08) (6 minutes)
+</li><li><a href="notes/wearable-ekg.html">A bargain-basement Holter monitor with a BOM under US$2.50</a>
+02021-04-07 (updated 02021-07-27) (33 minutes)
+</li><li><a href="notes/locking-telescope.html">Locking telescope</a>
+02021-04-07 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/logarithmic-low-power-serdes.html">Logarithmic low-power SERDES</a>
+02021-04-08 (4 minutes)
+</li><li><a href="notes/normal-order-macro-expansion.html">:fq0zl, a normal-order text macro language</a>
+02021-04-09 (updated 02021-07-27) (14 minutes)
+</li><li><a href="notes/copper-forming.html">Forming steel with copper instead of vice versa</a>
+02021-04-16 (updated 02021-06-12) (2 minutes)
+</li><li><a href="notes/oscopes.html">Notes on pricing of locally available oscilloscopes</a>
+02021-04-16 (updated 02021-07-27) (2 minutes)
+</li><li><a href="notes/pick-and-place.html">Can you get JLCPCB to fabricate a CPU for you affordably from “basic” parts?</a>
+02021-04-17 (updated 02021-12-30) (9 minutes)
+</li><li><a href="notes/bounded-forth.html">Safe FORTH with the FORTRAN memory model?</a>
+02021-04-21 (updated 02021-06-12) (2 minutes)
+</li><li><a href="notes/human-ssa.html">Manually writing code in static single assignment (SSA) form, inspired by Kemeny’s DOPE, isn’t worth it</a>
+02021-04-21 (updated 02021-06-12) (3 minutes)
+</li><li><a href="notes/trailer-netstrings.html">Diskstrings: Bernstein’s netstrings for single-pass streaming output</a>
+02021-04-21 (updated 02021-07-27) (4 minutes)
+</li><li><a href="notes/mesh-sonar.html">Phased-array imaging sonar from a mesh network of self-localizing sensor nodes</a>
+02021-04-27 (updated 02021-12-30) (8 minutes)
+</li><li><a href="notes/flash-boiler.html">A boiler for submillisecond steam pulses</a>
+02021-04-28 (updated 02021-12-30) (10 minutes)
+</li><li><a href="notes/three-phase-logic.html">Three phase logic</a>
+02021-04-30 (updated 02021-07-27) (9 minutes)
+</li></ol><h3>02021-05</h3><ol><li><a href="notes/backward-exponential.html">How fast do von Neumann probes need to reproduce to colonize space in our lifetimes?</a>
+02021-05-04 (updated 02021-06-12) (5 minutes)
+</li><li><a href="notes/ui-ideas.html">List of random GUI ideas</a>
+02021-05-04 (updated 02021-07-27) (6 minutes)
+</li><li><a href="notes/thixotropic-electrodeposition.html">Thixotropic electrodeposition</a>
+02021-05-04 (updated 02021-12-31) (2 minutes)
+</li><li><a href="notes/cheap-cutting-jig.html">Cheap cutting jig</a>
+02021-05-06 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/differential-filming.html">Differential filming</a>
+02021-05-07 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/planetary-worm-drive.html">Planetary roller screw worm drive</a>
+02021-05-07 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/fresnel-mirror-electropolishing.html">Fresnel mirror electropolishing</a>
+02021-05-08 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/leaf-hypertext.html">Leaf hypertext</a>
+02021-05-08 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/microscale.html">Weighing an eyelash on an improvised Kibble balance</a>
+02021-05-08 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/trickler.html">Precisely measuring out particulates with a trickler</a>
+02021-05-09 (updated 02021-12-30) (17 minutes)
+</li><li><a href="notes/lvdt-4d-matrix-keyboard.html">A four-dimensional keyboard matrix made of linear voltage differential transformers (LVDTs) to get 30 or 180 keys on five pins</a>
+02021-05-12 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/planetary-screw-potentiometer.html">Planetary screw potentiometer</a>
+02021-05-12 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/carbohydrate-3d-printing.html">3-D printing in carbohydrates</a>
+02021-05-16 (updated 02021-12-30) (10 minutes)
+</li><li><a href="notes/clay-pla.html">Clay-filled PLA filament for firing to ceramic</a>
+02021-05-17 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/multicolor-filament.html">Multicolor filament</a>
+02021-05-17 (updated 02021-12-30) (5 minutes)
+</li><li><a href="notes/acicular-low-binder-pastes.html">Acicular low binder pastes</a>
+02021-05-19 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/cutting-clay.html">Cutting clay</a>
+02021-05-19 (updated 02021-12-30) (10 minutes)
+</li><li><a href="notes/scaling-laws.html">Scaling laws</a>
+02021-05-19 (updated 02021-12-30) (8 minutes)
+</li><li><a href="notes/silicone-curing.html">Selectively curing one-component silicone by injecting water</a>
+02021-05-19 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/clay-wire-cutter.html">Clay wire cutter</a>
+02021-05-21 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/electroforming-rivets.html">Electroforming rivets</a>
+02021-05-22 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/metal-welding-fuel.html">Metal welding fuel</a>
+02021-05-23 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/aluminum-foil.html">Aluminum foil</a>
+02021-05-24 (updated 02021-09-11) (14 minutes)
+</li><li><a href="notes/mathematical-argument.html">The nature of mathematical discourse</a>
+02021-05-27 (updated 02021-12-30) (5 minutes)
+</li><li><a href="notes/curiosity.html">Designing curiosity and dreaming into optimizing systems</a>
+02021-05-30 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/omnidirectional-wheels.html">Omnidirectional wheels</a>
+02021-05-30 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/ghetto-edm.html">Ghetto electrical discharge machining (EDM)</a>
+02021-05-31 (updated 02021-12-30) (5 minutes)
+</li></ol><h3>02021-06</h3><ol><li><a href="notes/broken-disks.html">Broken hard disks are the cheapest source of ultraprecision components</a>
+02021-06-02 (updated 02021-06-12) (3 minutes)
+</li><li><a href="notes/micro-impact-driver.html">Micro impact driver</a>
+02021-06-02 (updated 02021-06-12) (2 minutes)
+</li><li><a href="notes/minkowski-deconvolution.html">Minkowski deconvolution</a>
+02021-06-02 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/greek-operating-systems.html">Greek operating systems</a>
+02021-06-04 (updated 02021-06-12) (4 minutes)
+</li><li><a href="notes/algebra-of-n-ary-relations.html">The algebra of N-ary relations</a>
+02021-06-14 (updated 02021-07-27) (4 minutes)
+</li><li><a href="notes/nuclear-amiga.html">Nuclear energy is the Amiga of energy sources</a>
+02021-06-14 (updated 02021-07-27) (3 minutes)
+</li><li><a href="notes/flux-gate-downconversion.html">Flux-gate downconversion in a loopstick antenna?</a>
+02021-06-15 (updated 02021-07-27) (2 minutes)
+</li><li><a href="notes/backwards-peg.html">PEG-like flexibility for parsing right-to-left?</a>
+02021-06-16 (updated 02021-07-27) (2 minutes)
+</li><li><a href="notes/minifs.html">How little code can a filesystem be?</a>
+02021-06-16 (updated 02021-07-27) (1 minute)
+</li><li><a href="notes/pdf-format.html">Notes on the PDF file format</a>
+02021-06-16 (updated 02021-07-27) (15 minutes)
+</li><li><a href="notes/ps2-arduino.html">Notes on what would be needed to drive a PS/2 keyboard from an Arduino</a>
+02021-06-20 (updated 02021-12-30) (12 minutes)
+</li><li><a href="notes/self-hosting-kernel.html">Self hosting kernel</a>
+02021-06-21 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/stack-syntax.html">Stack syntax</a>
+02021-06-22 (updated 02021-07-27) (4 minutes)
+</li><li><a href="notes/bead-hypertext.html">Bead hypertext</a>
+02021-06-22 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/bitstuffing-attack.html">Does USB bitstuffing create a timing-channel vulnerability?</a>
+02021-06-22 (updated 02021-12-31) (1 minute)
+</li><li><a href="notes/verstickulite.html">Verstickulite</a>
+02021-06-23 (updated 02021-07-27) (3 minutes)
+</li><li><a href="notes/delimiters.html">Simple linear-time linear-space nested delimiter parsing</a>
+02021-06-24 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/economic-history.html">Economic history</a>
+02021-06-25 (updated 02021-07-27) (17 minutes)
+</li><li><a href="notes/more-cements.html">More cements</a>
+02021-06-26 (updated 02021-08-15) (5 minutes)
+</li><li><a href="notes/base-3-gage-blocks.html">Base 3 gage blocks</a>
+02021-06-27 (updated 02021-12-30) (5 minutes)
+</li><li><a href="notes/counter-rotating-side-milling.html">Multiple counter-rotating milling cutters to eliminate side loading</a>
+02021-06-27 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/layered-ecm.html">Layered ECM</a>
+02021-06-27 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/shell-syscalls.html">A kernel you can type commands to</a>
+02021-06-27 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/zirconia-ecm.html">Can you use stabilized cubic zirconia as an ECM cathode in molten salt?</a>
+02021-06-27 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/electrolytic-glass-machining.html">Electrolytic glass machining</a>
+02021-06-28 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/super-ghetto-digital-fabrication.html">Super ghetto digital fabrication</a>
+02021-06-28 (updated 02021-12-30) (33 minutes)
+</li><li><a href="notes/glass-powder-bed-printing.html">Glass powder-bed 3-D printing</a>
+02021-06-29 (updated 02021-12-30) (20 minutes)
+</li><li><a href="notes/rator-port-gui.html">Rator-port GUIs</a>
+02021-06-29 (updated 02021-12-30) (26 minutes)
+</li><li><a href="notes/sulfur-jet-metal-cutting.html">Sulfur jet metal cutting</a>
+02021-06-30 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/two-binder-powder-bed-printing.html">Powder-bed 3-D printing with a sacrificial binder</a>
+02021-06-30 (updated 02021-12-30) (12 minutes)
+</li></ol><h3>02021-07</h3><ol><li><a href="notes/self-amalgamating-tape.html">Stochastically generated self-amalgamating tape variations for composite fabrication</a>
+02021-07-02 (updated 02021-12-30) (26 minutes)
+</li><li><a href="notes/spin-coating-clay.html">Spin-coating clay-filled plastics to make composites with high anisotropic filler loadings</a>
+02021-07-02 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/ecm-nonmetals.html">ECM for machining nonmetals?</a>
+02021-07-05 (updated 02021-07-27) (11 minutes)
+</li><li><a href="notes/sonic-screwdriver-resonance.html">Sonic screwdriver resonance</a>
+02021-07-06 (updated 02021-12-30) (11 minutes)
+</li><li><a href="notes/thermochromic-scan.html">Subnanosecond thermochromic light modulation for real-time holography and displays</a>
+02021-07-06 (updated 02021-12-30) (8 minutes)
+</li><li><a href="notes/water-treatment.html">Notes on Richards et al.’s nascent catalytic ROS water treatment process</a>
+02021-07-07 (updated 02021-07-27) (14 minutes)
+</li><li><a href="notes/memory-view.html">Memory view</a>
+02021-07-09 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/spreadtool.html">Spreadtool</a>
+02021-07-10 (updated 02021-12-30) (30 minutes)
+</li><li><a href="notes/smolsay.html">Smolsay: the Ur-Lisp, but with dicts instead of conses</a>
+02021-07-12 (updated 02021-07-27) (22 minutes)
+</li><li><a href="notes/electrolytic-berlinite.html">Electrolytic berlinite</a>
+02021-07-12 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/glauber-drywall.html">Making mirabilite and calcite from drywall</a>
+02021-07-12 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/refractories.html">Potential local sources  and prices of refractory materials</a>
+02021-07-14 (updated 02021-09-11) (9 minutes)
+</li><li><a href="notes/faygoo.html">Faygoo: a yantra-smashing ersatz version of Piumarta and Warth’s COLA</a>
+02021-07-14 (updated 02021-12-30) (17 minutes)
+</li><li><a href="notes/firing-talc.html">Firing talc</a>
+02021-07-14 (updated 02021-12-30) (17 minutes)
+</li><li><a href="notes/stack-bounding-yielding.html">Improvements on C for low-level programming such as block arguments</a>
+02021-07-14 (updated 02021-12-30) (8 minutes)
+</li><li><a href="notes/fiberglass-cmc.html">Fiberglass CMCs?</a>
+02021-07-15 (updated 02021-07-27) (8 minutes)
+</li><li><a href="notes/ideal-workshop.html">My ideal workshop (unfinished)</a>
+02021-07-16 (updated 02021-07-27) (2 minutes)
+</li><li><a href="notes/sorel-cement-3dp.html">Can you 3-D print Sorel cement by inhibiting setting with X-rays?</a>
+02021-07-16 (updated 02021-07-27) (1 minute)
+</li><li><a href="notes/tetrahedral-expanded-metal.html">Tetrahedral expanded metal</a>
+02021-07-16 (updated 02021-07-27) (3 minutes)
+</li><li><a href="notes/glass-foam.html">Glass foam</a>
+02021-07-16 (updated 02021-08-15) (17 minutes)
+</li><li><a href="notes/leaf-vein-roof.html">Leaf vein roof</a>
+02021-07-16 (updated 02021-09-11) (9 minutes)
+</li><li><a href="notes/aluminum-fuel.html">Aluminum fuel</a>
+02021-07-17 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/shs-booster.html">Boosters for self-propagating high-temperature synthesis (SHS)</a>
+02021-07-17 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/compressed-appendable-file.html">Compressed appendable file</a>
+02021-07-19 (updated 02021-07-27) (5 minutes)
+</li><li><a href="notes/shs-magnesium-phosphate.html">SHS of magnesium phosphate</a>
+02021-07-22 (updated 02021-07-27) (3 minutes)
+</li><li><a href="notes/back-drivable-differential-windlass.html">Back-drivable differential windlass</a>
+02021-07-23 (updated 02021-07-27) (15 minutes)
+</li><li><a href="notes/magnesia.html">Synthesizing reactive magnesia?</a>
+02021-07-25 (updated 02021-08-15) (4 minutes)
+</li><li><a href="notes/magnesium-silicate.html">Synthesizing amorphous magnesium silicate</a>
+02021-07-25 (updated 02021-08-15) (6 minutes)
+</li><li><a href="notes/hash-consing-ropes.html">Ropes with constant-time concatenation and equality comparisons with monoidal hash consing</a>
+02021-07-27 (15 minutes)
+</li><li><a href="notes/block-arguments.html">Compilation of block arguments to high-performance code</a>
+02021-07-29 (updated 02021-12-30) (19 minutes)
+</li><li><a href="notes/material-observations.html">Material observations</a>
+02021-07-29 (updated 02021-12-30) (194 minutes)
+</li></ol><h3>02021-08</h3><ol><li><a href="notes/dipropylene-glycol.html">Dipropylene glycol</a>
+02021-08-01 (updated 02021-08-15) (2 minutes)
+</li><li><a href="notes/fire-mud.html">The ayurvedic “fire mud” of Bhudeb Mookerji and modern castable refractories</a>
+02021-08-05 (updated 02021-08-15) (22 minutes)
+</li><li><a href="notes/arc-maker.html">Arc maker</a>
+02021-08-07 (updated 02021-12-30) (11 minutes)
+</li><li><a href="notes/pex-pipe.html">Argentine pricing of PEX pipe and alternatives for phase-change fluids</a>
+02021-08-07 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/power-transistors.html">Power transistors</a>
+02021-08-07 (updated 02021-12-30) (12 minutes)
+</li><li><a href="notes/pocket-kiln.html">Pocket kiln</a>
+02021-08-09 (updated 02021-08-15) (7 minutes)
+</li><li><a href="notes/cola-flavor.html">Cola flavor</a>
+02021-08-10 (updated 02021-08-15) (2 minutes)
+</li><li><a href="notes/constant-current-buck.html">Constant current buck</a>
+02021-08-10 (updated 02021-08-15) (4 minutes)
+</li><li><a href="notes/methane-bag.html">Methane bag</a>
+02021-08-10 (updated 02021-08-15) (8 minutes)
+</li><li><a href="notes/iodine-patterning.html">Iodine patterning</a>
+02021-08-11 (updated 02021-08-15) (1 minute)
+</li><li><a href="notes/shower-heating-tces.html">Heating a shower tank with portable TCES?</a>
+02021-08-11 (updated 02021-08-15) (6 minutes)
+</li><li><a href="notes/minimal-c-subset.html">Subset of C for the simplest self-compiling compiler</a>
+02021-08-12 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/c-stack-bytecode.html">A compact bytecode sketch that should average about 3 bytes per line of C</a>
+02021-08-17 (updated 02021-09-13) (66 minutes)
+</li><li><a href="notes/wiki-models.html">Wiki models</a>
+02021-08-19 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/residual-stream-windowing.html">Residual stream windowing</a>
+02021-08-21 (updated 02021-09-11) (5 minutes)
+</li><li><a href="notes/sandwich-panel-optimization.html">Sandwich panel optimization</a>
+02021-08-21 (updated 02021-09-11) (3 minutes)
+</li><li><a href="notes/glass-wood.html">Glass wood</a>
+02021-08-21 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/phosphates-fraction.html">Maximizing phosphate density from aqueous reaction</a>
+02021-08-21 (updated 02021-12-30) (8 minutes)
+</li><li><a href="notes/lazy-heapsort.html">Lazy heapsort</a>
+02021-08-22 (updated 02021-09-11) (6 minutes)
+</li><li><a href="notes/recursive-bearings.html">Recursive bearings</a>
+02021-08-23 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/shs-construction-set.html">A construction set using SHS</a>
+02021-08-24 (updated 02021-09-11) (5 minutes)
+</li><li><a href="notes/sorption-pipeline.html">Sorption vacuum pumps really can’t operate continuously</a>
+02021-08-24 (updated 02021-09-11) (5 minutes)
+</li><li><a href="notes/electrodeposition-welding.html">Electrodeposition welding</a>
+02021-08-25 (updated 02021-09-11) (2 minutes)
+</li><li><a href="notes/screw-heads.html">Better screw head designs?</a>
+02021-08-25 (updated 02021-09-11) (4 minutes)
+</li><li><a href="notes/dense-fillers.html">Dense fillers</a>
+02021-08-25 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/copper-sls.html">Selective laser sintering of copper</a>
+02021-08-30 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/mig-printing-feedback.html">Negative feedback control to prevent runaway positive feedback in 3-D MIG welding printing</a>
+02021-08-30 (updated 02021-12-30) (3 minutes)
+</li></ol><h3>02021-09</h3><ol><li><a href="notes/freezer-seacrete.html">Fast electrolytic mineral accretion (seacrete) for digital fabrication?</a>
+02021-09-01 (updated 02021-12-30) (52 minutes)
+</li><li><a href="notes/laser-marking-metal.html">Patterning metal surfaces by coating decomposition with lasers or plasma?</a>
+02021-09-03 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/rockwool.html">Rock-wool-filled composites</a>
+02021-09-03 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/weighing-balance-design.html">Weighing balance design</a>
+02021-09-06 (updated 02021-12-30) (9 minutes)
+</li><li><a href="notes/fast-slicing-ecm.html">Fast-slicing ECM</a>
+02021-09-08 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/fast-pulse-current.html">Switching kiloamps in microseconds</a>
+02021-09-09 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/spot-welding.html">Spot welding</a>
+02021-09-09 (updated 02021-12-30) (8 minutes)
+</li><li><a href="notes/term-rewriting-micro-interpreter.html">Qfitzah: a minimal term-rewriting language</a>
+02021-09-10 (updated 02021-12-31) (62 minutes)
+</li><li><a href="notes/cli-tools.html">A short list of the most useful Unix CLI tools</a>
+02021-09-15 (updated 02021-09-16) (2 minutes)
+</li><li><a href="notes/three-phase-differential-data.html">Three phase differential data</a>
+02021-09-22 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/waterglass-loctite.html">Waterglass “Loctite”?</a>
+02021-09-22 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/qfitzah-internals.html">Qfitzah internals</a>
+02021-09-24 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/blowing-agents.html">Blowing agents</a>
+02021-09-29 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/compliance-spectroscopy.html">Compliance spectroscopy</a>
+02021-09-29 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/planning-apples.html">Planning Apples to Apples, instead of Planning Poker</a>
+02021-09-29 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/handrolled-capacitor.html">Liquid dielectrics for hand-rolled self-healing capacitors</a>
+02021-09-30 (updated 02021-12-30) (3 minutes)
+</li></ol><h3>02021-10</h3><ol><li><a href="notes/deriving-binary-search.html">Deriving binary search</a>
+02021-10-01 (updated 02021-12-30) (5 minutes)
+</li><li><a href="notes/latex-3dp.html">The sol-gel transition and selective gelling for 3-D printing</a>
+02021-10-03 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/udanax-green-notes.html">Some notes on perusing the Udanax Green codebase</a>
+02021-10-05 (updated 02021-10-08) (12 minutes)
+</li><li><a href="notes/cantbelievesort.html">Fung’s “I can’t believe it can sort” algorithm and others</a>
+02021-10-05 (updated 02021-12-30) (5 minutes)
+</li><li><a href="notes/spanish-phonology.html">Spanish phonology</a>
+02021-10-05 (updated 02021-12-31) (15 minutes)
+</li><li><a href="notes/rust-notes.html">Some notes on learning Rust</a>
+02021-10-06 (updated 02021-10-10) (39 minutes)
+</li><li><a href="notes/pbkdf-content-addressing.html">PBKDF content addressing with keyphrase hashcash: a non-blockchain attack on Zooko’s Triangle</a>
+02021-10-08 (24 minutes)
+</li><li><a href="notes/drama-word-list.html">Wordlists for maximum drama</a>
+02021-10-08 (updated 02021-12-30) (16 minutes)
+</li><li><a href="notes/spark-pen.html">The spark-pen pointing device</a>
+02021-10-10 (updated 02021-10-12) (1 minute)
+</li><li><a href="notes/beyond-overstrike.html">Beyond overstrike</a>
+02021-10-10 (updated 02021-12-30) (13 minutes)
+</li><li><a href="notes/pipelined-piece-chain-painting.html">Pipelined piece chain painting</a>
+02021-10-10 (updated 02021-12-30) (23 minutes)
+</li><li><a href="notes/statement-algebra-apl.html">An algebra of partial functions for interactively composing programs</a>
+02021-10-10 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/beyond-op-streams.html">Beyond op streams</a>
+02021-10-11 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/inverse-perspective.html">Inverse perspective</a>
+02021-10-11 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/mosfet-ranking.html">Ranking MOSFETs for, say, rapid localized electrolysis to make optics</a>
+02021-10-11 (updated 02021-12-30) (8 minutes)
+</li><li><a href="notes/solar-air-conditioned-trailer.html">The relation between solar-panel efficiency for air conditioning and insulation thickness</a>
+02021-10-11 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/simplest-power-supply.html">An even simpler offline power supply than a capacitive dropper, with a 7¢ BOM</a>
+02021-10-14 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/2d-cutting-workflow.html">Trying to quantify relative speeds of different digital fabrication processes with “matter bandwidth”</a>
+02021-10-15 (updated 02021-12-30) (5 minutes)
+</li><li><a href="notes/balanced-ropes.html">Balanced ropes</a>
+02021-10-16 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/flexure-mount.html">Flexural mounts for self-aligning bushings</a>
+02021-10-18 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/spark-gap-exploding-wire.html">Triggering a spark gap with an exploding wire</a>
+02021-10-19 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/uv-led-triggered-spark-gap.html">Triggering a spark gap with low jitter using ultraviolet LEDs?</a>
+02021-10-20 (updated 02021-10-23) (8 minutes)
+</li><li><a href="notes/polynomial-pascal.html">Binomial coefficients and the dimensionality of spaces of polynomials</a>
+02021-10-20 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/sparse-fem.html">Finite element analysis with sparse approximations</a>
+02021-10-20 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/micro-marx.html">Implementation and applications of low-voltage Marx generators with solid-state avalanche breakdown?</a>
+02021-10-20 (updated 02021-12-31) (39 minutes)
+</li><li><a href="notes/its-ddt.html">The astounding UI responsivity of PDP-10 DDT on ITS</a>
+02021-10-22 (updated 02021-10-23) (28 minutes)
+</li><li><a href="notes/example-based-regexp.html">Example based regexp</a>
+02021-10-24 (updated 02021-12-30) (5 minutes)
+</li><li><a href="notes/adversarial-control.html">Adversarial control</a>
+02021-10-25 (updated 02021-12-30) (13 minutes)
+</li><li><a href="notes/constant-weight-dithering.html">Constant weight dithering</a>
+02021-10-28 (updated 02021-12-30) (5 minutes)
+</li><li><a href="notes/recursive-shingling.html">Hashing text with recursive shingling to find duplication efficiently</a>
+02021-10-30 (updated 02021-12-30) (6 minutes)
+</li></ol><h3>02021-11</h3><ol><li><a href="notes/my-h8.html">My Heathkit H8</a>
+02021-11-03 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/orthogonal-rational-vectors.html">Orthogonal rational vectors</a>
+02021-11-04 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/thread-rolling-roller-screw.html">Thread rolling roller screw</a>
+02021-11-04 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/viscoelastic-probing.html">Viscoelastic probing</a>
+02021-11-04 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/iron-marking-pencil.html">An aluminum pencil for marking iron?</a>
+02021-11-06 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/literate-haskell-like.html">Embedding runnable code in text paragraphs for numerical modeling</a>
+02021-11-06 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/paeth-vq.html">Paeth prediction and vector quantization</a>
+02021-11-06 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/wire-brush-microscope.html">Wire brush microscope</a>
+02021-11-06 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/china-nukes.html">New nuclear power in the People’s Republic of China</a>
+02021-11-09 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/miranda-pins.html">Ivan Miranda’s snap-pin fasteners and similar snaps</a>
+02021-11-11 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/pinn-gan-rendering.html">Rendering 3-D graphics with PINNs and GANs?</a>
+02021-11-11 (updated 02021-12-30) (10 minutes)
+</li><li><a href="notes/aqueous-scanning-probe-microscopy.html">Aqueous scanning probe microscopy</a>
+02021-11-12 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/selfrep-redundancy.html">Redundancy in self-replicating systems such as hundred-eyed chickens</a>
+02021-11-12 (updated 02021-12-30) (4 minutes)
+</li><li><a href="notes/date-calc-dsl.html">DSLs for calculations on dates</a>
+02021-11-14 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/reuleaux-constructor.html">Some notes on reading parts of Reuleaux’s engineering handbook</a>
+02021-11-17 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/palette-font-tile.html">A simple 2-D programmable graphics pipeline to unify tiles and palettes</a>
+02021-11-18 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/public-domain-02021.html">Interesting works that entered the public domain in 02021, in the US and elsewhere</a>
+02021-11-20 (updated 02021-12-30) (15 minutes)
+</li><li><a href="notes/electrowinning.html">At small scales, electrowinning may be cheaper than smelting</a>
+02021-11-21 (updated 02021-12-30) (25 minutes)
+</li><li><a href="notes/micro-ramjet.html">Micro ramjet</a>
+02021-11-22 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/vernier-indicator.html">Vernier indicator</a>
+02021-11-22 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/emm-book.html">Some notes on Bhattacharyya’s ECM book</a>
+02021-11-25 (updated 02021-12-30) (11 minutes)
+</li><li><a href="notes/chording-commands.html">Chording commands</a>
+02021-11-26 (updated 02021-12-30) (7 minutes)
+</li></ol><h3>02021-12</h3><ol><li><a href="notes/exotic-steels.html">Exotic steel analogues in other metals</a>
+02021-12-01 (updated 02021-12-30) (8 minutes)
+</li><li><a href="notes/simplest-blinker.html">Simplest blinker</a>
+02021-12-01 (updated 02021-12-30) (9 minutes)
+</li><li><a href="notes/capacitive-displacement.html">Capacitive linear encoder sensors</a>
+02021-12-11 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/two-finger-multitouch.html">Two finger multitouch</a>
+02021-12-11 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/house-blocks.html">The Habitaculum: a modular dwelling machine</a>
+02021-12-13 (updated 02021-12-31) (16 minutes)
+</li><li><a href="notes/against-subjectivism.html">Against subjectivism</a>
+02021-12-15 (updated 02021-12-30) (36 minutes)
+</li><li><a href="notes/exponential-forming.html">Solid rock on a gossamer skeleton through exponential deposition</a>
+02021-12-15 (updated 02021-12-30) (11 minutes)
+</li><li><a href="notes/pva-printing.html">3-D printing in poly(vinyl alcohol)</a>
+02021-12-15 (updated 02021-12-30) (2 minutes)
+</li><li><a href="notes/electrochromic-metals.html">Ghetto electrochromic displays for ultra-low-power computing?</a>
+02021-12-16 (updated 02021-12-30) (9 minutes)
+</li><li><a href="notes/electrolytic-2d-cutting.html">Electrolytic 2-D cutting and related electrolytic digital fabrication processes</a>
+02021-12-16 (updated 02021-12-30) (48 minutes)
+</li><li><a href="notes/layers-plus-electroforming.html">Layers plus electroforming</a>
+02021-12-16 (updated 02021-12-30) (7 minutes)
+</li><li><a href="notes/fet-geiger.html">MOSFET body diodes as Geiger counter avalanche detectors?</a>
+02021-12-17 (updated 02021-12-30) (1 minute)
+</li><li><a href="notes/paper-scanning-notebook.html">The user interface potentialities of a barcoded paper notebook</a>
+02021-12-18 (updated 02021-12-30) (6 minutes)
+</li><li><a href="notes/aluminum-refining.html">Aluminum refining</a>
+02021-12-20 (updated 02021-12-30) (3 minutes)
+</li><li><a href="notes/regenerative-muffle-kiln.html">Regenerative muffle kiln</a>
+02021-12-21 (updated 02021-12-30) (19 minutes)
+</li><li><a href="notes/democracy-stability.html">Is liberal democracy’s stability conditioned on historical conditions that no longer obtain?</a>
+02021-12-22 (updated 02021-12-30) (16 minutes)
+</li><li><a href="notes/xerogel-compacting.html">Xerogel compacting</a>
+02021-12-22 (updated 02021-12-30) (12 minutes)
+</li><li><a href="notes/photoemissive-power.html">Photoemissive power</a>
+02021-12-23 (updated 02021-12-28) (15 minutes)
+</li><li><a href="notes/spring-connector.html">Toggling eccentrics for removing preload from spring clamps</a>
+02021-12-28 (updated 02021-12-31) (22 minutes)
+</li><li><a href="notes/filecoin-problem.html">Safe decentralized cloud storage</a>
+02021-12-30 (10 minutes)
+</li></ol><div><h2>Topics</h2><ul><li><a href="topics/materials.html">Materials</a> (59 notes)
+</li><li><a href="topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="topics/contrivances.html">Contrivances</a> (45 notes)
+</li><li><a href="topics/electronics.html">Electronics</a> (39 notes)
+</li><li><a href="topics/pricing.html">Pricing</a> (35 notes)
+</li><li><a href="topics/digital-fabrication.html">Digital fabrication</a> (31 notes)
+</li><li><a href="topics/manufacturing.html">Manufacturing</a> (29 notes)
+</li><li><a href="topics/history.html">History</a> (24 notes)
+</li><li><a href="topics/performance.html">Performance</a> (22 notes)
+</li><li><a href="topics/hci.html">Human-computer interaction</a> (22 notes)
+</li><li><a href="topics/physics.html">Physics</a> (18 notes)
+</li><li><a href="topics/electrolysis.html">Electrolysis</a> (18 notes)
+</li><li><a href="topics/mechanical.html">Mechanical</a> (17 notes)
+</li><li><a href="topics/3d-printing.html">3-D printing</a> (17 notes)
+</li><li><a href="topics/filled-systems.html">Filled systems</a> (16 notes)
+</li><li><a href="topics/experiment-report.html">Experiment report</a> (14 notes)
+</li><li><a href="topics/algorithms.html">Algorithms</a> (14 notes)
+</li><li><a href="topics/strength.html">Strength of materials</a> (13 notes)
+</li><li><a href="topics/machining.html">Machining</a> (13 notes)
+</li><li><a href="topics/python.html">Python</a> (12 notes)
+</li><li><a href="topics/pulse.html">Pulsed machinery</a> (12 notes)
+</li><li><a href="topics/lasers.html">Frrickin’ lasers!</a> (12 notes)
+</li><li><a href="topics/ghettobotics.html">Ghettobotics</a> (12 notes)
+</li><li><a href="topics/energy.html">Energy</a> (12 notes)
+</li><li><a href="topics/bootstrapping.html">Bootstrapping</a> (12 notes)
+</li><li><a href="topics/safety.html">Safe programming languages</a> (11 notes)
+</li><li><a href="topics/math.html">Math</a> (11 notes)
+</li><li><a href="topics/lisp.html">Lisp</a> (11 notes)
+</li><li><a href="topics/asm.html">Assembly-language programming</a> (11 notes)
+</li><li><a href="topics/power-supplies.html">Power supplies</a> (10 notes)
+</li><li><a href="topics/graphics.html">Graphics</a> (10 notes)
+</li><li><a href="topics/compilers.html">Compilers</a> (10 notes)
+</li><li><a href="topics/clay.html">Clay</a> (10 notes)
+</li><li><a href="topics/aluminum.html">Aluminum</a> (10 notes)
+</li><li><a href="topics/welding.html">Welding</a> (9 notes)
+</li><li><a href="topics/virtual-machines.html">Virtual machines</a> (9 notes)
+</li><li><a href="topics/precision.html">Precision</a> (9 notes)
+</li><li><a href="topics/phosphates.html">Phosphates</a> (9 notes)
+</li><li><a href="topics/foam.html">Foam</a> (9 notes)
+</li><li><a href="topics/ecm.html">ECM</a> (9 notes)
+</li><li><a href="topics/composites.html">Composites</a> (9 notes)
+</li><li><a href="topics/composability.html">Composability</a> (9 notes)
+</li><li><a href="topics/waterglass.html">Waterglass</a> (8 notes)
+</li><li><a href="topics/small-is-beautiful.html">Small is beautiful</a> (8 notes)
+</li><li><a href="topics/sensors.html">Sensors</a> (8 notes)
+</li><li><a href="topics/programming-languages.html">Programming languages</a> (8 notes)
+</li><li><a href="topics/ceramic.html">Ceramic</a> (8 notes)
+</li><li><a href="topics/c.html">C</a> (8 notes)
+</li><li><a href="topics/real-time.html">Real time</a> (7 notes)
+</li><li><a href="topics/higher-order-programming.html">Higher order programming</a> (7 notes)
+</li><li><a href="topics/hand-tools.html">Hand tools</a> (7 notes)
+</li><li><a href="topics/falstad.html">Falstad’s circuit simulator</a> (7 notes)
+</li><li><a href="topics/facepalm.html">Facepalm</a> (7 notes)
+</li><li><a href="topics/argentina.html">Argentina</a> (7 notes)
+</li><li><a href="topics/2d-cutting.html">2-D cutting</a> (7 notes)
+</li><li><a href="topics/terminals.html">Terminals</a> (6 notes)
+</li><li><a href="topics/solar.html">Solar</a> (6 notes)
+</li><li><a href="topics/self-replication.html">Self replication</a> (6 notes)
+</li><li><a href="topics/sa.html">Systems architecture</a> (6 notes)
+</li><li><a href="topics/protocols.html">Protocols</a> (6 notes)
+</li><li><a href="topics/post-teletype.html">Post-teletype terminal design</a> (6 notes)
+</li><li><a href="topics/physical-computation.html">Physical computation</a> (6 notes)
+</li><li><a href="topics/optics.html">Optics</a> (6 notes)
+</li><li><a href="topics/minerals.html">Minerals</a> (6 notes)
+</li><li><a href="topics/microcontrollers.html">Microcontrollers</a> (6 notes)
+</li><li><a href="topics/metrology.html">Metrology</a> (6 notes)
+</li><li><a href="topics/magnesium.html">Magnesium</a> (6 notes)
+</li><li><a href="topics/instruction-sets.html">Instruction sets</a> (6 notes)
+</li><li><a href="topics/independence.html">Independence</a> (6 notes)
+</li><li><a href="topics/guis.html">GUIs</a> (6 notes)
+</li><li><a href="topics/end-user-programming.html">End user programming</a> (6 notes)
+</li><li><a href="topics/anisotropic-fillers.html">Anisotropic fillers</a> (6 notes)
+</li><li><a href="topics/thermodynamics.html">Thermodynamics</a> (5 notes)
+</li><li><a href="topics/the-future.html">The future</a> (5 notes)
+</li><li><a href="topics/syntax.html">Syntax</a> (5 notes)
+</li><li><a href="topics/steel.html">Steel</a> (5 notes)
+</li><li><a href="topics/small-things.html">Small things</a> (5 notes)
+</li><li><a href="topics/security.html">Security</a> (5 notes)
+</li><li><a href="topics/refractory.html">Refractory</a> (5 notes)
+</li><li><a href="topics/powder-bed.html">Powder-bed 3-D printing processes</a> (5 notes)
+</li><li><a href="topics/pdf.html">The Portable Document Format (PDF)</a> (5 notes)
+</li><li><a href="topics/parsing.html">Parsing</a> (5 notes)
+</li><li><a href="topics/numerical-modeling.html">Numerical modeling</a> (5 notes)
+</li><li><a href="topics/incentives.html">Incentives</a> (5 notes)
+</li><li><a href="topics/forth.html">FORTH</a> (5 notes)
+</li><li><a href="topics/flexures.html">Flexures</a> (5 notes)
+</li><li><a href="topics/file-formats.html">File formats</a> (5 notes)
+</li><li><a href="topics/copper.html">Copper</a> (5 notes)
+</li><li><a href="topics/cements.html">Cements</a> (5 notes)
+</li><li><a href="topics/bytecode.html">Bytecode</a> (5 notes)
+</li><li><a href="topics/aluminum-foil.html">Aluminum foil</a> (5 notes)
+</li><li><a href="topics/vermiculite.html">Vermiculite</a> (4 notes)
+</li><li><a href="topics/transactions.html">Transactions</a> (4 notes)
+</li><li><a href="topics/sparks.html">Sparks</a> (4 notes)
+</li><li><a href="topics/shs.html">Self-propagating high-temperature synthesis (SHS)</a> (4 notes)
+</li><li><a href="topics/scanning-probe-microscopy.html">Scanning probe microscopy</a> (4 notes)
+</li><li><a href="topics/rpn.html">Reverse Polish notation (RPN)</a> (4 notes)
+</li><li><a href="topics/reading.html">Reading</a> (4 notes)
+</li><li><a href="topics/pva.html">Poly(vinyl alcohol) (PVA)</a> (4 notes)
+</li><li><a href="topics/program-calculator.html">Program calculator</a> (4 notes)
+</li><li><a href="topics/pascal.html">Pascal</a> (4 notes)
+</li><li><a href="topics/oses.html">Operating systems</a> (4 notes)
+</li><li><a href="topics/ocaml.html">OCaml</a> (4 notes)
+</li><li><a href="topics/memory-hardware.html">Memory hardware</a> (4 notes)
+</li><li><a href="topics/life-support.html">Life support</a> (4 notes)
+</li><li><a href="topics/input-devices.html">Input devices</a> (4 notes)
+</li><li><a href="topics/heating.html">Heating</a> (4 notes)
+</li><li><a href="topics/glass.html">Glass</a> (4 notes)
+</li><li><a href="topics/gc.html">Garbage collection</a> (4 notes)
+</li><li><a href="topics/encoding.html">Encoding</a> (4 notes)
+</li><li><a href="topics/editors.html">Editors</a> (4 notes)
+</li><li><a href="topics/economics.html">Economics</a> (4 notes)
+</li><li><a href="topics/dynamic-dispatch.html">Dynamic dispatch</a> (4 notes)
+</li><li><a href="topics/dsls.html">Domain-specific languages (DSLs)</a> (4 notes)
+</li><li><a href="topics/displays.html">Displays</a> (4 notes)
+</li><li><a href="topics/control.html">Control (cybernetics)</a> (4 notes)
+</li><li><a href="topics/compression.html">Compression</a> (4 notes)
+</li><li><a href="topics/communication.html">Communication</a> (4 notes)
+</li><li><a href="topics/cmcs.html">Ceramic-matrix composites (CMCs)</a> (4 notes)
+</li><li><a href="topics/caching.html">Caching</a> (4 notes)
+</li><li><a href="topics/weighing.html">Weighing</a> (3 notes)
+</li><li><a href="topics/unix.html">Unix</a> (3 notes)
+</li><li><a href="topics/tiled.html">Tiled graphics</a> (3 notes)
+</li><li><a href="topics/term-rewriting.html">Term rewriting</a> (3 notes)
+</li><li><a href="topics/sugar.html">Sugar</a> (3 notes)
+</li><li><a href="topics/sorting.html">Sorting</a> (3 notes)
+</li><li><a href="topics/solubility.html">Solubility</a> (3 notes)
+</li><li><a href="topics/scheme.html">Scheme</a> (3 notes)
+</li><li><a href="topics/roller-screws.html">Roller screws</a> (3 notes)
+</li><li><a href="topics/risc-v.html">RISC-V</a> (3 notes)
+</li><li><a href="topics/reproducibility.html">Reproducibility</a> (3 notes)
+</li><li><a href="topics/radio.html">Radio</a> (3 notes)
+</li><li><a href="topics/politics.html">Politics</a> (3 notes)
+</li><li><a href="topics/plato.html">Illinois PLATO</a> (3 notes)
+</li><li><a href="topics/pla.html">Poly(lactic acid) (PLA)</a> (3 notes)
+</li><li><a href="topics/patterning.html">Patterning</a> (3 notes)
+</li><li><a href="topics/oscillators.html">Oscillators</a> (3 notes)
+</li><li><a href="topics/nlp.html">Natural-language processing</a> (3 notes)
+</li><li><a href="topics/memory-models.html">Memory models</a> (3 notes)
+</li><li><a href="topics/leds.html">LEDs</a> (3 notes)
+</li><li><a href="topics/kleene-algebras.html">Kleene algebras</a> (3 notes)
+</li><li><a href="topics/kingery.html">Kingery, the father of modern ceramics</a> (3 notes)
+</li><li><a href="topics/keyboards.html">Keyboards</a> (3 notes)
+</li><li><a href="topics/insulation.html">Insulation</a> (3 notes)
+</li><li><a href="topics/hypertext.html">Hypertext</a> (3 notes)
+</li><li><a href="topics/humor.html">Humor</a> (3 notes)
+</li><li><a href="topics/hashing.html">Hashing</a> (3 notes)
+</li><li><a href="topics/glutaraldehyde.html">Glutaraldehyde</a> (3 notes)
+</li><li><a href="topics/forming.html">Forming</a> (3 notes)
+</li><li><a href="topics/flying.html">Flying</a> (3 notes)
+</li><li><a href="topics/fasteners.html">Fasteners</a> (3 notes)
+</li><li><a href="topics/emacs.html">Emacs</a> (3 notes)
+</li><li><a href="topics/control-flow.html">Control flow</a> (3 notes)
+</li><li><a href="topics/comfy.html">COMFY-*</a> (3 notes)
+</li><li><a href="topics/cameras.html">Cameras</a> (3 notes)
+</li><li><a href="topics/batteries.html">Batteries</a> (3 notes)
+</li><li><a href="topics/basic.html">BASIC</a> (3 notes)
+</li><li><a href="topics/audio.html">Audio</a> (3 notes)
+</li><li><a href="topics/ascii-art.html">ASCII art</a> (3 notes)
+</li><li><a href="topics/art.html">Art</a> (3 notes)
+</li><li><a href="topics/anns.html">Artificial neural networks</a> (3 notes)
+</li><li><a href="topics/allocation-performance.html">Allocation performance</a> (3 notes)
+</li><li><a href="topics/alabaster.html">Alabaster</a> (3 notes)
+</li><li><a href="topics/x-rays.html">X rays</a> (2 notes)
+</li><li><a href="topics/wiki.html">Wiki</a> (2 notes)
+</li><li><a href="topics/video.html">Video</a> (2 notes)
+</li><li><a href="topics/veskeno.html">The Veskeno virtual machine</a> (2 notes)
+</li><li><a href="topics/usa.html">The United States of America (USA)</a> (2 notes)
+</li><li><a href="topics/unicode.html">Unicode</a> (2 notes)
+</li><li><a href="topics/toxicology.html">Toxicology</a> (2 notes)
+</li><li><a href="topics/thixotropy.html">Thixotropy</a> (2 notes)
+</li><li><a href="topics/tcl.html">Tcl</a> (2 notes)
+</li><li><a href="topics/talc.html">Talc</a> (2 notes)
+</li><li><a href="topics/stack-machines.html">Stack machines</a> (2 notes)
+</li><li><a href="topics/spreadtools.html">Spreadtools</a> (2 notes)
+</li><li><a href="topics/speech-synthesis.html">Speech synthesis</a> (2 notes)
+</li><li><a href="topics/space.html">Space</a> (2 notes)
+</li><li><a href="topics/sonic-screwdrivers.html">Sonic screwdrivers</a> (2 notes)
+</li><li><a href="topics/snaps.html">Snaps</a> (2 notes)
+</li><li><a href="topics/smalltalk.html">Smalltalk</a> (2 notes)
+</li><li><a href="topics/slms.html">Spatial light modulators (SLMs)</a> (2 notes)
+</li><li><a href="topics/silver.html">Silver</a> (2 notes)
+</li><li><a href="topics/silicone.html">Silicone</a> (2 notes)
+</li><li><a href="topics/sbcl.html">Steel Bank Common Lisp</a> (2 notes)
+</li><li><a href="topics/sapphire.html">Sapphire</a> (2 notes)
+</li><li><a href="topics/sandblasting.html">Sandblasting</a> (2 notes)
+</li><li><a href="topics/ropes.html">Ropes</a> (2 notes)
+</li><li><a href="topics/regenerators.html">Regenerators</a> (2 notes)
+</li><li><a href="topics/refining.html">Refining</a> (2 notes)
+</li><li><a href="topics/randomness.html">Randomness</a> (2 notes)
+</li><li><a href="topics/qfitzah.html">Qfitzah</a> (2 notes)
+</li><li><a href="topics/prefix-sums.html">Prefix sums</a> (2 notes)
+</li><li><a href="topics/plasma.html">Plasma</a> (2 notes)
+</li><li><a href="topics/piezoelectrics.html">Piezoelectrics</a> (2 notes)
+</li><li><a href="topics/photoemission.html">Photoemission</a> (2 notes)
+</li><li><a href="topics/perl.html">Perl</a> (2 notes)
+</li><li><a href="topics/pegs.html">Parsing expression grammars (PEGs)</a> (2 notes)
+</li><li><a href="topics/passwords.html">Passwords</a> (2 notes)
+</li><li><a href="topics/paeth.html">The Paeth predictor</a> (2 notes)
+</li><li><a href="topics/ownership.html">Memory ownership</a> (2 notes)
+</li><li><a href="topics/overstrike.html">Overstrike</a> (2 notes)
+</li><li><a href="topics/optimization.html">Mathematical optimization</a> (2 notes)
+</li><li><a href="topics/oogoo.html">Oogoo</a> (2 notes)
+</li><li><a href="topics/ontology.html">Ontology</a> (2 notes)
+</li><li><a href="topics/namespaces.html">Namespaces</a> (2 notes)
+</li><li><a href="topics/m4.html">m4</a> (2 notes)
+</li><li><a href="topics/luajit.html">LuaJIT</a> (2 notes)
+</li><li><a href="topics/lua.html">Lua</a> (2 notes)
+</li><li><a href="topics/lidar.html">LiDAR</a> (2 notes)
+</li><li><a href="topics/length.html">Length</a> (2 notes)
+</li><li><a href="topics/layout.html">Layout</a> (2 notes)
+</li><li><a href="topics/latency.html">Latency</a> (2 notes)
+</li><li><a href="topics/js.html">The JS programming language</a> (2 notes)
+</li><li><a href="topics/jlcpcb.html">JLCPCB (JiaLiChuang)</a> (2 notes)
+</li><li><a href="topics/interrupts.html">Interrupts</a> (2 notes)
+</li><li><a href="topics/incremental-search.html">Incremental search</a> (2 notes)
+</li><li><a href="topics/household.html">Household</a> (2 notes)
+</li><li><a href="topics/gradient-descent.html">Gradient descent</a> (2 notes)
+</li><li><a href="topics/gears.html">Gears</a> (2 notes)
+</li><li><a href="topics/gans.html">Generative adversarial networks (GANs)</a> (2 notes)
+</li><li><a href="topics/galileo.html">Galileo</a> (2 notes)
+</li><li><a href="topics/fiction.html">Fiction</a> (2 notes)
+</li><li><a href="topics/enthalpy.html">Enthalpy</a> (2 notes)
+</li><li><a href="topics/employment.html">Employment</a> (2 notes)
+</li><li><a href="topics/electropolishing.html">Electropolishing</a> (2 notes)
+</li><li><a href="topics/electroforming.html">Electroforming</a> (2 notes)
+</li><li><a href="topics/dreaming.html">Dreaming</a> (2 notes)
+</li><li><a href="topics/decentralization.html">Decentralization</a> (2 notes)
+</li><li><a href="topics/debugging.html">Debugging</a> (2 notes)
+</li><li><a href="topics/databases.html">Databases</a> (2 notes)
+</li><li><a href="topics/cross-linking.html">Cross linking</a> (2 notes)
+</li><li><a href="topics/cli.html">Command-line interfaces (CLI)</a> (2 notes)
+</li><li><a href="topics/china.html">China</a> (2 notes)
+</li><li><a href="topics/ccn.html">Ccn</a> (2 notes)
+</li><li><a href="topics/carborundum.html">Carborundum</a> (2 notes)
+</li><li><a href="topics/call-by-name.html">Call by name</a> (2 notes)
+</li><li><a href="topics/block-arguments.html">Block arguments</a> (2 notes)
+</li><li><a href="topics/bicicleta.html">Bicicleta</a> (2 notes)
+</li><li><a href="topics/barcodes.html">Barcodes</a> (2 notes)
+</li><li><a href="topics/azane.html">Azane</a> (2 notes)
+</li><li><a href="topics/avr.html">AVR8 microcontrollers</a> (2 notes)
+</li><li><a href="topics/arduino.html">Arduino</a> (2 notes)
+</li><li><a href="topics/archival.html">Archival</a> (2 notes)
+</li><li><a href="topics/apl.html">Apl</a> (2 notes)
+</li><li><a href="topics/ambiq.html">Ambiq</a> (2 notes)
+</li></ul></div><script src="liabilities/addtoc.js"></script></html>

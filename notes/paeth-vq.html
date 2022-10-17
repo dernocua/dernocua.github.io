@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><title>Paeth prediction and vector quantization ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Paeth prediction and vector quantization</h1><div class="metadata">Kragen Javier Sitaker, 02021-11-06 (updated 02021-12-30)
+(1 minute)</div><p>Suppose you want constant frame rate video over a bandwidth-limited
+channel with very simple encoding and decoding.  Paeth’s predictor
+predicts that each new pixel will be equal to one of the three pixels
+N, NW, and W of it, based on an estimate of the gradient from those
+three pixels, and then you encode, normally, a precise residual from
+that prediction.  This approach can be straightforwardly extended to
+use a three-dimensional prediction incorporating the previous frame as
+well.</p>
+<p>However, instead of transmitting a precise residual, you could
+transmit a quantized approximate residual.  For example, you could
+transmit a choice of 0, ±1, ±4, ±16, or ±64, which is 9 choices, 3.17
+bits per pixel per color channel.  If an image holds still for a
+little while, it’ll settle down to the correct image fairly quickly.</p>
+<p>However, this still sucks, because the compression ratio is less than
+a factor of 3.  You can do a little better by transforming to YUV
+(16-bit maybe) and subsampling the chroma, but to do a lot better by
+some such approach, you need to not transmit any bits for most pixels.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/graphics.html">Graphics</a> (10 notes)
+</li><li><a href="../topics/compression.html">Compression</a> (4 notes)
+</li><li><a href="../topics/paeth.html">The Paeth predictor</a> (2 notes)
+</li></ul></div></html>

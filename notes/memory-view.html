@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html><title>Memory view ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Memory view</h1><div class="metadata">Kragen Javier Sitaker, 02021-07-09 (updated 02021-12-30)
+(6 minutes)</div><p>I was thinking that, for examining data in PDF files, it would be nice
+to have Python objects that basically represent chunks of bytes; for
+example, the contents of a file, some substring of the contents of a
+file, or the output of decompressing them.  You ought to be able to
+slice these objects to create new ones on subranges of them, without
+copying the underlying data.  And these objects ought to have default
+displays that are useful for debugging, but not only one such display,
+like the ordinary repr(); rather, several:</p>
+<ul>
+<li>A default text display that represents, in UTF-8 text, the contents
+  of the chunk of bytes, treated as UTF-8 text, up to some limited
+  number of lines, like 8.  Like, the first four lines, an ellipsis,
+  and the last three lines.  Plus magic symbols to indicate things
+  like control characters, malformed UTF-8, and trailing whitespace.</li>
+<li>A hex dump display, again by default limited to a small number of
+  lines.</li>
+<li>An annotated display that also indicates their provenance.</li>
+<li>Jupyter displays that somehow use Jupyter facilities to display them
+  more richly.  For example, Jupyter apparently invokes <code>_repr_svg_</code>
+  if present (which the <code>graphviz.Graph</code> class uses).  Or you can
+  return an <code>IPython.display.Image(filename)</code> or
+  <code>IPython.display.Image(data=somebytes, format='png')</code>.</li>
+</ul>
+<p>Also, I want to have parse-node objects, which are the same kind of
+objects but with child nodes, trailing context, and computed values,
+and the computed values are their default display --- but the other
+forms of presentation are still available.  To get one of these, you
+invoke a .parse() method on one of the raw buffer objects with a
+grammar argument, and you get back a version of the same object, but
+with the parse-node stuff associated.</p>
+<p>Even the computed values ought to be able to have multiple kinds of
+displays.</p>
+<p>Ideally I’d like to enable clicking around the graph in an
+object-inspector sort of way, and clicking on Jupyter output to select
+different views and follow links to child nodes.</p>
+<h2>IPython facilities</h2>
+<p>Aha, and I see <a href="https://ipython.readthedocs.io/en/stable/config/integrating.html">IPython also supports customizing tab-completion</a>
+by defining a <code>__dir__</code> method, which is also what the builtin dir()
+uses, and for tab-completion of mapping keys or sequence indices
+foo[key], there’s an <code>_ipython_key_completions_</code> method.</p>
+<p><a href="https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html">For customizing display, there’s not only <code>_repr_svg_</code> but also png
+and jpeg representations, and in the HTML notebook, html, javascript,
+markdown, and latex</a>.  If you define more than one of these I don’t
+know how IPython determines which one to use, but there is a
+<code>_repr_mimebundle_</code> that supersedes them, and an <code>_ipython_display_</code>
+function which I guess can call whatever IPython methods it wants to
+draw stuff.</p>
+<p>For interactivity, there’s <a href="https://ipywidgets.readthedocs.io/en/stable/examples/Using%20Interact.html">IPywidgets</a>, which is simple enough to
+use for simple cases (sliders, dropdown selections) and will use the
+above means for output.  For example:</p>
+<pre><code>from ipywidgets import interact
+class Circle:
+    def __init__(self, r):
+        self.r = r
+
+    def _repr_svg_(self):
+        return """&lt;svg width="256"&gt;&lt;circle cx="128" cy="128" r="%s" stroke="#339" fill="#c6c" /&gt;&lt;/svg&gt;""" % self.r
+
+@interact(r=(0, 181))
+def circle(r):
+    return Circle(r)
+</code></pre>
+<p>It’s no ObservableHQ, but hey, it gives you a form-based GUI to any
+function.  There’s an <code>interactive</code> which creates the widget that
+<code>interact</code> displays, but lets you maybe display it later with
+IPython.core.display.display, which is imported into notebooks by
+default.  The dropdown facility is enough to select among different
+output facets; this very minimal prototype works, for example:</p>
+<pre><code>from ipywidgets import interactive
+
+class DataView:
+    def __init__(self, data):
+        self.data = data
+
+    def widget(self):
+        def show(format='text', size=64):
+            if format == 'text':
+                print(self.data[:size])
+            elif format == 'hex':
+                print(' '.join("%02x" % ord(c) for c in self.data[:size]))
+
+        return interactive(show, format=['text', 'hex'], size=(0, len(self.data)))
+
+DataView(open('README.md').read()).widget()
+</code></pre>
+<p>There’s a submit-button version of <code>interact</code> called
+<code>interact_manual</code>, and there’s <a href="https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20List.html#Button">widgets.Button</a> which has an
+<a href="https://ipywidgets.readthedocs.io/en/stable/examples/Widget%20Events.html">on_click method</a>.  Setting .value on an existing widgets.Text from
+another cell causes it to update its value on the screen.  There are
+HBox and VBox widgets for layout (not sure if their .children is
+mutable), and various kinds of output widgets: widgets.Label,
+widgets.HTML, widgets.HTMLMath, widgets.Image (whose .value is the
+binary data of the image file, and also takes format, width, and
+height parameters).  And there’s widgets.Tab and widgets.Accordion for
+selectively hiding things, but not, I think, for computing them
+lazily.</p>
+<p>I’m able to spawn widgets with a button <code>on_click</code>.</p>
+<p>Also, suitable for nesting inspectors, there’s a <a href="https://ipywidgets.readthedocs.io/en/latest/examples/Output%20Widget.html">widgets.Output to
+display anything IPython can display</a>, which can be used as a
+context manager:</p>
+<pre><code>out = widgets.Output(layout={'border': '1px solid black'})
+with out:
+    display(YouTubeVideo('eWzY2nGfkXk'))
+</code></pre>
+<p>widgets.Output also has a <code>.clear_output()</code> method and (maybe in newer
+versions?) an <code>.append_display_data()</code> method which avoids problems
+with multithreading.  However, <code>display()</code> with a widget doesn’t get
+nested into the output as it should, so I guess my best bet is
+mutating a VBox; the following code is a bit awkward but does work:</p>
+<pre><code>def nestable():
+    i = 0
+    out = widgets.Output()
+    inc = widgets.Button(description='inc')
+    def inc_click(ev):
+        nonlocal i
+        i += 1
+        with out:
+            display(i)
+
+    inc.on_click(inc_click)
+
+    spawn = widgets.Button(description='spawn')
+    vbox = widgets.VBox([widgets.HBox([inc, spawn]), out])
+    def spawn_click(ev):
+        nonlocal out
+        out = widgets.Output()
+        vbox.children += nestable(), out
+
+    spawn.on_click(spawn_click)
+
+    return widgets.HBox([widgets.Label('-'), vbox])
+
+nestable()
+</code></pre>
+<p>Finally, non-button widgets have an <code>.observe()</code> method.</p>
+<p>It’s possible to insert things with a <code>_repr_svg_</code> for instance into
+these Output widgets, using <code>display()</code>.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/hci.html">Human-computer interaction</a> (22 notes)
+</li><li><a href="../topics/python.html">Python</a> (12 notes)
+</li><li><a href="../topics/pdf.html">The Portable Document Format (PDF)</a> (5 notes)
+</li><li><a href="../topics/parsing.html">Parsing</a> (5 notes)
+</li><li><a href="../topics/dsls.html">Domain-specific languages (DSLs)</a> (4 notes)
+</li><li>Jupyter</li></ul></div></html>

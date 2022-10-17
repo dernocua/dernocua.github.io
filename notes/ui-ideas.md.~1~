@@ -1,0 +1,6 @@
+Some random ideas to try in UIs:
+
+- How about crosshairs instead of a mouse pointer?  Boundaries between
+  gradients, maybe, rather than opaque black lines.  Your mouse
+  pointer shouldn’t obscure anything.
+- Or maybe crosshairs with a vertical line that only goes down?

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html><title>The algebra of N-ary relations ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>The algebra of N-ary relations</h1><div class="metadata">Kragen Javier Sitaker, 02021-06-14 (updated 02021-07-27)
+(4 minutes)</div><p>(Based on Jamie Brandon’s <a href="https://scattered-thoughts.net/writing/imp-sets-and-funs/">Imp</a> and some unpublished work of Dave
+Long’s based on Hehner’s <em>Practical Theory of Programming</em>.)</p>
+<p>Consider N-ary relations like those of the relational algebra, treated
+as sets of equal-arity tuples.  (Maybe they could be bags instead of
+sets; I’m not sure.)  It’s convenient to assume some set of atomic
+items to make these tuples out of, such as words, symbols, or numbers.
+We can treat an atom as a degenerate relation: <code>a</code> is taken to be the
+relation consisting of a single tuple containing the atom <code>a</code>.</p>
+<p>From these atoms we can build nonempty single-column relations with a
+union operator <code>+</code>: <code>a+b+d</code> is a single-column relation consisting of
+three one-item tuples <code>a</code>, <code>b</code>, and <code>d</code>, in no particular order, so
+it’s equal to <code>a+d+b</code> or <code>d+b+a</code>.  (If we rule out multisets, it’s
+also idempotent, so <code>a+b+d+a+b+d</code> is also equal.)</p>
+<p>By adding a cartesian-product operator with higher precedence, written
+simply with juxtaposition, we can build multiple-column relations: <code>x
+y z</code> is a three-column relation consisting of a single tuple with the
+atoms <code>x</code>, <code>y</code>, and <code>z</code>, in that order.  This operator is associative,
+so <code>(x y) z</code> is equal to <code>x (y z)</code>, but not commutative; the order of
+columns matters, so, for example, <code>y z</code> ≠ <code>z y</code>, and <code>x y z</code> ≠ <code>x z
+y</code>.</p>
+<p>We give the implied operator of juxtaposition cartesian-product
+semantics simply by declaring that it distributes over <code>+</code>, so <code>(a +
+b) (c + d)</code> = <code>a (c + d) + b (c + d)</code> = <code>a c + a d + b c + b d</code>.  This
+also gives us a normalization procedure for relations built up in this
+way, which makes equivalence decidable.</p>
+<p>Now we can introduce identity elements for these two operations;
+capitalizing the names from Imp, we can declare that None is a
+relation with no rows, and Some is a relation containing only the
+empty tuple.  (A different choice of notation might use {} for None
+and () for Some, or α for Some and ω for None.)  For any relation X,
+<code>None + X</code> = <code>X</code>, and <code>Some X</code> = <code>X Some</code> = <code>X</code>.  I think it’s
+provable from this that <code>None X</code> = <code>X None</code> = <code>None</code>, but if not,
+let’s postulate it — it’s obviously necessary for juxtaposition to
+give us the usual kind of cartesian product.</p>
+<p>We’ve said that we’re interested in sets of <em>equal-arity</em> tuples, but
+there’s nothing stopping us from writing <code>a + b c</code>, though that has a
+straightforward interpretation as a set containing a 1-tuple and a
+2-tuple.  For the time being we’ll just consider such expressions as
+being uninteresting due to being “ill-typed”, but clearly enough if we
+leave them in with that interpretation, we have the
+Kleene-closure-free regular expressions.</p>
+<p>This is nearly a Boolean algebra, with juxtaposition for ∧, <code>+</code> for ∨,
+None for 0, and Some for 1; but the ∧ of a Boolean algebra must be
+commutative, and it’s not clear to me how to define ¬ such that <em>a</em> ∨
+¬<em>a</em> = 1 and <em>a</em> ∧ ¬<em>a</em> = 0 (<code>X + !X = Some</code> and <code>X !X = None</code>).</p>
+<p>It <em>is</em> a semiring, though, at least if we sweep the “typing” problem
+under the rug; we have associativity of both operators, commutativity
+of <code>+</code>, distributivity, identity elements, and annihilation.  In fact,
+it’s pretty much just the free semiring on whatever our atoms are.  If
+we rule out multisets, it’s the free idempotent semiring, which
+induces a partial order on the operations.</p>
+<p>The two operators above are two of the five primitive operators of
+Codd’s relational algebra; the other three are selection, projection,
+and set difference (set intersection being derived from union and
+difference).</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/math.html">Math</a> (11 notes)
+</li><li><a href="../topics/program-calculator.html">Program calculator</a> (4 notes)
+</li><li><a href="../topics/kleene-algebras.html">Kleene algebras</a> (3 notes)
+</li><li><a href="../topics/databases.html">Databases</a> (2 notes)
+</li></ul></div></html>

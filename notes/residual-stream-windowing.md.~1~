@@ -1,0 +1,9 @@
+Suppose you want to transmit video data for a windowing system, but
+you want something that’s simpler and less CPU-hungry than H.264
+encoding.
+
+PNG doesn't really compress image data, necessarily; what it
+compresses, like  are the prediction residuals from 
+
+ with a selectable predictor:
+

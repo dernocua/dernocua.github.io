@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html><title>Some notes on learning Rust ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Some notes on learning Rust</h1><div class="metadata">Kragen Javier Sitaker, 02021-10-06 (updated 02021-10-10)
+(39 minutes)</div><p>I want to learn Rust, so I’m reading the Rust book by Steve Klabnik,
+Carol Nichols, et al., and I’m going to try writing an IRC bot in it.
+I’ve done a few basic Rust tutorials in previous years, and I had a
+Rust compiler installed in /usr/local/bin, but it’s from 02016.</p>
+<p><em>The Rust Programming Language</em> book is very approachable,
+but it’s a bit slow-paced and
+patronizing.  Maybe it would be great if I were extremely insecure
+about my abilities.  <a href="https://doc.rust-lang.org/stable/reference/">The <em>Rust Reference</em></a> is maybe closer to what
+I want, but <a href="https://diziet.dreamwidth.org/10210.html">the 57-page <em>Rust for the Polyglot Programmer</em></a> is a
+night-and-day improvement over either as a starting point.  For
+example, after only 23 pages, it tells me, “There is no inheritance,”,
+and on the next page, “this is how <code>for x in y</code> loops work: <code>y</code> must
+<code>impl IntoIterator</code>”. These are things I’ve been wondering about
+through hundreds of pages of TRPL.  However, it is very much not
+self-contained, so it is only a starting point.</p>
+<h2>Installing Rust was kind of a pain in the ass and needed 294–1190 MB</h2>
+<p>First, I got rustup:</p>
+<pre><code>curl https://sh.rustup.rs &gt; rustup.sh
+</code></pre>
+<p>Rustup insisted I uninstall the five-years-ago Rust, so I did:</p>
+<pre><code>sudo /usr/local/lib/rustlib/uninstall.sh
+</code></pre>
+<p>Then I tried installing rust, but because I “only” had half a gig
+free, it failed:</p>
+<pre><code>$ sh rustup.sh
+info: downloading installer
+Warning: Not enforcing strong cipher suites for TLS, this is potentially less secure
+Warning: Not enforcing TLS v1.2, this is potentially less secure
+
+Welcome to Rust!
+
+This will download and install the official compiler for the Rust
+programming language, and its package manager, Cargo.
+
+Rustup metadata and toolchains will be installed into the Rustup
+home directory, located at:
+
+  /home/user/.rustup
+...
+1) Proceed with installation (default)
+2) Customize installation
+3) Cancel installation
+&gt;1
+
+info: profile set to 'default'
+...
+info: installing component 'rust-docs'
+ 10.2 MiB /  17.0 MiB ( 60 %)   7.3 MiB/s in  1s ETA:  0s
+info: rolling back changes
+error: failed to extract package (perhaps you ran out of disk space?): No space left on device (os error 28)
+$ df -h .
+Filesystem               Size  Used Avail Use% Mounted on
+/dev/mapper/debian-root  225G  214G  517M 100% /
+</code></pre>
+<p>At this point I had deleted my previous Rust installation with no way
+to get it back, but wasn’t able to install the current Rust.</p>
+<p>I was spending 3.2 gigs on the linux-2.6 Git repo that I hadn’t
+updated since 02014, so I deleted that.  Even if half a fucking
+gigabyte isn’t enough space for a fucking compiler, 3.7 gigs should
+be.  That’s four times the size of my first Linux box.</p>
+<p>This time I tried the “minimal” profile instead, too.  And it “only”
+needed 294 megs:</p>
+<pre><code>  stable-x86_64-unknown-linux-gnu installed - rustc 1.55.0 (c8dfcfe04 2021-09-06)
+
+Rust is installed now. Great!
+
+To get started you may need to restart your current shell.
+This would reload your PATH environment variable to include
+Cargo's bin directory ($HOME/.cargo/bin).
+
+To configure your current shell, run:
+source $HOME/.cargo/env
+</code></pre>
+<p>Before:</p>
+<pre><code>$ df -k .
+Filesystem              1K-blocks      Used Available Use% Mounted on
+/dev/mapper/debian-root 235891480 220134444   3774396  99% /
+</code></pre>
+<p>After:</p>
+<pre><code>$ df -k .
+Filesystem              1K-blocks      Used Available Use% Mounted on
+/dev/mapper/debian-root 235891480 220427872   3480968  99% /
+</code></pre>
+<p>Hmm, maybe I’ll try a fatter profile then:</p>
+<pre><code>warning: Updating existing toolchain, profile choice will be ignored
+</code></pre>
+<p>Hmm, maybe not?  I can’t find the uninstall script this time (it turns
+out the command is <code>rustup self uninstall</code> as explained on p. 13 of
+the book, which I hadn’t gotten to yet) so I’ll just delete it by
+hand:</p>
+<pre><code>$ rm -rf ~/.rustup ~/.cargo
+$ df -k .
+Filesystem              1K-blocks      Used Available Use% Mounted on
+/dev/mapper/debian-root 235891480 220014156   3894684  99% /
+$ sh rustup.sh
+...
+info: profile set to 'complete'
+info: setting default host triple to x86_64-unknown-linux-gnu
+info: syncing channel updates for 'stable-x86_64-unknown-linux-gnu'
+info: latest update on 2021-09-09, rust version 1.55.0 (c8dfcfe04 2021-09-06)
+warning: Force-skipping unavailable component 'miri-x86_64-unknown-linux-gnu'
+warning: Force-skipping unavailable component 'rust-analyzer-preview-x86_64-unknown-linux-gnu'
+...
+  stable-x86_64-unknown-linux-gnu installed - rustc 1.55.0 (c8dfcfe04 2021-09-06)
+...
+Rust is installed now. Great!
+...
+$ df -k .
+Filesystem              1K-blocks      Used Available Use% Mounted on
+/dev/mapper/debian-root 235891480 221200928   2707912  99% /
+</code></pre>
+<p>So this time it’s using 1.19 gigs because I set the profile to
+<code>complete</code>.</p>
+<h3>hello, world</h3>
+<p>But now it’s working:</p>
+<pre><code>: user@debian:~/devel/dev3; . ~/.cargo/env 
+: user@debian:~/devel/dev3; cat hello.rs 
+fn main() {
+    println!("hello, {}", "world");
+}
+: user@debian:~/devel/dev3; rustc hello.rs 
+: user@debian:~/devel/dev3; ./hello
+hello, world
+</code></pre>
+<h4>Hello World is Fucking Huge</h4>
+<blockquote>
+<p>Smaller runtimes have fewer features but have the advantage of
+resulting in smaller binaries. Smaller binaries make it easier to
+combine the language with other languages in more contexts. While
+many languages are okay with increasing the runtime in exchange for
+more features, Rust needs to have nearly no runtime, and cannot
+compromise on being able to call into C in order to maintain
+performance.</p>
+</blockquote>
+<p>— <em>The Rust Programming Language</em>, §4.1 “Using threads to run code
+simultaneously”, p. 423</p>
+<pre><code>: user@debian:~/devel/dev3; ls -l hello
+-rwxr-xr-x 1 user user 3439804 Oct  6 22:50 hello
+</code></pre>
+<p>That’s a completely unreasonable size, roughly two and a half floppy
+disks for “hello, world”, between three and five orders of magnitude
+larger than is needed, but it does run.  And compiling it takes about
+250 milliseconds; again, three to five orders of magnitude slower than
+compiling a three-line program ought to be, but tolerable.</p>
+<p>This is mostly (&gt;90%) debug info.  Unfortunately, the remainder is
+still almost 300K, between two and four orders of magnitude too big:</p>
+<pre><code>: user@debian:~/devel/dev3; ls -l hello
+-rwxr-xr-x 1 user user 3439804 Oct  7 23:00 hello
+: user@debian:~/devel/dev3; strip hello
+: user@debian:~/devel/dev3; ls -l hello
+-rwxr-xr-x 1 user user 297312 Oct  7 23:01 hello
+</code></pre>
+<p>Different optimization levels unsurprisingly don’t make much difference:</p>
+<pre><code>: user@debian:~/devel/dev3; rustc -C opt-level=s hello.rs
+: user@debian:~/devel/dev3; ls -l hello
+-rwxr-xr-x 1 user user 3438548 Oct  7 23:03 hello
+: user@debian:~/devel/dev3; rustc -C opt-level=z hello.rs
+: user@debian:~/devel/dev3; ls -l hello
+-rwxr-xr-x 1 user user 3438615 Oct  7 23:04 hello
+: user@debian:~/devel/dev3; rustc -C opt-level=3 hello.rs
+: user@debian:~/devel/dev3; ls -l hello
+-rwxr-xr-x 1 user user 3438552 Oct  7 23:04 hello
+: user@debian:~/devel/dev3; strip hello
+: user@debian:~/devel/dev3; size hello
+   text    data     bss     dec     hex filename
+ 281780   11288     576  293644   47b0c hello
+</code></pre>
+<p>Apparently <a href="https://github.com/johnthagen/min-sized-rust#optimize-libstd-with-build-std">I’d have to not use the prebuilt libstd to fix this, which
+requires nightly Rust</a>, but that still leaves a 51-kilobyte
+executable, or use <code>#![no_std]</code> to not use libstd at all.
+<a href="https://news.ycombinator.com/item?id=23498254">Dynamically linking libstd <em>by default</em> isn’t an option because Rust
+doesn’t have an ABI</a>, but <a href="https://docs.rust-embedded.org/book/interoperability/rust-with-c.html">you <em>can</em> dynamically link with <code>-C
+prefer-dynamic</code></a>, which gives you a 10-kilobyte stripped binary
+which by default doesn’t work because it doesn’t know where to find
+Rust’s libstd:</p>
+<pre><code>: user@debian:~/devel/dev3; rustc -C prefer-dynamic hello.rs
+: user@debian:~/devel/dev3; strip hello
+: user@debian:~/devel/dev3; ls -l hello
+-rwxr-xr-x 1 user user 10456 Oct  7 23:26 hello
+: user@debian:~/devel/dev3; ldd hello
+        linux-vdso.so.1 =&gt;  (0x00007fff26df3000)
+        libstd-008055cc7d873802.so =&gt; not found
+        libgcc_s.so.1 =&gt; /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007f05ead14000)
+        libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007f05ea987000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f05eb12d000)
+: user@debian:~/devel/dev3; ./hello
+./hello: error while loading shared libraries: libstd-008055cc7d873802.so: cannot open shared object file: No such file or directory
+: user@debian:~/devel/dev3; LD_LIBRARY_PATH=/home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib ./hello
+hello, world
+</code></pre>
+<p>That seems pretty reasonable.</p>
+<p>There are, however, some other reasons that Rust compilation output is bloated:</p>
+<pre><code>0000000000003b00 &lt;_ZN4core3ptr9const_ptr33_$LT$impl$u20$$BP$const$u20$T$GT$4cast17h2979c04ce50f48ccE&gt;:
+    3b00:       48 89 f8                mov    %rdi,%rax
+    3b03:       c3                      retq
+    3b04:       90                      nop
+    3b05:       90                      nop
+    3b06:       90                      nop
+    3b07:       90                      nop
+    3b08:       90                      nop
+    3b09:       90                      nop
+    3b0a:       90                      nop
+    3b0b:       90                      nop
+    3b0c:       90                      nop
+    3b0d:       90                      nop
+    3b0e:       90                      nop
+    3b0f:       90                      nop
+</code></pre>
+<h3>Holy shit, thirty thousand HTML files?</h3>
+<p>For some reason the <code>rustup doc</code> command just opens some kind of Wine
+error dialog telling me how to install Wine.  But it looks like the
+docs are here:</p>
+<pre><code>: user@debian:~/devel/dev3; find /home/user/.rustup/ -name '*.html' | random 5000
+/home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/core/arch/x86_64/fn._pdep_u32.html
+/home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/core/arch/x86_64/fn._mm512_mask_reduce_add_pd.html
+/home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/core/arch/aarch64/fn.vaddv_s32.html
+/home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/core/arch/aarch64/fn.vaddl_s32.html
+/home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/core/arch/aarch64/fn.vmlsl_u32.html
+/home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/core/core_arch/arm_shared/neon/generated/fn.vqrdmlahq_laneq_s32.html
+/home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/core/core_arch/x86/avx512vbmi2/fn._mm512_mask_compress_epi16.html
+: user@debian:~/devel/dev3; find /home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/ | wc
+  30223   30223 3819176
+</code></pre>
+<p>Thirty.  Thousand.  Files.  <em>Of documentation alone</em>.  Evidently, it’s
+mostly one file per assembly-language instruction on any of the
+supported architectures.  What have I done?</p>
+<pre><code>: user@debian:~/devel/dev3; find ~/.rustup ~/.cargo | wc
+  31994   31994 4029266
+</code></pre>
+<p>Oh, I guess that’s not so bad, then.</p>
+<pre><code>: user@debian:~/devel/dev3; firefox /home/user/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/index.html
+</code></pre>
+<p>Well, that works.  Nice comprehensive and polished documentation, too,
+looks like.</p>
+<h3>My very first crate</h3>
+<p>Let’s try making a crate.  I don’t want to proliferate Git repos,
+because then I can forget to check things in or push them, so I’m
+using my standard hellbox repo:</p>
+<pre><code>: user@debian:~/devel/dev3; cargo new --vcs none hello_cargo
+     Created binary (application) `hello_cargo` package
+</code></pre>
+<p>(The Rust book says to use <code>--bin</code> but <code>cargo new --help</code> says that’s
+the default.)</p>
+<pre><code>: user@debian:~/devel/dev3; cd hello_cargo/
+: user@debian:~/devel/dev3/hello_cargo; cat &gt; hello.rs
+fn main() {
+        println!("hello, world");
+}
+: user@debian:~/devel/dev3/hello_cargo; ls
+Cargo.toml  hello.rs  src
+: user@debian:~/devel/dev3/hello_cargo; mv hello.rs src/.
+: user@debian:~/devel/dev3/hello_cargo; mv src/hello.rs src/main.rs
+: user@debian:~/devel/dev3/hello_cargo; cat Cargo.toml 
+[package]
+name = "hello_cargo"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+: user@debian:~/devel/dev3/hello_cargo; cargo build
+   Compiling hello_cargo v0.1.0 (/home/user/devel/dev3/hello_cargo)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.72s
+: user@debian:~/devel/dev3/hello_cargo; ls
+Cargo.lock  Cargo.toml  src  target
+: user@debian:~/devel/dev3/hello_cargo; find target/
+target/
+target/.rustc_info.json
+target/debug
+target/debug/.fingerprint
+target/debug/.fingerprint/hello_cargo-cb8f156fc8def340
+target/debug/.fingerprint/hello_cargo-cb8f156fc8def340/bin-hello_cargo
+target/debug/.fingerprint/hello_cargo-cb8f156fc8def340/invoked.timestamp
+target/debug/.fingerprint/hello_cargo-cb8f156fc8def340/bin-hello_cargo.json
+target/debug/.fingerprint/hello_cargo-cb8f156fc8def340/dep-bin-hello_cargo
+target/debug/incremental
+target/debug/incremental/hello_cargo-3fhio3llrdrxv
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w.lock
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/3n8baekyl6jfd1zt.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/dep-graph.bin
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/5893w20ken98e8mr.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/15pcyh12hnx9h9yu.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/work-products.bin
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/2zukcvf9271rij44.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/3jf4rvldk0nwopmj.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/query-cache.bin
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/3vvwo10tkawer2dj.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/497974iq30wb32q0.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/2pe66p99jtgk2gt2.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/4moexls4ruzzyfmb.o
+target/debug/incremental/hello_cargo-3fhio3llrdrxv/s-g31wqj1itv-18kv17w-3u24lffwq59u4/56vc5hmppbu1ww1q.o
+target/debug/build
+target/debug/.cargo-lock
+target/debug/hello_cargo.d
+target/debug/deps
+target/debug/deps/hello_cargo-cb8f156fc8def340
+target/debug/deps/hello_cargo-cb8f156fc8def340.d
+target/debug/examples
+target/debug/hello_cargo
+target/CACHEDIR.TAG
+: user@debian:~/devel/dev3/hello_cargo; ./target/debug/hello_cargo 
+hello, world
+</code></pre>
+<p>Hmm, seems okay.  A bit voluminous, I guess, but that’s a small price
+to pay if it speeds up builds and/or makes them more reliable.</p>
+<p>Because I said <code>--vcs none</code> it didn’t create a .gitignore, so I do:</p>
+<pre><code>: user@debian:~/devel/dev3/hello_cargo; echo target &gt; .gitignore
+</code></pre>
+<p>Then I can add it to git, which I do, and then I can clone:</p>
+<pre><code>: user@debian:~/devel/dev3/hello_cargo; cd ../..
+: user@debian:~/devel; time git clone dev3 dev3.copy
+...
+real    0m2.890s
+...
+: user@debian:~/devel; cd dev3.copy
+: user@debian:~/devel/dev3.copy; cd hello_cargo/
+: user@debian:~/devel/dev3.copy/hello_cargo; cargo build
+   Compiling hello_cargo v0.1.0 (/home/user/devel/dev3.copy/hello_cargo)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.72s
+: user@debian:~/devel/dev3.copy/hello_cargo; ./target/debug/
+build/        deps/         examples/     .fingerprint/ hello_cargo   incremental/  
+: user@debian:~/devel/dev3.copy/hello_cargo; ./target/debug/hello_cargo 
+hello, world
+</code></pre>
+<p>Good enough.  And it’s nice that it records the versions of
+dependencies I’m building with in <code>Cargo.lock</code> by default.</p>
+<p>There’s a <code>cargo run</code>:</p>
+<pre><code>: user@debian:~/devel/dev3/hello_cargo; cargo run
+    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
+     Running `target/debug/hello_cargo`
+hello, world
+: user@debian:~/devel/dev3/hello_cargo; rm -rf target
+: user@debian:~/devel/dev3/hello_cargo; cargo run
+   Compiling hello_cargo v0.1.0 (/home/user/devel/dev3/hello_cargo)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.71s
+     Running `target/debug/hello_cargo`
+hello, world
+</code></pre>
+<p>Oof, 710 ms to build a three-line program.  Four lines of code
+compiled per second.  This is <em>not</em> going to be fun.  Oddly, the
+release build happens faster, so possibly that was just a measurement
+error:</p>
+<pre><code>: user@debian:~/devel/dev3/hello_cargo; cargo run --release
+   Compiling hello_cargo v0.1.0 (/home/user/devel/dev3/hello_cargo)
+    Finished release [optimized] target(s) in 0.30s
+     Running `target/release/hello_cargo`
+hello, world
+</code></pre>
+<h2>Cross-compiling depends on the C toolchain (and other things)</h2>
+<p>It seems like the Rust compiler I installed includes every Rust
+backend known to history or myth:</p>
+<pre><code>: user@debian:~/devel/dev3; rustc --print target-list| wc
+    166     166    4022
+: user@debian:~/devel/dev3; rustc --print target-list| random 32
+mips64-unknown-linux-muslabi64
+mipsisa64r6el-unknown-linux-gnuabi64
+powerpc64-wrs-vxworks
+x86_64-unknown-illumos
+</code></pre>
+<p>But because the binaries link with libc, you need to have a GCC or
+similar toolchain installed for the target platform:</p>
+<pre><code>: user@debian:~/devel/dev3; rustc --target s390x-unknown-linux-gnu hello.rs
+error[E0463]: can't find crate for `std`
+  |
+  = note: the `s390x-unknown-linux-gnu` target may not be installed
+  = help: consider downloading the target with `rustup target add s390x-unknown-linux-gnu`
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0463`.
+: user@debian:~/devel/dev3; rustup target add s390x-unknown-linux-gnu
+info: downloading component 'rust-std' for 's390x-unknown-linux-gnu'
+info: installing component 'rust-std' for 's390x-unknown-linux-gnu'
+ 22.9 MiB /  22.9 MiB (100 %)  11.2 MiB/s in  1s ETA:  0s
+: user@debian:~/devel/dev3; rustc --target s390x-unknown-linux-gnu hello.rs
+error: linking with `cc` failed: exit status: 1
+  |
+  = note: "cc" "hello.hello.996e1e6f-cgu.0.rcgu.o" "hello.hello.996e1e6f-
+...
+e.rlib" "-Wl,-Bdynamic" "-lgcc_s" "-lutil" "-lrt" "-lpthread" "-lm" "-ldl" "
+-lc" "-Wl,--eh-frame-hdr" "-Wl,-znoexecstack" "-L" "/home/user/.rustup/toolc
+hains/stable-x86_64-unknown-linux-gnu/lib/rustlib/s390x-unknown-linux-gnu/li
+b" "-o" "hello" "-Wl,--gc-sections" "-pie" "-Wl,-zrelro" "-Wl,-znow" "-nodef
+aultlibs"
+  = note: /usr/bin/ld: hello.hello.996e1e6f-cgu.0.rcgu.o: Relocations in generic ELF (EM: 22)
+          hello.hello.996e1e6f-cgu.0.rcgu.o: could not read symbols: File in wrong format
+          collect2: error: ld returned 1 exit status
+
+error: aborting due to previous error
+</code></pre>
+<p>This failure left a debris of 11 <code>hello.*.rcgu.o</code> files built for the
+S/390, perhaps as a debugging aid.</p>
+<p>Among the more exciting targets included are x86_64-fuchsia,
+wasm32-wasi, wasm32-unknown-emscripten, riscv32i-unknown-none-elf,
+riscv64gc-unknown-linux-gnu, nvptx64-nvidia-cuda, mipsel-sony-psp,
+arm-linux-androideabi, and avr-unknown-gnu-atmega328.  I actually have
+the cross-compiling toolchain for the AVR, but trying to get Rust
+working for it fails in an excitingly different way:</p>
+<pre><code>: user@debian:~/devel/dev3; rustup target add avr-unknown-gnu-atmega328
+error: toolchain 'stable-x86_64-unknown-linux-gnu' does not contain component 'rust-std' for target 'avr-unknown-gnu-atmega328'
+note: not all platforms have the standard library pre-compiled: https://doc.rust-lang.org/nightly/rustc/platform-support.html
+</code></pre>
+<p>(Here by “excitingly” I mean “disappointingly”.)</p>
+<h2>Notes on things that surprised me about the language</h2>
+<p>I’d say “notes about the language” but I’m not going to attempt to
+describe the whole language, except very cursorily: the atomic
+(“scalar”) types are {u,i}{8,16,32,64,size}, Unicode codepoints
+(“char”), f{32,64}, and boolean.  Built-in aggregate types (“compound
+types” — oddly not “vector”, which is a standard library growable
+array, as in the STL) are tuples, strings, arrays, structs (chapter
+5), enums (ADTs, chapter 6), plus references, mutable references, and,
+rarely, pointers.  Hmm, what about traits and functions?  Looks like
+closure types are trait types (Fn, FnMut, FnOnce).</p>
+<p>Some of what follows probably sounds critical and might inspire
+Rustaceans to feel defensive.  I’d suggest they don’t read it, because
+it’s not about Rust; it’s about me.</p>
+<p>It’s nice to be able to use underscores in numbers.  Binary literals
+(0b101) are nice.  Array literals [x, y, z] are nice.  String
+formatting with <code>println!</code> (and <code>format!</code>, and even <code>panic!</code>) is nice.
+Snake case is nice.  Array indexes are checked at runtime, panicking
+like .expect() when out of bounds.  Type inference is nice, but
+unfortunately it doesn’t extend to formal parameters or function
+return types, making the subroutine mechanism a more costly form of
+generalization than it would be.  Implicit return and closure syntax,
+OTOH, reduce the cost of the subroutine mechanism, and it’s nice that
+implicit return is just a special case of a more general <code>progn</code>
+mechanism.  (Closure syntax <em>does</em> receive the benefit of type
+inference.)  Unparenthesized conditions in <code>if</code> and <code>while</code> are nice.
+Conditional expressions are nice, even if they do have to be made out
+of blocks.  Not sure I like the <code>else if</code> special-case syntax, but I
+guess it’s easy to read and remember.  <code>for</code>-<code>in</code> is nice; not sure
+about the explicit <code>.iter()</code>.  The <code>(1..4).rev()</code> syntax for a <code>Range</code>
+is nice.</p>
+<p>I was thinking that maybe the cmp method from std::cmp::Ordering
+implied that there was no operator overloading, but evidently that’s
+not true; <code>std::ops::Add&lt;T&gt;</code> is the trait of things that overload <code>+</code>.
+And <code>Vec</code> overloads <code>[]</code>, which is even better news for nefarious EDSL
+purposes.  (Though Rust’s macro system is probably a more capable way
+of doing EDSLs.)</p>
+<p>In general the error messages are really excellent:</p>
+<pre><code>: user@debian:~/devel/dev3; rustc add.rs
+error: return types are denoted using `-&gt;`
+ --&gt; add.rs:1:13
+  |
+1 | fn f(i: i32): i32 {
+  |             ^ help: use `-&gt;` instead
+</code></pre>
+<p>Though not always:</p>
+<pre><code>thread 'main' panicked at 'index out of bounds: the len is 1
+but the index is 1', /stable-dist-rustc/build/src/libcollections/
+vec.rs:1307
+</code></pre>
+<p>That’s... not a useful error location.</p>
+<p>This is a very groovy way to <em>almost</em> implicitly propagate an
+exception:</p>
+<pre><code>fn run(config: Config) -&gt; Result&lt;(), Box&lt;Error&gt;&gt; {
+    let mut f = File::open(config.filename)?;
+</code></pre>
+<p>That sneaky little byte <code>?</code> means “return the result if it’s an
+error”.</p>
+<p>I like the fact that each file forms a namespace of its own by
+default.  I dislike the fact that apparently the crate name has
+nothing to do with the filename.</p>
+<p>I wonder if instead of a <code>&amp;</code> sigil for borrowing an immutable
+reference and no sigil for consumption or copying (the difference
+between them being only whether the object has the <code>Copy</code> trait) the
+unmarked case should be borrowing an immutable reference, while
+copying and consumption each have their own sigils.  Mina suggested
+that consumption should use an arrow; instead of <code>let s2 = s1</code> you
+could say <code>let s2 ← s1</code> to emphasize the “movement” aspect of the
+value; in other consumption contexts (arguments, returns) that
+wouldn’t quite work, but <code>let s2 = ←s1</code> would.</p>
+<p>Syntactically, I am not a fan of the paamayim nekudotayim, but I guess
+it could be worse; VMS used $.</p>
+<p>It’s interesting that library functions are private (like C file
+<code>static</code>, I guess?) by default, if you don’t prefix them with <code>pub</code>.
+<code>pub fn foo</code>, etc.</p>
+<p>Recursive deref coercion for arguments surprised me.</p>
+<h3>Unhandled results are just a warning</h3>
+<p>Unhandled result failures warn by default, which is nice:</p>
+<pre><code>: user@debian:~/devel/dev3; rustc greet.rs
+warning: unused `Result` that must be used
+ --&gt; greet.rs:6:4
+  |
+6 |    io::stdin().read_line(&amp;mut s);
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_must_use)]` on by default
+  = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: 1 warning emitted
+</code></pre>
+<p>But it was only a warning:</p>
+<pre><code>: user@debian:~/devel/dev3; ./greet
+hi, what is your name?
+bob
+hello, bob
+!
+</code></pre>
+<p>There’s a linter standardly installed with the compiler called
+“Clippy”; I’m not sure if this is a Clippy warning or not.</p>
+<h3>Unicode handling?  Well, shit, at least it’s not Python</h3>
+<p>The Rust book says:</p>
+<blockquote>
+<p><em>Note: <code>std::env::args</code> will panic if any argument contains invalid
+Unicode.  If you need to accept arguments containing invalid
+Unicode, use <code>std::env::args_os</code> instead. That function returns
+OsString values instead of String values.  We’ve chosen to use
+<code>std::env::args</code> here for simplicity because <code>OsString</code> values
+differ per-platform and are more complex to work with than <code>String</code>
+values.</em></p>
+</blockquote>
+<p>So, on the plus side, at least command-line argument handling isn’t
+<em>completely</em> broken in order to enable portability to broken operating
+systems.  On the other hand, the easiest interface to command-line
+argument apparently <em>is</em> broken.  I don’t understand why I should
+suffer because other people use Microsoft Windows.</p>
+<p>But hey.  At least I think my Rust programs won’t crash while
+attempting to print a crash traceback because the traceback contains a
+non-ASCII character, which is actually a thing that has happened to me
+with Python 3.  And probably there won’t be files I can’t open in Rust
+because their names aren’t UTF-8.  And I’m pretty sure my Rust
+programs won’t stop compiling if I put curly quotes inside my comments,
+which happened to me a lot in Python 2.</p>
+<h3>Strings</h3>
+<p>The str/String distinction is a bit of a hassle.  Nice that str (and
+maybe String?) has .lines() iterator and a .contains() method, and
+that String (and maybe str?) can be sliced by bytes.  .to_lowercase()
+is a longish method name but not commonly enough used to merit a more
+ambiguous name.</p>
+<h3>Iterators</h3>
+<p>Python’s iterator design is one of its strongest points, and Rust’s
+iterator design is one of <em>its</em> strongest points.  Both are external
+iterators (they don’t receive a closure to evaluate on each item, so
+you can build fairly general converging dataflow trees from them).
+And they are very similar, consisting of only a <code>next()</code> method
+(renamed <code>__next__()</code> in Python 3 for dubious reasons) that either
+returns the next item or fails (with None in Rust, StopIteration in
+Python) and implicitly mutates the iterator.</p>
+<p>It’s interesting that <code>Vec</code> “is an iterator” (you can directly iterate
+over it with for-in) but the book implies some built-in collections
+aren’t; you need to call .iter() on them.  Though, which built-in
+collections were they?  Arrays evidently <em>can</em> be directly iterated
+over.  The default way of iterating over <code>Vec</code> is I think its .iter()
+method; it also has <code>.into_iter()</code>, which consumes the vec, and
+<code>.iter_mut()</code>, which returns an iterator of mutable references.</p>
+<p>The <code>next()</code> method in the <code>Iterator</code> trait takes a mutable self
+reference, which makes it surprising that you can usefully make an
+immutable iterator reference.</p>
+<p>Python added generators fairly soon after iterators, allowing you to
+implement an iterator as a coroutine, which greatly improved the
+clarity of iterator transformation.  Soon after that it added
+generator expressions, which are still terser.</p>
+<p>Python’s iterators are somewhat bug-prone because you can confuse them
+with collections and attempt to use them again after they’ve already
+been fully consumed, in which case they will generally appear to be
+empty.  Java’s iterator design solved this by not treating iterators
+themselves as iterable, at the cost of not being able to deal with
+sequences like lines from an input file.  I think this bug-proneness
+is less of a concern in Rust because normally anything that iterates
+over an iterator will consume and drop the iterator; it won’t be
+satisfied with a borrowed mutable reference.</p>
+<p>Another bug that Rust is better at detecting than Python is creating a
+lazy iterator and then never consuming it, because at least iterator
+adaptors are <code>#[warn(unused_must_use)]</code>, like Err.</p>
+<p>Because Rust has traits instead of just protocols, things like map(),
+filter(), enumerate(), zip(), sum(), reduce() (called .fold()),
+collect() (like Python <code>list()</code>, <code>dict()</code>, etc.),
+and skip() (like APL drop I guess) are methods on the iterator trait
+with default implementations, not functions in a global namespace.
+This helps to reduce nesting compared to Python, though a Python genex
+is still usually shorter and clearer.</p>
+<p>Interestingly, both .collect() and .sum() have ad-hoc polymorphism on
+their return type, similar to Perl’s scalar vs. list context, but
+generalized.  Any type that implements the FromIterator trait can be
+returned from .collect(); any type that implements Sum can be returned
+from .sum() (and similarly for Product and .product()).</p>
+<p>There is some implicit lifting into the Result and Option monads for,
+e.g., .sum() and .product().</p>
+<p>In addition to what STL calls input and output (see below!) iterators,
+I think Rust iterators can be forward iterators (by implementing Copy
+or Clone) and random-access iterators (with the <code>Step</code> trait).</p>
+<h4>Writing through iterators</h4>
+<p>Because Rust iterators can yield mutable references, you can use them
+as cursors into data structures you’re mutating as well, like C++
+forward iterators.  This is something Python iterators can’t do.  This
+took me 20 minutes of struggling through compiler errors, but I did
+finally get it to work:</p>
+<pre><code>fn copy_iter&lt;T: Copy&gt;(src: &amp;mut dyn Iterator&lt;Item=&amp;T&gt;,
+                      dest: &amp;mut dyn Iterator&lt;Item=&amp;mut T&gt;) {
+    loop {
+        match (src.next(), dest.next()) {
+            (Some(s), Some(d)) =&gt; *d = s.clone(),
+            (_, _) =&gt; return,
+        }
+    }
+}
+
+fn main() {
+    let mut v1 = vec![3, 4, 1];
+    let v2 = vec![10, 20, 100];
+    let mut i = v1.iter_mut();
+    i.next();
+
+    copy_iter(&amp;mut v2.iter(), &amp;mut i);
+    println!("Now it's {:?}", v1);      // outputs: Now it's [3, 10, 20]
+}
+</code></pre>
+<p>That, uh, doesn’t really emit reasonable code for <code>copy_iter</code>, though.
+It <em>does</em> get specialized for the <code>i32</code> integers it’s being invoked
+with, but, oddly enough, not for vector iteration, presumably because
+of <code>dyn</code>:</p>
+<pre><code>0000000000002cb0 &lt;_ZN4iter9copy_iter17h5fd7a53461d29648E&gt;:
+    2cb0:       48 83 ec 58             sub    $0x58,%rsp
+    2cb4:       48 89 7c 24 28          mov    %rdi,0x28(%rsp)
+    2cb9:       48 89 74 24 30          mov    %rsi,0x30(%rsp)
+    2cbe:       48 89 54 24 38          mov    %rdx,0x38(%rsp)
+    2cc3:       48 89 4c 24 40          mov    %rcx,0x40(%rsp)
+    2cc8:       48 8b 44 24 30          mov    0x30(%rsp),%rax
+    2ccd:       48 8b 7c 24 28          mov    0x28(%rsp),%rdi
+    2cd2:       ff 50 18                callq  *0x18(%rax)
+    2cd5:       48 89 44 24 20          mov    %rax,0x20(%rsp)
+    2cda:       48 8b 44 24 40          mov    0x40(%rsp),%rax
+    2cdf:       48 8b 7c 24 38          mov    0x38(%rsp),%rdi
+    2ce4:       ff 50 18                callq  *0x18(%rax)
+    2ce7:       48 89 44 24 18          mov    %rax,0x18(%rsp)
+    2cec:       48 8b 44 24 18          mov    0x18(%rsp),%rax
+    2cf1:       48 8b 4c 24 20          mov    0x20(%rsp),%rcx
+    2cf6:       48 89 4c 24 48          mov    %rcx,0x48(%rsp)
+    2cfb:       48 89 44 24 50          mov    %rax,0x50(%rsp)
+    2d00:       b8 01 00 00 00          mov    $0x1,%eax
+    2d05:       31 c9                   xor    %ecx,%ecx
+    2d07:       48 83 7c 24 48 00       cmpq   $0x0,0x48(%rsp)
+    2d0d:       48 0f 44 c1             cmove  %rcx,%rax
+    2d11:       48 83 f8 01             cmp    $0x1,%rax
+    2d15:       75 17                   jne    2d2e &lt;_ZN4iter9copy_iter17h5fd7a53461d29648E+0x7e&gt;
+    2d17:       b8 01 00 00 00          mov    $0x1,%eax
+    2d1c:       31 c9                   xor    %ecx,%ecx
+    2d1e:       48 83 7c 24 50 00       cmpq   $0x0,0x50(%rsp)
+    2d24:       48 0f 44 c1             cmove  %rcx,%rax
+    2d28:       48 83 f8 01             cmp    $0x1,%rax
+    2d2c:       74 05                   je     2d33 &lt;_ZN4iter9copy_iter17h5fd7a53461d29648E+0x83&gt;
+    2d2e:       48 83 c4 58             add    $0x58,%rsp
+    2d32:       c3                      retq
+    2d33:       48 8b 7c 24 48          mov    0x48(%rsp),%rdi
+    2d38:       48 8b 44 24 50          mov    0x50(%rsp),%rax
+    2d3d:       48 89 44 24 08          mov    %rax,0x8(%rsp)
+    2d42:       e8 09 0e 00 00          callq  3b50 &lt;_ZN4core5clone5impls52_$LT$impl$u20$core..clone..Clone$u20$for$u20$i32$GT$5clone17h4244c5f4dce8d8e8E&gt;
+    2d47:       89 44 24 14             mov    %eax,0x14(%rsp)
+    2d4b:       48 8b 44 24 08          mov    0x8(%rsp),%rax
+    2d50:       8b 4c 24 14             mov    0x14(%rsp),%ecx
+    2d54:       89 08                   mov    %ecx,(%rax)
+    2d56:       e9 6d ff ff ff          jmpq   2cc8 &lt;_ZN4iter9copy_iter17h5fd7a53461d29648E+0x18&gt;
+    2d5b:       90                      nop
+    2d5c:       90                      nop
+    2d5d:       90                      nop
+    2d5e:       90                      nop
+    2d5f:       90                      nop
+</code></pre>
+<p>I mean, reading through the code, it’s not <em>totally</em> appalling, but
+does this function really need an almost-90-byte stack frame?  And
+what’s going on here?</p>
+<pre><code>    2ce7:       48 89 44 24 18          mov    %rax,0x18(%rsp)
+    2cec:       48 8b 44 24 18          mov    0x18(%rsp),%rax
+</code></pre>
+<p>And this in particular is kind of an embarrassing way to compile <code>*d =
+s.clone()</code> in a production compiler optimizing for size:</p>
+<pre><code>    2d33:       48 8b 7c 24 48          mov    0x48(%rsp),%rdi
+    2d38:       48 8b 44 24 50          mov    0x50(%rsp),%rax
+    2d3d:       48 89 44 24 08          mov    %rax,0x8(%rsp)
+    2d42:       e8 09 0e 00 00          callq  3b50 &lt;_ZN4core5clone5impls52_$LT$impl$u20$core..clone..Clone$u20$for$u20$i32$GT$5clone17h4244c5f4dce8d8e8E&gt;
+    2d47:       89 44 24 14             mov    %eax,0x14(%rsp)
+    2d4b:       48 8b 44 24 08          mov    0x8(%rsp),%rax
+    2d50:       8b 4c 24 14             mov    0x14(%rsp),%ecx
+    2d54:       89 08                   mov    %ecx,(%rax)
+</code></pre>
+<p>I’d think something like this would be more reasonable:</p>
+<pre><code>    mov 0x48(%rsp), %rdi    # s
+    callq _ZN4core5clone5impls52_$LT$impl$u20$core..clone..Clone$u20$for$u20$i32$GT$5clone17h4244c5f4dce8d8e8E #WTAF
+    mov 0x50(%rsp), %rcx    # d
+    mov %eax, (%rcx)        # *d = ...
+</code></pre>
+<p>That’s with <code>-C prefer-dynamic -C opt-level=s</code>.  Without the
+optimization the executable is three times the size.  opt-level=3
+doesn’t help but opt-level=1 is actually a little better, except that
+its invocation of the <code>next()</code> method is much worse:</p>
+<pre><code>00000000000013a0 &lt;_ZN4iter9copy_iter17h5fd7a53461d29648E&gt;:
+    13a0:       41 57                   push   %r15
+    13a2:       41 56                   push   %r14
+    13a4:       41 54                   push   %r12
+    13a6:       53                      push   %rbx
+    13a7:       50                      push   %rax
+    13a8:       49 89 f6                mov    %rsi,%r14
+    13ab:       49 89 ff                mov    %rdi,%r15
+    13ae:       66 90                   xchg   %ax,%ax
+    13b0:       e8 8b ff ff ff          callq  1340 &lt;_ZN91_$LT$core..slice..iter..Iter$LT$T$GT$$u20$as$u20$core..iter..traits..iterator..Iterator$GT$4next17h074db47cc7af8891E&gt;
+    13b5:       49 89 c4                mov    %rax,%r12
+    13b8:       4c 89 f7                mov    %r14,%rdi
+    13bb:       e8 b0 ff ff ff          callq  1370 &lt;_ZN94_$LT$core..slice..iter..IterMut$LT$T$GT$$u20$as$u20$core..iter..traits..iterator..Iterator$GT$4next17h50a12d7708b22495E&gt;
+    13c0:       4d 85 e4                test   %r12,%r12
+    13c3:       74 17                   je     13dc &lt;_ZN4iter9copy_iter17h5fd7a53461d29648E+0x3c&gt;
+    13c5:       48 89 c3                mov    %rax,%rbx
+    13c8:       48 85 c0                test   %rax,%rax
+    13cb:       74 0f                   je     13dc &lt;_ZN4iter9copy_iter17h5fd7a53461d29648E+0x3c&gt;
+    13cd:       4c 89 e7                mov    %r12,%rdi
+    13d0:       e8 ab fd ff ff          callq  1180 &lt;_ZN4core5clone5impls52_$LT$impl$u20$core..clone..Clone$u20$for$u20$i32$GT$5clone17hb0e95370c1e5efa8E&gt;
+    13d5:       89 03                   mov    %eax,(%rbx)
+    13d7:       4c 89 ff                mov    %r15,%rdi
+    13da:       eb d4                   jmp    13b0 &lt;_ZN4iter9copy_iter17h5fd7a53461d29648E+0x10&gt;
+    13dc:       48 83 c4 08             add    $0x8,%rsp
+    13e0:       5b                      pop    %rbx
+    13e1:       41 5c                   pop    %r12
+    13e3:       41 5e                   pop    %r14
+    13e5:       41 5f                   pop    %r15
+    13e7:       c3                      retq
+</code></pre>
+<p>(Maybe all those extra <code>mov</code>s disappear into register renaming in
+early stages of execution, though.)</p>
+<p>(On the plus side, compiling this 17-line program
+at any optimization level takes 280–290 ms,
+barely longer than the 230 ms to compile the three-line hello-world
+program.  So it’s compiling... about 300 lines a second?  Probably
+that’s just happenstance and the actual amount of code is a minimal
+factor here.)</p>
+<p>The explicit call to .iter() is necessary; maybe coercion to iterators
+happens automatically in for-in loops for <code>Vec</code>, but not here:</p>
+<pre><code>error[E0277]: `Vec&lt;{integer}&gt;` is not an iterator
+  --&gt; iter.rs:17:15
+   |
+17 |     copy_iter(&amp;mut v2, &amp;mut i);
+   |               ^^^^^^^ `Vec&lt;{integer}&gt;` is not an iterator
+   |
+   = help: the trait `Iterator` is not implemented for `Vec&lt;{integer}&gt;`
+   = note: required for the cast to the object type `dyn Iterator&lt;Item = &amp;_&gt;`
+</code></pre>
+<p>The body of the loop is stupid, though, because it’s explicitly
+calling .clone() on a <code>Copy</code> instance; it should instead say</p>
+<pre><code>match (src.next(), dest.next()) {
+    (Some(s), Some(d)) =&gt; *d = *s,
+    (_, _) =&gt; return,
+}
+</code></pre>
+<p>and, with this fix, the function is inlined into main() as it should
+be, and fully unrolled, and I think maybe dead-store-eliminated as
+well.  This also works:</p>
+<pre><code>while let (Some(s), Some(d)) = (src.next(), dest.next()) {
+    *d = *s;
+}
+</code></pre>
+<p>And so does this:</p>
+<pre><code>for (s, d) in src.zip(dest) {
+    *d = *s;
+}
+</code></pre>
+<h2>FFI Callability</h2>
+<p>One of the major draws of Rust for me is interoperability: <a href="https://docs.rust-embedded.org/book/interoperability/rust-with-c.html">being able
+to call code from other languages</a> and <a href="https://doc.rust-lang.org/stable/reference/items/external-blocks.html#abi">being able to call code in
+other languages</a>.</p>
+<p>It’s not obvious how you invoke the Rust compiler to build a .o file
+you can link with C, though.  All in all this seems like an
+underdocumented aspect of Rust.</p>
+<p>The following seems to work (see <a href="https://stackoverflow.com/questions/63617012/creating-and-linking-static-rust-library-and-link-to-c">SO question</a>), but involves
+compiling four lines of code into a 20-megabyte library which adds 4.7
+megs to the binary, and adds dependencies on libpthreads, libdl, libm,
+and librt to the C code:</p>
+<pre><code>: user@debian:~/devel/dev3; cat add2.rs
+#[no_mangle]
+pub extern "C" fn add(a: i32, b: i32) -&gt; i32 {
+    a + b
+}
+: user@debian:~/devel/dev3; rustc --crate-type=staticlib add2.rs
+: user@debian:~/devel/dev3; ls -l libadd2.a
+-rw-r--r-- 1 user user 19493732 Oct  7 23:51 libadd2.a
+: user@debian:~/devel/dev3; cat calladd2.c
+#include &lt;stdio.h&gt;
+
+int add(int a, int b);          /* prototype for function written in Rust */
+
+int main(int argc, char **argv) {
+  printf("3 + 4 = %d\n", add(3, 4));
+  return 0;
+}
+: user@debian:~/devel/dev3; cc -L. calladd2.c -ladd2 -lpthread -ldl -lm -lrt
+: user@debian:~/devel/dev3; ls -l a.out
+-rwxr-xr-x 1 user user 4689773 Oct  7 23:52 a.out
+: user@debian:~/devel/dev3; ./a.out
+3 + 4 = 7
+</code></pre>
+<p>(It sort of works with <code>cc -static</code> but gives terrifying warnings.)</p>
+<p>So it seems like doing this in practice would involve doing some of
+the things mentioned in the “Hello World is Fucking Huge” section
+above.  Until your library is hundreds of thousands of lines of code,
+anyway.</p>
+<p><a href="https://github.com/mooman219/fontdue">Fontdue</a> is a TrueType
+rasterizer written this way (a <code>no_std</code> crate) to facilitate calling
+from C.  It seems like I could probably learn a lot from things like
+that about how to pull this off.</p>
+<p>However, it’s notable that building libraries like this evidently
+doesn’t rely on having a working GCC toolchain, so cross-compiling is
+easier for building C-callable libraries than for building
+executables:</p>
+<pre><code>: user@debian:~/devel/dev3; rustc --crate-type=staticlib \
+    --target s390x-unknown-linux-gnu add2.rs
+: user@debian:~/devel/dev3; ls -l libadd2.a
+-rw-r--r-- 1 user user 37002666 Oct  8 00:13 libadd2.a
+: user@debian:~/devel/dev3; ar tv libadd2.a
+rw-r--r-- 0/0   1640 Dec 31 21:00 1969 add2.add2.a3d9fba4-cgu.0.rcgu.o
+rw-r--r-- 0/0   2288 Dec 31 21:00 1969 add2.1o36m3z73gy3kp52.rcgu.o
+...[188 lines omitted]...
+: user@debian:~/devel/dev3; ar x libadd2.a add2.add2.a3d9fba4-cgu.0.rcgu.o
+: user@debian:~/devel/dev3; ls -l add2.add2.a3d9fba4-cgu.0.rcgu.o
+-rw-r--r-- 1 user user 1640 Oct  8 00:14 add2.add2.a3d9fba4-cgu.0.rcgu.o
+: user@debian:~/devel/dev3; file add2.add2.a3d9fba4-cgu.0.rcgu.o
+add2.add2.a3d9fba4-cgu.0.rcgu.o: ELF 64-bit MSB relocatable, IBM S/390, version 1 (SYSV), not stripped
+</code></pre>
+<p>I don’t have cross-platform binutils installed, though:</p>
+<pre><code>: user@debian:~/devel/dev3; objdump -d add2.add2.a3d9fba4-cgu.0.rcgu.o
+
+add2.add2.a3d9fba4-cgu.0.rcgu.o:     file format elf64-big
+
+objdump: can't disassemble for architecture UNKNOWN!
+</code></pre>
+<h2>Creature comforts and affordances</h2>
+<p>I’d really like to have Hypothesis.  <a href="https://github.com/Rik-de-Kort/minithesis-rust">Rik de Kort has ported
+minithesis</a> but
+doesn’t recommend using it; he recommends the Hypothesis-inspired
+<a href="https://docs.rs/proptest/0.10.1/proptest/">proptest</a> (<a href="https://altsysrq.github.io/proptest-book/proptest/tutorial/macro-proptest.html">docs</a>) or
+<a href="https://docs.rs/quickcheck/0.9.2/quickcheck/">quickcheck</a> instead,
+which latter is by BurntSushi (Andrew Gallant, the ripgrep guy) and
+also comes recommended by DRMacIver.  There are <a href="https://alastairreid.github.io/why-not-both/">efforts to provide
+proptest via symbolic execution in KLEE</a>.</p>
+<p>It’s nice that there’s a standard test setup: the <code>#[cfg(test)]</code>
+attribute on a <code>mod</code>, the <code>#[test]</code> attribute on each test function,
+the <code>assert!</code> macro (or just <code>panic!</code>), and <code>cargo test</code> to run the
+lot (implicitly all in parallel!).  I don’t think the Rust book’s
+recommendation to put the tests <code>mod</code> in <code>src/lib.rs</code> is optional or
+not; XXX try it.  I like the recommendation to put unit tests in the
+same file as the implementation; I guess Cargo enforces the putting of
+integration tests in a <code>tests/</code> directory and <code>extern crate</code> importing
+your library module?  XXX try a different directory.</p>
+<h3>Deep equality and deep printing</h3>
+<p>One of the big advances in Python over Perl for me was deep equality
+and printing by default (for lists, tuples, and dicts), The semantics
+of equality used by <code>assert_eq!</code> are those of <code>==</code>, which comes from
+the <code>PartialEq</code> trait.  As with printing, Rust doesn’t do the deep
+comparison thing for structs and enums unless you opt into it with
+<code>#[derive(..., PartialEq)]</code>.  Not sure yet about the semantics of
+these with built-in arrays, slices, tuples, and hash maps.  XXX try
+it.  Vec evidently has a useful debug print format.</p>
+<p>Vec and std::collection::HashMap at least do the deep equality thing
+by default.  Given this code:</p>
+<pre><code>let xs = vec![3, 8, 12];
+
+let mut ys = vec![3, 8];
+ys.push(13);
+assert_eq!(xs, ys);
+</code></pre>
+<p>We get this behavior:</p>
+<pre><code>: user@debian:~/devel/dev3; ./veciter
+thread 'main' panicked at 'assertion failed: `(left == right)`
+  left: `[3, 8, 12]`,
+ right: `[3, 8, 13]`', veciter.rs:6:5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+</code></pre>
+<p>And similarly for HashMap.  It formats okay with <code>{:?}</code> too.</p>
+<h3>Backtraces</h3>
+<p>It’d be nice to have a stack data dump like Python <code>cgitb</code>, but I’m
+not sure to what extent that’s implementable in Rust.  With
+<code>RUST_BACKTRACE=1</code> in the environment, you do get some kind of
+backtrace, but it doesn’t display the values of local variables, and
+if you compile without <code>-g</code> it won’t even show you the line number in
+your code where it failed:</p>
+<pre><code>: user@debian:~/devel/dev3; RUST_BACKTRACE=1 ./veciter
+thread 'main' panicked at 'assertion failed: `(left == right)`
+  left: `[3, 8, 12]`,
+ right: `[3, 8, 13]`', veciter.rs:6:5
+stack backtrace:
+   0: rust_begin_unwind
+             at /rustc/c8dfcfe046a7680554bf4eb612bad840e7631c4b/library/std/src/panicking.rs:515:5
+   1: core::panicking::panic_fmt
+             at /rustc/c8dfcfe046a7680554bf4eb612bad840e7631c4b/library/core/src/panicking.rs:92:14
+   2: core::panicking::assert_failed_inner
+   3: core::panicking::assert_failed
+   4: veciter::main
+   5: core::ops::function::FnOnce::call_once
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+</code></pre>
+<p>The suggested <code>RUST_BACKTRACE=full</code> gives you more stack frames,
+machine-code addresses, and compilation hashes, but not more
+variables, e.g.,</p>
+<pre><code>  17:     0x7ff3987a1c61 - veciter::main::hdfeb52505aea83ac
+                               at /home/user/devel/dev3/veciter.rs:6:5
+</code></pre>
+<p>This would be useful if I were debugging the compiler or build system
+but not if the bug is in my code.</p>
+<h3>Etc.</h3>
+<p>Failing full backtraces, what does the debugger look like?  <a href="https://rustc-dev-guide.rust-lang.org/debugging-support-in-rustc.html">Evidently
+(Rust’s fork of) GDB and (Rust’s MacOS-only fork of) LLDB are
+supported</a>, and Tom Tromey has been working on it, but DWARF can’t
+represent traits yet.</p>
+<p>There are some wrappers installed by Rustup (or Cargo?) that don’t
+work:</p>
+<pre><code>: user@debian:~/devel/dev3; rust-gdb
+gdb: unrecognized option '-iex'
+Use `gdb --help' for a complete list of options.
+: user@debian:~/devel/dev3; rust-lldb
+lldb not found! Please install it.
+</code></pre>
+<p>You'd think there would be a <code>rustfilt</code> analogous to <code>c++filt</code> for the
+name mangling, but there doesn’t seem to be.</p>
+<p><a href="https://lib.rs/crates/coredump">There’s a crate called coredump to dump core on panic</a>, which is
+potentially a useful alternative to full backtraces, if you have a
+working debugger, anyway.</p>
+<p>Printf debugging in tests is feasible but requires <code>cargo test --
+--nocapture</code>.</p>
+<p>A lot of the things I’m accustomed to in the Python standard library
+(JSON, XML, HTTP) aren’t in the Rust standard library; you’re supposed
+to get them from Cargo.  But which crates (packages) do I use in Cargo
+for these things?  For example, apparently <a href="https://arusahni.net/blog/2020/03/optimizing-rust-binary-size.html">ureq is a lot smaller than
+reqwest for HTTP</a>.</p>
+<p>I guess one possibility is to look at exemplary Rust projects and see
+what dependencies <em>they</em> use.  ripgrep, for example, has 46
+dependencies (!).  Among them are the FNV hash function used by the
+Rust compiler, <code>atty</code> (which provides various OS-specific cversions of
+<code>isatty</code>), <code>libc</code> (a wrapper around libc), <code>itoa</code> (a faster version
+than the <code>fmt::Formatter</code> version), <code>memmap2</code> (a fork of memmap-rs,
+supporting mmap and similar facilities on other OSes), <code>ryu</code> (for
+float-to-string conversion), and <code>serde</code> (similar to pickle).  This
+gives something of a flavor of the stuff left out of the standard
+library.</p>
+<p><em>Rust for the Polyglot Programmer</em> recommends crates called <code>slab</code>,
+<code>slotmap</code>, and <code>generational_arena</code> for memory management;
+<code>itertools</code>; the locking-primitives crate <code>parking_lot</code>; the <code>tokio</code>
+runtime for async programs; the alternative <code>smol</code>; <code>pin-project</code> and
+<code>pin-project-lite</code> for dealing with some obscure async problems;
+<code>futures</code>; <code>cxx</code>, for calling C++; <code>inline-python</code> and <code>pyo3</code> for
+calling Python; <code>wasm-bindgen</code>, <code>web-sys</code>, and <code>rusty_v8</code> for WASM and
+the web; <code>j4rs</code> and <code>jni</code> for calling Java; <code>fehler</code>, <code>thiserror</code>,
+<code>eyre</code>, and/or <code>anyhow</code> for error handling; <code>num</code>, <code>num-traits</code>, and
+<code>num-derive</code> for numerical code and integer conversion; <code>index_vec</code>,
+<code>arrayvec</code>, and <code>indexmap</code> for containers; <code>easy-ext</code>; <code>rayon</code> and
+<code>crossbeam</code> for multi-thread parallelism; <code>chrono</code> and <code>chrono-tz</code> for
+datetime; <code>libc</code> or <code>nix</code>; <code>lazy_static</code> and <code>once_cell</code>; <code>log</code>;
+<code>tracing</code>; <code>regex</code>; <code>lazy-regex</code>; <code>glob</code>; <code>tempfile</code>; <code>rand</code> (also
+recommended by TRPL); <code>either</code>; <code>void</code>; <code>ndarray</code>; <code>ndarray-linalg</code>;
+<code>ring</code>; <code>rustls</code>; <code>bstr</code>; <code>bytemuck</code>; <code>serde</code>, mentioned above, but
+also with the objective of data <em>interchange with other languages</em>,
+saying they are “considerably better for many tasks than anything
+available in any other programming environment”; <code>reqwest</code> or <code>ureq</code>;
+<code>hyper</code> for raw HTTP; <code>rocket</code>, <code>actix-web</code>, <code>rouille</code> (sync), or
+<code>warp</code> as a web server framework; <code>structop</code> and <code>clap</code> or <code>argparse</code>
+for command-line parsing; etc.  It also suggests looking at “recent
+downloads” on crates.io to see what other people are using.  It
+specifically recommends avoiding <code>wasm-pack</code> and <code>stdweb</code>.</p>
+<p>I think the easiest way to make Cargo get the source for a package is
+to add it as a dependency to a project.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li>Rust</li></ul></div></html>

@@ -1,0 +1,5 @@
+difference in radii gives lever arm, so absolute diameter can be large
+
+plain bearings can be smaller than drums.  bearing's m.a. relative to
+applied force is bearing radius divided by effective lever arm (drum
+radius difference).  if this is multiplied by frictional coefficient, 

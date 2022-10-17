@@ -1,0 +1,8 @@
+PDF is a mess because it tries to support incremental updates by way
+of appending, random access, and compression, in a way that’s deeply
+intermeshed with the application-layer data structures it uses and
+unnecessarily inefficient as a result.  You have independently
+compressed streams for the contents of each page, an xrefs table at
+the end of the file that tells you where to find those streams
+
+If your PDF file were store

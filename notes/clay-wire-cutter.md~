@@ -1,0 +1,8 @@
+A clay wire cutter makes curved cuts.  If it enters a planar surface
+of a clay block all at once while it is pulled taut, the cut starts
+out straight, but if it enters incrementally, the cut can start out
+curved; and of course the path on which it is pulled through the clay
+can also be curved.
+
+The cut path has a tendency to have negative Gaussian curvature as
+initial wiggles in the wire tend to straighten out.

@@ -1,0 +1,12 @@
+I was watching a [video about the Open Source Ecology large 3-D
+printer][0] and the problems they're having with bushing misalignment.
+Basically the problem is that they have this big 3-D-printed block
+with spaces in it for bronze bushings, so that it will ride smoothly
+and with low friction on a pair of steel rods, but it doesn't.
+
+[0]: https://youtu.be/BnMIJprpCIA
+
+The problem is diagnosed to be misalignment: the bushings are
+12-micron tolerance, so a 12-micron deviation in the shape of the
+cavity they fit into is enough to get them out of tolerance, and
+possibly make them nonparallel enough that the rod can't 

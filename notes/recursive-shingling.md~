@@ -1,0 +1,4 @@
+Suppose you divide a text into consecutive four-byte windows.  If the
+text is not a multiple of four bytes long, one of the windows will not
+be full; traditionally we pad at the end, but we can also pad at the
+beginning.  There are four ways to do such sequence alignment.

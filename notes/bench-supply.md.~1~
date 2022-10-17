@@ -1,0 +1,4 @@
+One thing I’ve been procrastinating on for years is building a proper
+bench power supply.  Minimally it needs a galvanically isolated
+single-ended DC output voltage adjustable from 0 V to 15 V with an
+adjustable current limit.

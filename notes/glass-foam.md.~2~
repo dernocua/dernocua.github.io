@@ -1,0 +1,136 @@
+You can get neutral waterglass to foam up into an open-cell-foam glass
+just by heating it to its softening point (I didn’t measure with a
+thermometer, maybe 500°?) over the course of a few minutes.  The
+structure of the resulting foam is fairly coarse, and the density is
+not that low.
+
+How
+---
+
+A couple of possibilities occur to me to improve the structure.
+
+Water is probably the best blowing agent for this kind of thing, just
+based on its low molecular weight.  Ammonia might be a possibility,
+too.
+
+First, waterglass solution doesn’t solidify at room temperature until
+it’s something like 35% waterglass by mass, and so when you heat it up
+slowly, any water in excess of that 65% (or even a bit more, since
+solubility increases at higher temperatures) will bubble out in the
+liquid state, before the solid foam can form.  Adding small amounts of
+polyvalent cations (such as calcium or magnesium, or maybe even
+aluminum or boron) is well known to decrease its solubility to by
+orders of magnitude, so perhaps they could permit the formation of a
+solid hydrogel with much higher water content, perhaps 90%, 99%, or
+99.9%, with a corresponding decrease in the density of the final
+product.  There must be some density limit below which you get glass
+mist rather than glass foam, but given how viscous glasses can be just
+above their softening point, the limit might be pretty low.
+
+Second, if the expansion is carried out very quickly rather than over
+a period of time, bubbles will have less time to coalesce into larger
+bubbles and convert the foam into the open-cell form.  So perhaps the
+solid hydrogel precursor could be foamed more effectively in the way
+that rice and breakfast cereals were originally puffed (and still are
+by roadside vendors in China and Korea), by first heating it under
+pressure to its softening point, then suddenly releasing the pressure.
+For most cereals this is done by heating the cereal to the proper
+temperature inside a cereal cannon, then whacking the valve on the
+front of the cannon with a hammer, allowing the cereal to blow the
+cannon door open; but for popcorn it is instead done by encasing a
+small ball of the starch hydrogel in a hermetic hull which contains
+the pressure until it ruptures.  Both possibilities might work to
+produce lighter-weight glass foam.
+
+In the cannon case, there’s the risk that the glass hydrogel will
+completely melt inside the pressure chamber and stick together into a
+single mass, and also to its walls.  If the hydrogel is initially
+produced in granules, their surfaces can be treated to prevent this,
+for example by rolling them in quartz flour (which can be made to
+stick either by doing it before they have finished solidifying, by
+making the quartz flour hot enough to partially melt the surface, or
+by a hot air blast) or by replacing most of the alkali ions near their
+surface with polyvalent cations like those mentioned above.
+
+Many minerals might serve as viable alternatives to quartz flour here,
+including chalk, quicklime, alabaster, magnesia, zeolites, clays,
+talc, feldspar, aluminum hydroxide, mica, or rutile — almost any
+mineral used in formulating ceramic clay bodies or glazes will have a
+much higher melting point than the waterglass hydrogel, except perhaps
+oxides of lead.  Boric acid and borax don’t have a higher melting
+point, but still might be an alternative, by forming a borosilicate
+network in the surface of the granule.
+
+Most of these treatments to increase the melting point of the
+granules’ surfaces would also increase the surface’s strength, which
+would permit the use of the cannon-free popcorn process.
+
+An alternative means of puffing rice is “hot salt frying”, in which
+salt is heated to a high enough temperature to puff rice (but not melt
+the salt), and then the rice (often parboiled) is mixed into it.  The
+hot salt transfers heat to the rice much more rapidly than hot air
+would at ordinary velocities, so the rice puffs instead of dehydrating
+through vapor diffusion as it normally would.  The coarse-grained
+puffed rice is then easily sieved out of the fine-grained salt.
+Modern continuous-process cereal puffing works the same way, but using
+high-speed air or steam rather than solids.  This might be a viable
+alternative way to rapidly foam waterglass hydrogels, but media you
+wouldn’t want in your food could be used instead of the
+salt — anything from the foregoing litany of quartz, chalk, quicklime,
+etc., and also carbon.  These would permit the use of higher puffing
+temperatures.  Using air, of course, would permit puffing glass at
+higher temperatures still, but its low thermal conductivity and
+thermal density means you need high-pressure air jets.
+
+You could load a refractory mold full of many such beads of the
+hydrogel, but without any such surface treatment, then run hot air or
+steam through the mold cavity at high speed in order to expand all the
+grains and cause them to fuse together, like expanded polystyrene.
+This could be a pretty quick process if the grains are small; the hot
+air could convert them into a sort of fluidized bed.
+
+Why
+---
+
+The glass foam resulting from foaming waterglass can be abraded or
+sawn (or crushed) very easily, and the possibility of cutting it with
+a hot wire, like styrofoam, is very appealing, especially if its
+density can be decreased further.  Although it’s quite weak, it could
+be very useful for supporting granular slightly-denser materials such
+as perlite, vermiculite, alumina foam, and cheap carbon foam, for
+example while an adhesive sets (see file `leaf-resin-roof.md` for one
+use for this).  Because of its relatively low melting point and very
+low density, it might be possible to “burn it out” in such cases,
+leaving only a thin layer of residue.
+
+A different way of using this glass foam to support stronger materials
+is to first get it into the right shape (whether by expanding beads
+into a mold, gluing together a bunch of pre-expanded beads and pushing
+them into a mold, by cutting or abrading at low temperatures, or by
+hot-wire cutting) and then use the resulting form as either a mold or
+a stucco substrate.  This is more or less the same way styrofoam is
+used for molding, for example, concrete, or as a base for a fiberglass
+layup.  By painting, spraying, wrapping, laying up, or otherwise
+depositing a stronger material onto its surface, you can make a
+strong, hard shell.  This may need to be done in stages, first
+building up a lightweight shell that can be supported by the foam,
+then a stronger shell supported by the lightweight shell, then perhaps
+a solid object filling the whole shell.
+
+Why would you use glass foam for this rather than styrofoam?  Well, it
+doesn't require any organic materials, so it’s potentially much
+cheaper.  Being more rigid means you can cut it to precise dimensions
+more easily, and it will bend less when you’re doing things to it that
+impose slight side loads, like painting or stuccoing it.  It can
+withstand common solvents without any complaint, unlike styrofoam, and
+it can withstand higher temperatures than any organic polymer.
+Counterintuitively, it might be possible to get it to a *lower*
+density than styrofoam, because silicate glass (even waterglass) has a
+much higher strength-to-weight ratio than polystyrene.  My subjective
+impression is that even the foamed waterglass I’ve made with the crude
+direct process of slow heating is about as light as polystyrene.
+
+Also, if the density gets low enough, you can use glass foam for
+lost-foam casting, particularly for casting of materials like basalt,
+fused quartz, lead glass, or soda-lime glass that will happily
+dissolve the glass-foam residues.

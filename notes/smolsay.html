@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html><title>Smolsay: the Ur-Lisp, but with dicts instead of conses ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Smolsay: the Ur-Lisp, but with dicts instead of conses</h1><div class="metadata">Kragen Javier Sitaker, 02021-07-12 (updated 02021-07-27)
+(22 minutes)</div><p>What if we wanted a small dynamically-typed imperative language with
+the flexibility of Lisp that admitted reasonably efficient
+implementations, but not based on conses?  Like, something with an
+implementation about the size of the ur-Lisp?  The power of
+first-class hash tables (“dictionaries” or “tables” or “associative
+arrays”) has been convincingly shown by JS, Perl5, PHP, Python, and
+Lua, and they certainly produce much more readable code than Lisp.</p>
+<p>Lua has shown that freeform syntax without statement terminators can
+be reasonably usable (though it mostly prohibits you from using
+juxtaposition as an operator, as ML does for function composition, and
+it limits your flexibility in what expressions can start with), and
+Python has shown that indentation-based syntax can be too, at least if
+you don’t demand too much from anonymous lambdas.</p>
+<h2>Statement-level structure</h2>
+<p>We can start with variables.  Imperative languages probably need
+variable updates, but most variables should be declared and
+initialized and then not mutated, so it makes sense to privilege the
+declaration form over mutation with brevity; and ideally the thing
+being declared should be in the left margin, permitting easy scanning,
+rather than preceded by a keyword or punctuation:</p>
+<pre><code>decl ::= name "=" expr
+assi ::= "set" lvalue "=" expr
+</code></pre>
+<p>Multiple assignment (and multiple declaration) is convenient syntactic
+sugar at times, especially with Lua-style or Perl-style multiple
+return values, but it doesn’t add any fundamental power if we have
+dicts.  And I think non-multiple assignment tends to push code toward
+being “boring” rather than “clever”, which is worthwhile here.</p>
+<p>So an lvalue is just a dictionary lookup chain from a name.  A
+pathname, you might say.  I think it’s really important to be able to
+say literally <code>p.x = 3</code> rather than the much noisier options like,
+say, <code>p{x} = 3</code> or <code>p:x = 3</code> or <code>p.:x = 3</code> or <code>p['x'] = 3</code> or <code>x(p) =
+3</code>, or a more implicit option like <code>p x = 3</code>.  But it’s also important
+to be able to index with expressions rather than literal symbols like
+<code>:x</code>.  One approach to this would be to distinguish literal symbols by
+case: perhaps <code>X</code> would be a literal symbol and <code>x</code> a variable, so
+<code>p.X = 3</code> would index by the literal symbol, but <code>p.x = 3</code> would use
+whatever the current value of <code>x</code> was.  But I think maybe a better
+approach is to use a parenthesized expression, so <code>p.x = 3</code> assigns to
+the property <code>x</code>, while <code>p.(x) = 3</code> reads the variable <code>x</code> and assigns
+to the property it names.  Thus <code>.()</code> takes the place of <code>[]</code> in most
+conventional languages.</p>
+<pre><code>lvalue ::= name ("." arc)*
+arc ::= name | "(" expr ")"
+</code></pre>
+<p>Now we need conditionals, functions, and (if this is really
+imperative) iteration.  My Lisp sense tells me that conditionals and
+iteration should be expressions rather than statements; my Lua and
+Python sense tells me that this might make parsing errors unusable
+(Lua's parsing can reliably distinguish a function call from a
+trailing expression followed by a new statement beginning wih <code>(</code> or
+<code>[</code> because Lua statements can’t begin with those because Lua doesn’t
+have expression statements) but in any case they should use
+conventional words; my C sense tells me that I should use curly
+braces.  So, conditionals:</p>
+<pre><code>if ::= "if" expr "{" expr+ "}"
+        ("elif" expr "{" expr+ "}")*
+        ("else" expr "{" expr+ "}")?
+</code></pre>
+<p>Since we don’t have multiple value returns, the value returned by the
+conditional is the value of the last expression in the chosen branch.</p>
+<p>Function calls are similarly syntactically simple, although they
+involve the expression-juxtaposition danger that shows up in JS, since
+presumably we will allow expression parenthesization:</p>
+<pre><code>call ::= expr "(" (expr ("," expr)*)? ","? ")"
+</code></pre>
+<p>The arrow syntax from current JS is the lowest-hassle way to define an
+anonymous function.  Semantics are that it is a closure with arguments
+are passed by value.</p>
+<pre><code>lambda ::= "(" (name ("," name)*)? ","? ")" "=&gt;" "{" expr* "}"
+</code></pre>
+<p>Tentatively I’m using Sam Atman’s <code>-&gt;</code> syntax from Lun for function
+return values:</p>
+<pre><code>return ::= "-&gt;" expr
+</code></pre>
+<p>This allows us to write <code>add1 = (x) =&gt; { -&gt; x + 1 }</code>, which is
+lightweight enough to not wish for a sugared <code>function add1(x) { -&gt; x
++ 1 }</code> form.</p>
+<p>Minimally iteration needs a while loop, but most loops are better
+expressed as iteration over a sequence:</p>
+<pre><code>while ::= "while" expr "{" expr* "}"
+for ::= "for" name "in" expr "{" expr* "}"
+</code></pre>
+<p>List comprehensions in Python are extremely useful, so these ought to
+return sequences, but what should they contain?  The conventional
+answer would be the last expression invoked in the loop body, and that
+seems adequate.</p>
+<p>The Lisp approach to sequences is to use cons lists, in which case the
+“for” structure would desugar somewhat as follows:</p>
+<pre><code>for x in y { z }
+
+yi = y
+while !yi.null {
+    x = yi.car
+    z
+    set yi = yi.cdr
+}
+</code></pre>
+<p>A different approach would use arrays and perhaps slices:</p>
+<pre><code>yi = 0
+while yi &lt; y.len {
+    x = y.at(yi)
+    z
+    set yi = yi + 1
+}
+</code></pre>
+<p>The remaining fundamental means of combination is explicit aggregate
+variable construction.  Unlike in JS, it’s syntactically unambiguous
+to use <code>{}</code> here because all our previous uses of <code>{</code> were
+semantically obligatory and thus cannot occur where an expression is
+expected.</p>
+<pre><code>dict ::= "{" (arc ":" expr ("," arc ":" expr)* ","?)? "}"
+list ::= "[" (expr ("," expr)* ","?)? "]"
+</code></pre>
+<p>So, the basic expression language then is</p>
+<pre><code>expr ::= decl | assi | if | call | lambda | return | while | for
+       | dict | list | infix
+</code></pre>
+<h2>Infix expressions</h2>
+<p>Pop infix syntax is fairly straightforward; basic arithmetic is:</p>
+<pre><code>atom ::= "(" expr ")" | string | int | real | symb | lvalue
+unary ::= atom | "-" atom | "!" atom
+expo ::= atom ("**" exp)*
+term ::= expo (("/" | "//" | "*" | "%") expo)*
+terms ::= term (("+" | "-" | "..") term)*
+</code></pre>
+<p>Here <code>..</code> is Lua’s string concatenation operator.  I think it’s safe
+to relegate bitwise arithmetic to named functions.</p>
+<p>There’s an unfortunate precedence ordering thing in C where booleans
+have precedence close to the bitwise operators, tighter than
+comparisons, rather than the more desirable looser-than-comparisons
+thing.  Another problem is that chained comparisons (<code>x == y == z</code>)
+have unintuitive results in most languages.  A simple solution is to
+restrict the syntactic composability of these elements, requiring the
+use of parentheses to disambiguate:</p>
+<pre><code>infix ::= terms (( "==" | "!=" | "&lt;"  | "&gt;"
+                 | "&lt;=" | "&gt;=" | "&amp;&amp;" | "||") terms)?
+</code></pre>
+<p>A slightly better solution is to provide a separate case for the
+associative short-circuiting Boolean operators that does allow them to
+be individually chained:</p>
+<pre><code>infix ::= terms (( "==" | "!=" | "&lt;"  | "&gt;" | "&lt;=" | "&gt;=") terms)?
+        | terms ("&amp;&amp;" terms)+
+        | terms ("||" terms)+
+</code></pre>
+<h2>Tokens</h2>
+<p>Strings, numbers, names, and symbols are simple enough.  The {} around
+these productions indicate that whitespace should not be skipped
+within them.</p>
+<pre><code>string ::= {"\"" ([^\\"] | "\" byte)* "\""}
+int ::= {"-"? [0-9]+}
+real ::= {"-"? ("." [0-9]+ | [0-9]+ "." [0-9]*)}
+name ::= {[A-Za-z_$] [^] \t\r\n(){}[.=!&lt;&gt;+-*/%&amp;|#]*}
+symb ::= {":" name}
+</code></pre>
+<p>Whitespace itself, implicitly ignored elsewhere, includes comments to
+end of line, which are marked with Unix <code>#</code> rather than Ada/Lua <code>--</code>.</p>
+<pre><code>whitespace ::= ([ \t\r\n] | "#" [^\r\n]* (\r\n | \n | \r))*
+</code></pre>
+<h2>Modules and scoping</h2>
+<p>There’s no need to put an import statement into the program grammar;
+the “.” syntax will work perfectly well for reaching into modules if
+there’s an ordinary function that imports a module and returns it,
+like JS’s <code>require</code>.  We can simply declare, Python-like, that global
+variables in a file are the properties of the corresponding module.</p>
+<p>So then we simply have</p>
+<pre><code>module ::= expr*
+</code></pre>
+<p>I’m convinced that lexical scoping is adequate and the right default.</p>
+<h2>The whole Smolsay grammar (Smolbutswol?)</h2>
+<pre><code>module ::= expr*
+expr ::= decl | assi | if | call | lambda | return | while | for
+       | dict | list | infix
+decl ::= name "=" expr
+assi ::= "set" lvalue "=" expr
+lvalue ::= name ("." arc)*
+arc ::= name | "(" expr ")"
+if ::= "if" expr "{" expr+ "}"
+        ("elif" expr "{" expr+ "}")*
+        ("else" expr "{" expr+ "}")?
+call ::= expr "(" (expr ("," expr)*)? ","? ")"
+lambda ::= "(" (name ("," name)*)? ","? ")" "=&gt;" "{" expr* "}"
+return ::= "-&gt;" expr
+while ::= "while" expr "{" expr* "}"
+for ::= "for" name "in" expr "{" expr* "}"
+dict ::= "{" (arc ":" expr ("," arc ":" expr)* ","?)? "}"
+list ::= "[" (expr ("," expr)* ","?)? "]"
+atom ::= "(" expr ")" | string | int | real | symb | lvalue
+unary ::= atom | "-" atom | "!" atom
+expo ::= atom ("**" exp)*
+term ::= expo (("/" | "//" | "*" | "%") expo)*
+terms ::= term (("+" | "-" | "..") term)*
+infix ::= terms (( "==" | "!=" | "&lt;"  | "&gt;" | "&lt;=" | "&gt;=") terms)?
+        | terms ("&amp;&amp;" terms)+
+        | terms ("||" terms)+
+string ::= {"\"" ([^\\"] | "\" byte)* "\""}
+int ::= {"-"? [0-9]+}
+real ::= {"-"? ("." [0-9]+ | [0-9]+ "." [0-9]*)}
+name ::= {[A-Za-z_$] [^] \t\r\n(){}[.=!&lt;&gt;+-*/%&amp;|#]*}
+symb ::= {":" name}
+whitespace ::= {([ \t\r\n] | "#" [^\r\n]* (\r\n | \n | \r))*}
+</code></pre>
+<p>This still contains the frustrating ambiguity where an expression
+immediately followed by <code>(</code> is a call, but expressions can also begin
+with <code>(</code>.  The alternative of replacing <code>sin(x)</code> with something like
+<code>sin:(x)</code> or <code>sin[x]</code> is unappealing.  It’s possible to disambiguate
+in these cases by assigning to a dummy variable: <code>_ = (foo)</code>.
+Requiring no whitespace or at least no line breaks before the paren
+would pretty much solve the problem, but it sort of requires that the
+parsing of <code>expr</code> not consume following whitespace.</p>
+<p>Because conditional blocks are always wrapped in braces, the if-else
+ambiguity doesn’t occur.</p>
+<h2>Resulting design at other levels of abstraction</h2>
+<p>This suggests the following set of 23 basic “bytecode” operations:
+getlocal, setlocal, get, put; jumpfalse, jump, call, return; makedict,
+makelist; constant; negative, not, exponent, truediv, floordiv, mul,
+mod, add, sub, cat, eq, lt.</p>
+<p>Of course, the proper order of implementation would be something like:</p>
+<ol>
+<li>Implement bytecode interpreter with textual bytecode syntax and
+   program in it a bit.</li>
+<li>Implement S-expression syntax, compiling to the bytecode, and
+   program in it a bit.</li>
+<li>Implement debugger stuff, maybe native-code compiler, etc.</li>
+<li>Implement pop infix syntax above.</li>
+</ol>
+<p>The S-expression syntax can get by with six special forms:</p>
+<ul>
+<li><code>(lambda args body...)</code></li>
+<li><code>(return x)</code></li>
+<li><code>(cond xy...)</code></li>
+<li><code>(while p body...)</code></li>
+<li><code>(for x y body...)</code></li>
+<li><code>(setlocal n v)</code></li>
+</ul>
+<p>The other bytecode operations are either implicit (getlocal, call,
+constant), folded into the three control structures, or ordinary
+functions (get, put, makedict, makelist, negative, not, exponent,
+truediv, floordiv, mul, mod, add, sub, cat, eq, lt), along with the
+other ordinary functions (require, print, length, etc.).</p>
+<p>From the point of view of the pure ur-Lisp, if we strip away the
+imperative and arithmetic frippery, we’re replacing ATOM, CONS, CAR,
+and CDR with get, put, makedict, and makelist, and makelist is
+unnecessary.</p>
+<p>Of course, other alternatives to S-expressions exist.  RPN, for
+example (which is on my mind lately because I’ve been hacking on PDF
+and PostScript) or Prolog notation, or REBOL-style non-R PN, or
+APL-style precedence-free infix.</p>
+<h2>Alternative debugging-first semantics</h2>
+<p>What if functions returned their internal namespaces instead of an
+explicit return value?  You wouldn’t need a return statement or a dict
+type, and in most cases debugging would get a lot easier.</p>
+<p>A hairier approach to this would be to associate the internal
+namespace with the value thus produced, and provide a function
+<code>why(x)</code> that returns the activation record of the function call that
+returned <code>x</code>.  This implies that returning a value sort of makes a
+copy of it to potentially associate it with a different activation
+record, but accessing it as a property does not; we want <code>why(p.x)</code> to
+work.  Other internal operations can be treated as functions.</p>
+<p>That is, a variable/property has a <em>value</em> aspect, the usual
+reference; but it also has a <em>why</em> aspect, which is the activation
+record of some function, accessible via the <code>why</code> built-in function.
+Both of these aspects are returned when a function returns and stored
+in the variable/property.  It might as well also have other aspects
+useful for debugging, like <code>prev</code>, which gives you the variable as it
+was before being overwritten, and <code>where</code>, which tells you what
+statement did the overwriting (or initializing), and in what
+activation record.  An activation record might also have a <code>caller</code>;
+often <code>caller(why(v))</code> will be <code>where(v).call</code>.  You might also want
+to know the control-flow context of the <code>where</code>, with something like
+<code>where(v).context.condition</code> to find out why the if or while statement
+was continuing.</p>
+<p>If all this data is always available, no activation record and indeed
+no value ever becomes garbage, so only very short programs can run
+fast.  (We’re in an imperative world here, so we can’t just recompute
+the activation record on demand like Bicicleta.)  We could maybe store
+it in some kind of a ring buffer, like Cheney on the MTA.</p>
+<p>The no-return-statement variation doesn’t have this problem; <code>sin(x)</code>
+is a whole activation record, but <code>sin(x).val</code> is just the return
+value, so you only retain activation records when you want them.  In
+Bicicleta I had syntactic sugar for this: <code>sin{x}</code> and <code>sin(x)</code>
+respectively, the second of which extracted a variable annoyingly
+called <code>()</code>.</p>
+<h2>Efficient implementation</h2>
+<p>A standard pointer-bumping generational GC should work pretty well
+here, though maybe not quite as well as in a strictly immutable
+language.  If we use a standard sort of stack structure rather than
+heap-allocating activation records, we need to scan the stack for
+roots on nursery collections anyway, so we don’t need a write barrier
+for writes to the stack, which are statically apparent, nor for
+property initializations.  Only property mutations and module-variable
+mutations need a write barrier.</p>
+<p>To statically resolve callees, we’d like to be able to treat the
+module variables in which “global” functions live as constant.  Static
+analysis can’t show that module variables are never mutated, but we
+could maybe trigger a recompile after mutating such a cell.  This
+makes the property-mutation write barrier more expensive, and it might
+require on-stack replacement (with a recompilation of the same code,
+not a compilation of the new function), which is easier if our
+stack-frame structures aren’t too optimized.  Debugging is also
+easier if those structures are ordinary dictionaries.</p>
+<p>Statically compiling local-variable accesses into indexing off a stack
+frame that is also an ordinary dictionary would be easier if we could
+ensure that dictionaries never changed shape, as local-variable
+vectors normally don’t.  If you can delete values from a dictionary,
+which is probably important, there’s the question of what happens when
+you try to read the deleted value.  If getting nil as in Lua is an
+acceptable answer, then you can ensure that dictionaries never change
+shape.  But, if you want that to raise an exception, you either need
+to check for existence every time you read a local variable, as Python
+does, or you need to recompile the function to crash (and potentially
+do on-stack replacement) when you delete the variable from its stack
+frame.</p>
+<p>Or you could just raise an error when you try to delete a variable
+from a stack frame, which is probably the most sensible thing to do
+--- changing their values is reasonable but deleting them is not.
+That would require that the deletion operation do a special check for
+such protection --- which is fine, because key deletion is so rare
+that it doesn’t need to be especially fast.</p>
+<p>The space-efficient way to make such early-bound accesses fast would
+be to put dictionaries’ keys in one vector (or set of vectors, but
+probably just one in this case, though maybe it would be worthwhile to
+use the set-of-vectors approach to handle lexical scopes) and the
+corresponding values in another one, which would be in the stack
+frame.  For large key sets, a canary hash table for the key set would
+enable fast access by key.  Newly added keys would go into a new
+key vector.</p>
+<p>This kind of design, where the stack frame structure is a regular
+first-class data value that happens to be efficient enough to use for
+local variables, seems like it might be an appealing alternative to
+dynamic deoptimization.</p>
+<p>(It might be useful to expose the inheriting-dictionary approach used
+to handle nested scopes as first-class in the language itself, so that
+you could, for example, put a class’s methods in one dictionary and
+then create objects that inherit from it, or efficiently override a
+few things in a large dictionary.)</p>
+<p>This structure would also make the common makedict case, where the set
+of keys is constant, fast and space-efficient.  And it might ease the
+task of “hidden class” compilers.</p>
+<p>Initialization can be statically guaranteed for all local variables if
+variable declarations are block-local rather than function-local.</p>
+<h2>What about dynamically dispatched methods?</h2>
+<p>We can use closures as methods, of course, or we could supply
+syntactic sugar like Lua’s <code>obj:method(args)</code>, which translates to
+<code>obj.method(obj, args)</code>, although both <code>:</code> and <code>-&gt;</code> are already taken
+in the syntax above.  <code>obj.method[args]</code>, <code>obj &lt;&lt; method(args)</code>, <code>obj
+&lt;- method(args)</code>, <code>^method(obj, args)</code>, <code>@method(obj, args)</code>, and
+<code>method = generic(:method) ... method(obj, args)</code> come to mind.  But
+we’d like to be able to do this in a way that can be compiled
+efficiently in a dynamically-typed system, which means we need some
+way to quickly verify that the method to invoke is the same as last
+time.  So we’d like the memory representation of <code>obj</code> to be possessed
+of some easily readable register-sized value that can be efficiently
+compared against the one for the method we think we ought to call.</p>
+<p>One approach is to attack the problem entirely at the desugared level:
+if we’re first fetching a property from the object, then invoking the
+resulting closure, we could try to speed up the property fetch, and/or
+we could compare the resulting property against the last closure we
+invoked at this callsite (or a PIC of them).  This would be fine for a
+tracing JIT but it seems unlikely to provide much benefit for a
+simpler compiler.  If your objects are made out of a delegation chain
+of dictionaries as described earlier, you can store the chain in a
+counted vector in the dictionary object, and you can copy the chain
+item in which you found the method to your inline cache, along with a
+number that says what index it was at.  Then you can compare the
+cache-key dictionary pointer to the dictionary pointer in the
+delegation chain at the appropriate position, if it’s within bounds.
+But then you need to worry that a later (more superficial) dictionary
+in the chain might be hiding the method, so you can also maybe store
+an index in the object that tells which is the last dictionary in the
+chain none of whose keys are hidden, and use <em>that</em> instead of the
+dictionary where you actually found the keys.  Hopefully this will
+allow you to have cache hits for “objects” in the same “class”, since
+instance data doesn’t normally hide methods.</p>
+<p>Another approach is the Perl/Python <code>bless</code> approach, where the
+instance data of an object is in one dictionary, and its methods are
+in another, providing a totally separate namespace and enabling you to
+use dicts with much greater security than in JS.  Lua does this with
+<code>setmetatable</code>: the things that tell Lua how to index a table or
+convert to strings are stored in a separate table, the metatable,
+which may be shared among many objects.  So maybe <code>obj &lt;&lt;
+method(args)</code> should desugar to what we’d write in Lua as
+<code>getmetatable(obj).method(obj, args)</code>.</p>
+<p>This is somewhat less conceptually simple (a dict isn’t just a set of
+key-value pairs; instead it has become merely the puppet of a shadowy
+class) but much easier to compile efficiently and much safer.  You
+don’t need to grovel over a delegation chain to figure out what the
+best cache key is; it’s just the class, which doesn’t need to support
+inheritance.  It would be better to put regular user methods in the
+class too, unlike Lua, which is at this intermediate point where
+methods like <strong>index and </strong>tostring are in the metatable as in Perl
+and Ruby, but you’re expected to put ordinary user methods in the same
+namespace as your instance variables or dictionary items, as in JS.</p>
+<p>I think this is slightly less simple than the current Lua approach,
+since in Lua, you don't need to add a metatable to a table in order to
+put methods on it.  but the metatables are already in the picture and
+it's already common to <code>return setmetatable(...)</code> in object
+constructors, and in those cases it seems like it would just simplify
+user code, as well as having the above advantages.</p>
+<p>One of the things I really enjoyed about LuaJIT's FFI (by contrast to
+Python's cffi) is that I can just add Lua methods to C structs with
+<code>ffi.metatype(ctype, { __index = { methods } })</code> instead of having to
+do the whole song and dance of the membrane pattern where I wrap each
+C type in a separate porcelain object, everywhere it's returned
+through the looking glass (and possibly going to some effort to keep
+that relationship 1:1).  But the standard Lua way of defining ordinary
+methods means that if I want to do the same thing for an ordinary
+table that's used as a dictionary, I do have to create a separate
+porcelain façade to hold its methods.</p>
+<p>Some notes on COLA-like object models are in <a href="../notes/faygoo.html">Faygoo: a yantra-smashing ersatz version of Piumarta and Warth’s COLA</a>.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/lisp.html">Lisp</a> (11 notes)
+</li><li><a href="../topics/virtual-machines.html">Virtual machines</a> (9 notes)
+</li><li><a href="../topics/small-is-beautiful.html">Small is beautiful</a> (8 notes)
+</li><li><a href="../topics/programming-languages.html">Programming languages</a> (8 notes)
+</li><li><a href="../topics/higher-order-programming.html">Higher order programming</a> (7 notes)
+</li><li><a href="../topics/sa.html">Systems architecture</a> (6 notes)
+</li><li><a href="../topics/syntax.html">Syntax</a> (5 notes)
+</li><li><a href="../topics/bytecode.html">Bytecode</a> (5 notes)
+</li><li><a href="../topics/gc.html">Garbage collection</a> (4 notes)
+</li><li><a href="../topics/dynamic-dispatch.html">Dynamic dispatch</a> (4 notes)
+</li><li><a href="../topics/luajit.html">LuaJIT</a> (2 notes)
+</li><li><a href="../topics/lua.html">Lua</a> (2 notes)
+</li><li><a href="../topics/js.html">The JS programming language</a> (2 notes)
+</li><li><a href="../topics/debugging.html">Debugging</a> (2 notes)
+</li><li>Lun</li></ul></div></html>

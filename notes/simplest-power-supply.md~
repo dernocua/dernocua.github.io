@@ -1,0 +1,6 @@
+Watching [BigClive's air "freshener" teardown][0] I was surprised to
+see an even simpler DC power supply for a microcontroller than I'd
+seen previously.  In the air freshener it consists of two 15K
+resistors in series, 
+
+[0]: https://youtu.be/3cm9AO0qD7k

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html><title>Scaling laws ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Scaling laws</h1><div class="metadata">Kragen Javier Sitaker, 02021-05-19 (updated 02021-12-30)
+(8 minutes)</div><p><a href="http://galileoandeinstein.physics.virginia.edu/tns_draft/tns_109to152.html">Galileo’s square-cube
+law</a>
+explains that a cylinder over a given dimension will collapse under
+its own weight:</p>
+<blockquote>
+<p>From what has already been demonstrated, you can plainly see the
+impossibility of increasing the size of structures to vast
+dimensions either in art or in nature; likewise the impossibility of
+building ships, palaces, or temples of enormous size in such a way
+that their oars, yards, beams, iron-bolts, and, in short, all their
+other parts will hold together; nor can nature produce trees of
+extraordinary size because the branches would break down under their
+own weight; so also it would be impossible to build up the bony
+structures of men, horses, or other animals so as to hold together
+and perform their normal functions if these animals were to be
+increased enormously in height; for this increase in height can be
+accomplished only by employing a material which is harder and
+stronger than usual, or by enlarging the size of the bones, thus
+changing their shape until the form and appearance of the animals
+suggest a monstrosity.</p>
+</blockquote>
+<h2>Different properties</h2>
+<p>Suppose we scale some physical system up by some factor <em>f</em>, or down
+if <em>f</em> &lt; 1.  Not only will some of its static properties change, as
+Galileo points out above, but also some of its other behaviors will
+speed up or slow down.  But by how much?</p>
+<h3>Mass</h3>
+<p>The mass and thus weight of a body will tend to scale as <em>f</em>³.</p>
+<h3>Tensile failure</h3>
+<p>The tensile strength of a member will tend to scale as <em>f</em>², so by
+smallifying an object we make it stronger (1/<em>f</em> times) relative to
+its own weight.  If we consider stress from accelerations, well, this
+means we can accelerate it faster (1/<em>f</em> times) before it fails in the
+tensile mode; relative to its own dimension, this is an advantage of a
+factor of 1/<em>f</em>² in acceleration, but this only works out to a factor
+of 1/<em>f</em> in frequency.</p>
+<p>That is, suppose we have some sort of machine in which a weight is
+being jerked back and forth along a course inside the machine by a
+rope, and if we run the machine too fast, the rope will break.  We
+smallify the machine, say by a factor of 1/<em>f</em> = 3.  Now the weight is
+being moved a 3 times shorter distance, it has 27 times less mass, and
+the rope can withstand 9 times less tension.  So the rope can
+withstand 27/9 = 3 times greater acceleration, but at a given jerking
+frequency, 3 times less acceleration would be needed to jerk the
+weight the same distance.  But the length of the weight’s course
+within the machine has also diminished by a factor of 3, so at the
+same operational frequency, the stress on the rope has actually
+diminished by a factor of 9.</p>
+<p>However, if we run the machine 3 times as fast, so that it jerks the
+weight 3 times as often, the velocity increases by a factor of 3, but
+the acceleration increases by a factor of 9.  So, in the mode of
+tensile failure, smallifying does increase the maximum frequency, but
+only proportionally, not quadratically as one might hope.</p>
+<h3>Buckling failure</h3>
+<p>XXX Euler columns</p>
+<h3>Shear failure</h3>
+<p>XXX</p>
+<h3>Compressive failure</h3>
+<p>XXX</p>
+<h3>Elastic beam bending</h3>
+<p>The usual expression for rectangular beam bending stiffness is <em>k</em> =
+<em>Ebh</em>³/4<em>L</em>³, where <em>E</em> is the material’s modulus, <em>h</em> is the
+thickness of the beam along the direction of bending, <em>L</em> is its
+length, and <em>b</em> is its width transverse to the direction of bending.
+If we scale the beam uniformly up or down by some factor, then the
+changes in <em>bh</em>³ and <em>L</em>³ leave the stiffness varying directly with
+the scale.</p>
+<h3>Resonant tines</h3>
+<p>The general expression for the resonant angular frequency of a
+sprung-mass system is <em>ω</em> = (<em>k</em>/<em>m</em>)<sup>½</sup>.  So, if a mass is
+at the end of an elastically bending beam, the mass <em>m</em> changes by a
+factor of <em>f</em>³ while the stiffness <em>k</em> changes by a factor of <em>f</em>, so
+its resonant angular frequency changes by a factor of 1/<em>f</em>.</p>
+<p>tensile-mass oscillation</p>
+<p>shear-mass oscillation</p>
+<h3>Dennard scaling</h3>
+<p>XXX</p>
+<h3>Resistors</h3>
+<p>A resistor’s resistance is <em>ρL</em>/<em>bh</em>, where <em>ρ</em> is the resistivity.
+If it becomes <em>f</em> times longer and <em>f</em> times wider and deeper, it will
+thus diminish in resistance by that same factor <em>f</em>.  Smallifying
+resistors thus makes them proportionally higher in resistance; we
+might say that <em>conductance</em>, rather than resistance, is proportional
+to scale.</p>
+<p>A thin resistive film whose thickness does not change is well known to
+have a characteristic “resistance per square”: its resistance over 1
+mm × 1 mm is the same as its resistance over 1 cm × 1 cm or 1 μm × 1
+μm.</p>
+<p>At ordinary (macroscopic) sizes it is easy to achieve an enormous
+range of resistances at any scale, because in a given volume you can
+either make a long, thin conductor or a short, thick one, and moreover
+available resistive materials themselves cover several orders of
+magnitude of resistivity; resistors from 0.001Ω to 1GΩ are all staple
+articles of commerce, and resistors from 1Ω to 1MΩ are common, and all
+of those common ones are available at any size from 0402 up to many
+watts.  At the lower end these resistances are limited by the
+resistances of the commonly employed wires (i.e., not superconductors,
+but materials like copper) and at the upper end by the leakage
+currents of materials such as glass, polypropylene, and Teflon, used
+as insulators.</p>
+<p>On chip, the story is different, because although low resistances are
+easily accessible (just use a metal layer) high resistances such as
+100kΩ are not; they occupy an inordinate amount of space and are a
+nuisance.</p>
+<h3>Capacitors</h3>
+<p>A (planar) capacitor’s capacitance is <em>εA</em>/<em>d</em>, where <em>ε</em> is the
+permittivity of the dielectric.  This is proportional to <em>f</em>, so
+smallifying capacitors thus makes them proportionally smaller in
+capacitance.</p>
+<p>Common macroscopic capacitors cover an even wider range than
+resistors, from 10 pF to 50 F, or 10000 μF if we exclude
+supercapacitors.</p>
+<h3>RC time constant</h3>
+<p>Perhaps the most common way to mark time in an electrical circuit is
+with an RC circuit with an exponential decay time constant <em>τ</em> = <em>RC</em>;
+this is how RC filters and 555 timer circuits work, for example, and
+how the internal oscillators in microcontrollers work.  Since <em>R</em> is
+inversely proportional to <em>f</em> while <em>C</em> is proportional to it,
+smallifying an <em>RC</em> circuit will not change its frequency response.</p>
+<p>This is an astonishingly different result from Dennard scaling.</p>
+<h3>Inductors</h3>
+<p>A cylindrical air-core coil has an inductance of roughly <em>μN</em>²<em>A</em>/<em>L</em>.
+Scaling it by <em>f</em> increases <em>A</em> by <em>f</em>² and <em>L</em> by <em>f</em>, so inductance
+scales with <em>f</em>.  So inductance, like capacitance and conductance, is
+proportional to scale.</p>
+<h3>LC frequency</h3>
+<p>The resonant angular frequency of an LC circuit is <em>ω</em> =
+(<em>LC</em>)<sup>-½</sup>.  So multiplying both <em>L</em> and <em>C</em> by a factor <em>f</em>
+will multiply <em>ω</em> by 1/<em>f</em>; larger LC circuits oscillate
+proportionally slower.</p>
+<h3>RL time constant</h3>
+<h3>etc.</h3>
+<p>electromagnetic relays</p>
+<p>electrostatic relays</p>
+<p>crystalline structure</p>
+<p>heat transfer characteristic time</p>
+<p>turbulent vs. laminar flow</p>
+<p>matter diffusion</p>
+<p>composite materials</p>
+<p>aerostats</p>
+<p>heat exchanger design</p>
+<p>mass transfer design</p>
+<p>liquid friction</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/history.html">History</a> (24 notes)
+</li><li><a href="../topics/physics.html">Physics</a> (18 notes)
+</li><li><a href="../topics/small-things.html">Small things</a> (5 notes)
+</li><li><a href="../topics/galileo.html">Galileo</a> (2 notes)
+</li></ul></div></html>

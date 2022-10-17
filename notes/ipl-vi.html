@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html><title>Some notes on IPL-VI, Lisp’s 01958 precursor ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Some notes on IPL-VI, Lisp’s 01958 precursor</h1><div class="metadata">Kragen Javier Sitaker, 02021-03-02
+(4 minutes)</div><p>Reading <a href="http://bitsavers.org/pdf/rand/ipl/P-1277_A_Command_Structure_For_Complex_Information_Processing_Aug58.pdf" title="Shaw, Newell, Simon, and Ellis">“A Command Structure for Complex Information Processing” from
+01958</a>, and it’s pretty astonishing.</p>
+<p>It talks about a memory made of dotted pairs in the same year as LISP,
+and a CPU without arithmetic decades before Steele’s Scheme chip.</p>
+<p>They hadn’t invented garbage collection yet, so they tried to use a
+“responsibility bit” to distinguish the “owning” pointer to a
+substructure, with the intent of giving their system a purely
+hierarchical structure like a hard-link-free Unix filesystem.  They
+didn’t know about symlinks, though, and they only associated this bit
+with <code>car</code>, not <code>cdr</code> (pp. 17–18 (19–20/54)):</p>
+<blockquote>
+<p>The single bit, <em>e</em>, is an essential piece of auxiliary information.
+The address, <em>d</em>, in a symbol [“symbol” here means what LISP calls
+<code>car</code>] may be the address of another list structure.  The
+responsibility code in a symbol occurrence [<code>car</code>] indicates whether
+this occurrence is “responsible” for the structure designated by
+<em>d</em>.  If the same address, <em>d</em>, occurs in more than one word, only
+one of these will indicate responsibility for <em>d</em>. ...The need for a
+definite assignment of responsibility can be seen by considering the
+process of erasing a list. ...although a system that will handle
+merging lists also requires a responsibility bit on the link [<code>cdr</code>]
+<em>f</em>.</p>
+</blockquote>
+<p>Their design is a two-stack machine significantly before Forth; the
+operand stack is “L<sub>0</sub>, <em>Communication List</em>” and the return
+stack is “L<sub>2</sub>, <em>List of Current Instruction Addresses
+(CIA)</em>” (p. 14).</p>
+<p>They had the idea of a generator coroutine or OO or thunking or lazy
+evaluation or duck typing too.  p. 7:</p>
+<blockquote>
+<p>Without breakout devices [this is difficult to gloss], this format
+would ... permit the operand [argument] of a process [subroutine] to
+be specified only by giving its address.  ...these limitations are
+removed... by allowing the address for an operand to refer either to
+the operand itself or to any process that will determine the
+operand.</p>
+</blockquote>
+<p>Note that this was <em>before</em> thunking was invented for ALGOL-60 call by
+name!  On p. 8 we see duck typing, coroutines, and laziness:</p>
+<blockquote>
+<p><em>Identity of Data with Programs</em></p>
+<p>In current computers, the data are considered “inert.”  They are
+symbols to be operated upon by the program.  All “structure” of the
+data is ... encoded implicitly into the programs that work with the
+data.  The structure is embodied in the conventions that determine
+what bits the processes will decode, and so on.</p>
+<p>An alternative approach is to make the data “active.”  All words in
+the computer will have the instruction format; there will be “data”
+programs, and the data will be obtained by executing these
+programs. ... a list of data, for example, may be specified by a
+list of processes that determine the data.  Since data are only
+desired “on command” by the processing programs, this approach leads
+to a computer that, although still serial in its control, contains
+at any given moment a large number of parallel active programs,
+frozen in the midst of operation and waiting until called upon to
+produce the next operation or piece of data.  This identity of data
+with program can be attained only if the processing programs require
+for their operation no information about the structure of the data
+programs — only information about how to receive the data from them.</p>
+</blockquote><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/history.html">History</a> (24 notes)
+</li><li><a href="../topics/lisp.html">Lisp</a> (11 notes)
+</li><li><a href="../topics/ownership.html">Memory ownership</a> (2 notes)
+</li></ul></div></html>

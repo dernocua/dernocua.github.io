@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html><title>Manually writing code in static single assignment (SSA) form, inspired by Kemeny’s DOPE, isn’t worth it ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Manually writing code in static single assignment (SSA) form, inspired by Kemeny’s DOPE, isn’t worth it</h1><div class="metadata">Kragen Javier Sitaker, 02021-04-21 (updated 02021-06-12)
+(3 minutes)</div><p>Darius mentioned <a href="https://en.wikipedia.org/wiki/DOPE_%28Dartmouth_Oversimplified_Programming_Experiment%29">DOPE</a>, Kemeny’s predecessor to BASIC, and it
+occurred to me that you could simplify it further by unifying
+destination variables with line labels.</p>
+<p>In DOPE each line of the program was similar to a line of assembly,
+with implicit variable declarations and explicit line numbers and
+inputs and outputs.  So to calculate -b+√(b²-4ac) you might say:</p>
+<pre><code>10 * 4 a d    # d := 4 * a
+20 * d c d    # d := c * d
+30 * b b q    # q := b * b
+40 - q d d    # d := q - d
+50 sqr d d    # d := √d
+60 - d b d    # d := b - d
+</code></pre>
+<p>The line numbers permit gotos.  If we require destination variables to
+be unique, we could have just as much goto messiness with less
+verbosity, and you could also shift the operand one position to the
+right to improve readability slightly:</p>
+<pre><code>d:  4 * a      # d  := 4 * a
+d2: d * c      # d₂ := d * c
+q:  b * b
+d3: q - d2
+d4: d3 sqr
+s:  d4 - b
+</code></pre>
+<p>Labels can be omitted for statements executed for side effects.
+Conditionals and loops would require some equivalent of SSA φ
+functions.  DOPE used FORTRAN-style arithmetic IF (an opcode named “C”
+with 4 operands), but we can avoid such abominations with conditional
+jump or conditional skip; for absolute value, for example:</p>
+<pre><code>pos:  x &gt; 0
+      pos → r       # jump to r if x is positive
+xn:   0 - x         # negate x into xn
+r:    x \/ xn       # set r to either x or xn, whichever is most recent
+</code></pre>
+<p>A different approach, though it doesn’t subsume the need for jumps, is
+a conditional operator:</p>
+<pre><code>pos:  x &gt; 0
+xn:   0 - x
+r:    pos ? x xn
+</code></pre>
+<p>Here’s a dot-product routine for nonzero-length vectors without a
+high-level FOR construct:</p>
+<pre><code>init: 0
+i0:   0
+i:    i0 \/ i'
+s:    init \/ t
+ai:   a @ i
+bi:   b @ i
+p:    ai * bi
+t:    s + p
+i':   i + 1
+cont: i &lt; n
+      cont → i
+</code></pre>
+<p>Changing it to handle zero-length vectors makes it two lines longer:</p>
+<pre><code>init: 0
+i0:   0
+i:    i0 \/ i'
+s:    init \/ t
+stop: i = n
+      stop → end
+ai:   a @ i
+bi:   b @ i
+p:    ai * bi
+t:    s + p
+i':   i + 1
+      → i
+end:  nop
+</code></pre>
+<p>For <em>writing</em> to arrays, you’d probably need some kind of
+side-effecting indexed-store operator, like <code>a ! i x</code> or something.</p>
+<p>However, all of this is pretty shitty compared to Forth — harder to
+write and harder to read — and Forth is probably just as easy to
+implement, if not to optimize.  These versions are 2–10× smaller,
+depending on how you count, and I think more readable, though still
+worse than infix:</p>
+<pre><code>0 b - b b * 4 a * c * - sqrt +
+x 0 &lt; if 0 x - else x then
+0 s !  n 0 do  i a @ i b @ *  s +! loop  s @
+</code></pre><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/history.html">History</a> (24 notes)
+</li><li><a href="../topics/asm.html">Assembly-language programming</a> (11 notes)
+</li><li><a href="../topics/facepalm.html">Facepalm</a> (7 notes)
+</li><li><a href="../topics/forth.html">FORTH</a> (5 notes)
+</li><li><a href="../topics/basic.html">BASIC</a> (3 notes)
+</li></ul></div></html>

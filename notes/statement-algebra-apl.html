@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html><title>An algebra of partial functions for interactively composing programs ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>An algebra of partial functions for interactively composing programs</h1><div class="metadata">Kragen Javier Sitaker, 02021-10-10 (updated 02021-12-30)
+(3 minutes)</div><p>Consider the statement:</p>
+<pre><code>y := x * x;
+</code></pre>
+<p>One way to think of this is as a partial function from states of the
+world to states of the world.  The prior state (the one in the domain)
+needs to have some variable <code>x</code> defined in it, and the posterior state
+has that variable <code>x</code> and also a variable <code>y</code>.  We could maybe write
+that function as {x: x0, ...} -&gt; {x: x0, y: x0², ...}, with the
+understanding that the two <code>...</code> tokens denote the same set of other
+variable assignments.</p>
+<p>This is a partial function in the sense that it isn’t defined on
+states of the world that don’t have an <code>x</code> in them.  We could
+additionally argue that maybe it requires an <code>x</code> for which
+multiplication to be defined in some way, and describe this as a
+<em>type</em>.</p>
+<p>Similarly, we can consider the statement</p>
+<pre><code>z := y + 1;
+</code></pre>
+<p>to mean {y: y0, ...} -&gt; {y: y0, z: y0 + 1, ...}.  Instead of being
+undefined for environments that lack an <code>x</code>, this is undefined for
+environments that lack a <code>y</code>.</p>
+<p>If we <em>compose</em> these two partial functions, the result corresponds to
+a sequence or progn of two statements:</p>
+<pre><code>y := x * x;
+z := y + 1;
+</code></pre>
+<p>which denotes {x: x0, ...} -&gt; {x: x0, y: x0², z: x0² + 1, ...}.  The
+second statement’s requirement for <code>y</code> in the environment has vanished
+because the first statement satisfied it directly.</p>
+<p>(I’ve been thinking about a program-calculating environment where you
+manipulate scraps of program like these, constructing them bottom-up
+and combining them with elementary operations like sequencing,
+alternation, and iteration (and their inverses), seeing not only the
+procedures but the resulting extensional functions visualized as you
+manipulate them.  It would be useful to also have additional
+non-elementary operations like specialization, loop unrolling,
+subroutine extraction, and conditional hoisting.)</p>
+<p>This sort of inheritance of non-overridden variables is precisely the
+semantics of indexing I have been thinking about for my “principled
+APL” project.</p>
+<p>Some interesting avenues for further investigation:</p>
+<ol>
+<li>
+<p>Conditionals (alternation) are straightforward to add to this way
+   of thinking about statements, but what about while-loops?  Do they
+   drive us to Dijkstra’s weakest-precondition function?  Or do they
+   just denote the least fixpoint of a conditional function?</p>
+</li>
+<li>
+<p>What do conditionals and while-loops correspond to in APL-land?</p>
+</li>
+<li>
+<p>Is subroutine call just a slightly different form of composition in
+   which most of the variable bindings from the called subroutine are
+   discarded?</p>
+</li>
+<li>
+<p>We can think of expressions as being functions from these
+   environments to non-environment values.  The expression <code>45</code>, for
+   example, denotes {...} -&gt; 45, while a more interesting expression
+   like <code>x * x</code> denotes the more interesting function {x: x0, ...} -&gt;
+   x0².</p>
+</li>
+</ol><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/composability.html">Composability</a> (9 notes)
+</li><li><a href="../topics/programming-languages.html">Programming languages</a> (8 notes)
+</li><li><a href="../topics/program-calculator.html">Program calculator</a> (4 notes)
+</li><li><a href="../topics/apl.html">Apl</a> (2 notes)
+</li></ul></div></html>

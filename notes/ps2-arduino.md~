@@ -1,0 +1,38 @@
+Trying to get a PS/2 keyboard to work with an Arduino Duemilanove.
+
+The keyboard is an IBM KB-9910, Latin American layout with Windows
+key, which seems on first glance to be in pretty good shape aside from
+being dusty.  The main board is a single-sided board built around a
+large Chicony DIP, 40 pins I think, with lots of through-hole parts.
+The keyboard switch silicone domes are all molded from a single
+silicone sheet, which fortunately means they can't get lost
+individually.  The main board is connected to the
+thoroughly-strain-relieved cable with a four-pin Dupont connector,
+with four lines on the board labeled G (violet), V (brown), D (red),
+and C (yellow); presumably these are ground, Vcc, data, and clock.
+
+I reassembled the keyboard, cut off the PS/2 connector, stripped the
+cable a bit, and soldered pins individually to the wires.  Plugging
+the brown and violet wires into the 5V and GND pins on a Duemilanove
+doesn't seem to harm the Duemilanove, which has its pin-13 LED
+blinking happily.
+
+[Adam Chapweske's protocol
+guide](http://www.burtonsys.com/ps2_chapweske.htm) clarifies the key
+points:
+
+> I use a few tricks when implementing an open-collector interface
+> with PIC microcontrollers.  I use the same pin for both input and
+> output, and I enable the PIC's internal pullup resistors rather than
+> using external resistors.  A line is pulled to ground by setting the
+> corresponding pin to output, and writing a "zero" to that port.  The
+> line is set to the "high impedance" state by setting the pin to
+> input.  Taking into account the PIC's built-in protection diodes and
+> sufficient current sinking, I think this is a valid configuration.
+> Let me know if your experiences have proved otherwise.
+> 
+> The device always generates the clock signal.  If the host wants to
+> send data, it must first inhibit communication from the device by
+> pulling Clock low.  The host then pulls Data low and releases Clock.
+> This is the "Request-to-Send" state and signals the device to start
+> generating clock pulses.

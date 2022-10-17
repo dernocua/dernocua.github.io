@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html><title>Transactional editor ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Transactional editor</h1><div class="metadata">Kragen Javier Sitaker, 02021-01-14 (updated 02021-01-15)
+(73 minutes)</div><p>I was thinking about the transaction-per-call notes in Derctuo, and it
+occurred to me that an Emacs clone might be a fun testbed for some of
+the ideas in there, in particular the use of transactions to guarantee
+UI responsiveness without presenting a complicated programming model
+to ad-hoc editing scripts, and providing easier error recovery.  If
+updating the screen, syntax-highlighting text, auto-indenting, and
+handling keystroke commands are each done in separate transactions, it
+should be easy to guarantee rapid screen updates, and even in some
+cases rapid keystroke commands.</p>
+<p>The transaction write logging can maybe also be repurposed for undo,
+which is a pretty essential feature.  Emacs’s local undo is one of the
+nicest things about Emacs.</p>
+<h2>What would I actually need to implement to get an editor I’d use?</h2>
+<p>Here is some of my view-lossage from Emacs while writing this note, to
+try to get a handle on which commands I use most and would therefore
+miss most if they were missing:</p>
+<pre><code>r e p a i n t i n g SPC t h e SPC s c r e e n M-q SPC
+a n d SPC C-a M-d u p d a t i n g M-f M-f , SPC s y
+&lt;backspace&gt; n &lt;backspace&gt; y n t a x - h i g h l i t
+h &lt;backspace&gt; &lt;backspace&gt; g h t i n g SPC t e x t ,
+C-x C-s C-e h a n d l i n g SPC k e y s t r o k e s
+SPC a r e SPC d o n e SPC i n SPC s e p a r a t e M-q
+SPC t r a n s a c t i o n s , SPC C-x C-s C-p C-e &lt;backspace&gt;
+SPC c o m m n d s &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
+a n d s M-q M-f SPC e a c h C-x C-s C-e SPC t h e n
+SPC C-x C-s &lt;M-backspace&gt; i t SPC s h o u l d SPC b
+e SPC e a s y SPC t o SPC g u a r a n t e e M-q SPC
+r a p i d SPC s c r e e n SPC u p d a t e s , SPC a
+n d SPC p o s s i b l y SPC e v e n SPC r a p i d SPC
+k e y s t r o k e SPC c o m m a n d M-b M-b M-b M-b
+&lt;M-backspace&gt; M-f SPC i n SPC s o m e SPC c a s e s
+C-e s . M-q C-x C-s M-&gt; &lt;return&gt; &lt;return&gt; C-x C-s C-h
+l  C-x o C-SPC
+M-&lt; M-w C-x o C-y C-x C-x C-&gt; C-g C-l C-o C-o C-x 1
+H e r e SPC i s SPC s o m e SPC o f SPC m y SPC v i
+e w - l o s s a g e SPC f r o m SPC E m a c s SPC w
+h i l e SPC r u n &lt;M-backspace&gt; w r i t i n g SPC t
+h i s SPC d o c u m e n &lt;M-backspace&gt; p a g e &lt;M-backspace&gt;
+n o t e : C-x C-s C-h l C-x o C-p
+C-M-v C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p
+C-p C-s c - h SPC l C-r M-f C-f C-f C-f C-f C-SPC C-n
+C-n C-n C-n C-n C-n M-w C-x o M-&gt; SPC C-y M-^ M-^ M-^
+M-^ M-^ M-^ C-/ C-/ C-/ C-/ C-/ C-/ C-f &lt;return&gt; C-x
+C-x C-e C-f C-&gt; C-x C-s C-x 1 M-v C-g M-{ M-{ C-n C-p
+C-o &lt;return&gt; C-x C-s T h e SPC t r a n s a c t i o
+n SPC w r i t e SPC l o g g i n g SPC c a n SPC a l
+s o SPC b e SPC r e p u r p o s e d SPC t &lt;backspace&gt;
+f o r SPC C-x C-s C-x b s h &lt;return&gt; C-d g r e p SPC
+- i SPC q e m a c s SPC . . / d e r c u &lt;tab&gt; m a r
+&lt;tab&gt; * &lt;return&gt; C-x C-f M-p M-p M-n &lt;M-backspace&gt;
+&lt;M-backspace&gt; &lt;M-backspace&gt; &lt;M-backspace&gt; &lt;M-backspace&gt;
+d e r c u &lt;tab&gt; m a r &lt;tab&gt; q e &lt;tab&gt; m &lt;backspace&gt;
+a &lt;tab&gt; &lt;return&gt; C-x 3 C-x b C-s &lt;return&gt; C-h l
+p e n d i n g SPC p r o p e r l y , SPC M - q SPC l
+e a v i n g SPC y o u SPC i n p &lt;backspace&gt; SPC p l
+a c e , M-q SPC r e i &lt;backspace&gt; d i s p l a y SPC
+t h a t SPC i s n ' t SPC v i s i l &lt;backspace&gt; b l
+y SPC s l o w SPC ( ! ) , SPC M - / , SPC c o n t r
+l - b a c k s p a c e , M-q SPC M-b M-b M-f &lt;backspace&gt;
+o l C-e c o m m a n d SPC &lt;backspace&gt; - g r a n u l
+a r i t y SPC u n d o , M-q SPC p r e f i x SPC a r
+g u m e n t s , SPC a n d SPC &lt;M-backspace&gt; &lt;backspace&gt;
+&lt;backspace&gt; . M-b M-b a n d SPC C-e SPC S-SPC l s &lt;backspace&gt;
+&lt;backspace&gt; A l s o SPC s o m e SPC t h i n g s SPC
+I S-SPC u s e d SPC t h a t SPC d i c SPC &lt;backspace&gt;
+&lt;backspace&gt; d SPC w o r k : M-q SPC C C-h k C-x C-e
+C-x o q C-x o C-x o &lt;backspace&gt; g o t o - l i n e ,
+SPC y a n k - p o p . M-b M-b &lt;backspace&gt; &lt;backspace&gt;
+SPC a n d SPC C-e &lt;backspace&gt; SPC , s a y &lt;M-backspace&gt;
+&lt;backspace&gt; , &lt;backspace&gt; &lt;backspace&gt; , SPC s a y .
+M-q C-x C-s C-x 1 C-h l
+C-x o C-x o C-x o M-&lt; C-s C - h SPC l C-SPC
+M-&lt; M-w C-x o M-{ C-y C-x C-x C-&gt; C-x C-s C-x 1 C-x
+C-x C-o C-x C-s M-v M-{ M-{ M-{ M-{ M-{ M-} M-} C-p
+M-f M-f M-f M-f M-f SPC m a y b e C-e u n d o , SPC
+w h i c h SPC i s SPC p a &lt;backspace&gt; &lt;backspace&gt; a
+SPC p r e t t y SPC e s s e n t i a l SPC f e a t u
+r e . M-q SPC S-SPC E m a c ' &lt;backspace&gt; s ' s SPC
+l o c a l SPC u n d o SPC i s SPC o n e SPC o f SPC
+t h e SPC n e &lt;backspace&gt; i c e s t SPC t h i n g s
+SPC a b o u t SPC E m a c s . M-' M-q C-x C-s &lt;next&gt;
+&lt;next&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; M-{ M-{ M-{ M-{ M-}
+C-p C-x b t r a n C-g C-x C-f &lt;M-backspace&gt; &lt;M-backspace&gt;
+d e r t &lt;backspace&gt; c t u &lt;tab&gt; m a r &lt;tab&gt; r a n &lt;M-backspace&gt;
+t r a n s &lt;tab&gt; &lt;return&gt; C-x C-= C-= C-= &lt;next&gt; M-x
+M-p &lt;return&gt; c d SPC . . / d e r c t u &lt;tab&gt; &lt;return&gt;
+l s &lt;return&gt; f i r e f o &lt;tab&gt; SPC d e r c t &lt;tab&gt;
+- 0 2 &lt;tab&gt; &lt;tab&gt; 1 / n o t &lt;tab&gt; t r a n s &lt;tab&gt; &amp;
+&lt;return&gt; C-x 1 C-x b &lt;return&gt; C-x b C-s &lt;return&gt; C-h
+l
+C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n
+M-w C-x o M-&gt; M-{ M-{ M-} C-y C-x C-x C-&gt; C-g C-d C-x
+C-s C-x 1 C-v M-} M-{ M-} C-p C-p C-p C-p C-p C-o M-{
+C-p C-e &lt;backspace&gt; , SPC t o SPC t r y SPC t o SPC
+g e t SPC a SPC h a n d l e SPC o n SPC w h i c h SPC
+c o m m a n d SPC &lt;backspace&gt; s SPC I S-SPC u s e M-q
+SPC m o s t SPC a n d SPC w o u l d SPC t h e r e f
+o r e SPC m i s s SPC m o s t SPC i f SPC t h e y SPC
+w e r e SPC m i s s i n g : M-q C-x C-s C-x 2 C-x C-f
+&lt;M-backspace&gt; &lt;M-backspace&gt; d e v 3 / d e c o d e -
+l &lt;backspace&gt; &lt;backspace&gt; l o s s a g e . p y &lt;return&gt;
+# ! / u s r / b i n / p y t h o n 3 &lt;return&gt; " " &lt;backspace&gt;
+&lt;backspace&gt; " " " D e c o d e SPC e m a c s SPC C-x
+C-s C-h k C-h l C-x o v i e w - l o s s a g e . C-x
+o C-x o C-n C-n C-n C-n C-n C-n C-n C-n C-e C-b C-b
+C-b &lt;return&gt; C-x o C-x o C-v C-v C-v C-v M-x o p e
+n - d r i &lt;tab&gt; &lt;return&gt; l o s s a g e . &lt;backspace&gt;
+M-b t m p . &lt;return&gt; C-h l
+C-x o C-r C-r C-r M-f M-f C-f C-f C-SPC C-n C-n C-g
+C-r C-r C-r M-&lt; C-SPC M-&gt; C-p C-p M-w C-x o C-x o M-&gt;
+M-{ C-y C-x C-x C-&gt; C-x C-x C-g C-x C-f t m p . l &lt;tab&gt;
+&lt;return&gt; C-n C-n C-x k &lt;return&gt; C-x o q C-x o &lt;backspace&gt;
+SPC o u t p u t . " " " &lt;return&gt; C-x C-s M-b M-b M-f
+M-f SPC w i t h SPC a n SPC a s s u m e d SPC k e y
+m a p C-x C-s M-x d e s c r i b - e &lt;backspace&gt; &lt;backspace&gt;
+e - k e y &lt;tab&gt; m &lt;tab&gt; &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
+&lt;backspace&gt; c u r &lt;tab&gt; k e y &lt;tab&gt; m &lt;backspace&gt; &lt;backspace&gt;
+&lt;backspace&gt; &lt;backspace&gt; m &lt;M-backspace&gt; &lt;M-backspace&gt;
+m &lt;tab&gt; o d &lt;tab&gt; &lt;return&gt; C-x o C-x o C-x o C-v C-v
+C-v M-v C-v C-v C-v C-v M-v M-v M-v q C-h l
+M-&lt; C-s C - h SPC l C-s C-x C-x C-g
+C-x C-x C-g C-r C - h SPC &lt;backspace&gt; C-p C-p C-p C-p
+C-p C-p C-p C-p C-p C-a C-p C-p C-f C-f C-SPC C-n C-n
+C-n C-n C-n C-n C-n C-n C-n C-n C-n C-e C-f M-w C-x
+o C-x o C-y C-x C-x C-&gt; C-x C-s C-x o q C-x o C-x o
+C-x o C-g M-v M-v M-v M-v M-v M-v C-x o C-e &lt;return&gt;
+&lt;return&gt; w o r &lt;M-backspace&gt; d e f SPC w o r d s M-(
+i n f i l e C-e : &lt;return&gt; &lt;tab&gt; f o r SPC l i n e
+SPC i n SPC i n f M-/ : &lt;return&gt; &lt;tab&gt; f o r SPC w
+o r d SPC i n SPC l i n e . s p l i t ( ) : &lt;return&gt;
+&lt;tab&gt; y i e l d SPC w o r d &lt;return&gt; C-x C-s &lt;return&gt;
+&lt;return&gt; i f SPC _ _ n a m e _ _ SPC = = SPC ' _ _
+m a i n _ _ ' : &lt;return&gt; &lt;tab&gt; p r i n t ( l i s t
+( w o r d s ( s y s . s t d i n ) ) ) M-&lt; M-} C-o C-o
+i m p r o &lt;backspace&gt; &lt;backspace&gt; o r t SPC s y s C-x
+C-s C-h l
+C-x o C-x o C-r C-e C-g C-x o C-r
+C - h SPC l C-r M-f M-f C-f C-f C-SPC M-&gt; C-p C-p M-w
+C-x o C-x o M-} C-y C-x C-x C-&gt; C-g C-x C-s C-d C-x
+C-s C-x o q C-x o C-x b C-g M-x M-p C-g M-o C-g M-x
+s h e l l &lt;return&gt; c d SPC . . / d e v 3 &lt;return&gt; p
+y t h o n SPC d e c o d e l &lt;tab&gt; &lt;return&gt; C-x o C-x
+b &lt;return&gt; M-{ C-SPC M-} M-w C-x o C-y C-d &lt;return&gt;
+C-d &lt;return&gt; C-c C-d &lt;return&gt; C-d C-d C-c C-p C-v C-v
+C-v C-v C-v C-v M-v C-h l
+C-x o
+C-x o C-x o C-r C-r C-r M-f M-f M-f M-f M-b C-SPC C-n
+C-n C-n C-e C-n C-n C-n C-n C-n M-w C-x o C-p C-n C-y
+C-x C-x C-&gt; C-l C-x C-s C-x 1 C-x C-x C-o C-f C-x C-s
+C-x 2 C-x b C-s C-s &lt;return&gt; M-} M-} C-o &lt;return&gt; p
+r e f i x e s SPC = SPC ( ' C - x ' M-b C-b C-b C-b
+( C-e , ) M-b C-b C-b C-b C-b &lt;backspace&gt; [ C-e SPC
+( ' C - c ' , ) , SPC C-x C-s C-x o M-v &lt;prior&gt; &lt;prior&gt;
+&lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;next&gt;
+&lt;next&gt; C-x o ( ' E S S &lt;S-backspace&gt; C ' ) &lt;backspace&gt;
+, ' &lt;backspace&gt; ) ) &lt;backspace&gt; ] C-f C-s C-g C-x C-s
+C-n C-n C-n C-o C-k C-o &lt;tab&gt; m a i n ( s y s s &lt;backspace&gt;
+. s t d i n ) C-f C-k C-k C-p C-p C-p C-o C-o d e f
+SPC m a i n ( i n p u t ) &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
+&lt;backspace&gt; f i l e ) : &lt;return&gt; C-y C-k C-x C-s M-x
+c o m p C-g C-x o M-v M-v C-v C-n C-SPC C-v C-n C-n
+C-n C-n C-n M-w C-x o M-x M-p &lt;return&gt; M-&gt; C-p M-&gt;
+M-p M-p &lt;return&gt; C-y C-/ C-x b &lt;return&gt; C-r ) SPC C-f
+, C-x C-s C-x g q C-h l
+C-r C-r &lt;return&gt; M-&gt; C-r C
+- h SPC l C-r C-f M-f M-f C-SPC M-&gt; C-p C-e C-p C-e
+C-p C-e M-w C-x o C-x o M-} C-y C-x C-x C-&gt; C-d C-x
+C-x C-o C-x C-s C-x o q C-x b &lt;return&gt; M-p &lt;return&gt;
+C-x o C-f C-SPC M-2 M-0 C-p M-w C-x o C-y &lt;return&gt;
+C-d C-d C-x o C-h l
+C-x o C-x o C-x o C-r
+C-r C-r M-f M-f M-f M-b M-f C-SPC C-n C-n C-n C-n C-n
+M-w C-x o C-x o M-} C-y C-x C-x C-&gt; C-d C-x C-s C-x
+o C-x o C-x o C-x b C-g C-n C-n C-n C-n C-n C-n C-o
+C-x C-s C-x o C-x o C-x 3 C-x b &lt;return&gt; C-n C-n &lt;return&gt;
+w &lt;backspace&gt; &lt;tab&gt; f o r SPC w o r d SPC i n SPC M-d
+M-d C-d C-e &lt;backspace&gt; &lt;backspace&gt; : &lt;return&gt; C-p
+C-o &lt;tab&gt; p r e f i x SPC = SPC ( ) C-n C-n C-e &lt;tab&gt;
+C-x C-s p r e f i x SPC = SPC p r f &lt;backspace&gt; e f
+i x SPC + S-SPC &lt;M-backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
++ = SPC ( w o r d , ) &lt;return&gt; &lt;tab&gt; i f SPC p r e
+f i x SPC n o t SPC i n SPC p r e f i x e : &lt;backspace&gt;
+s : &lt;return&gt; &lt;tab&gt; p r i n t ( p r e f i x ) M-b '
+SPC ' . j o i n ( C-e ) &lt;return&gt; &lt;tab&gt; p r e f i x
+SPC = SPC ( ) C-x C-s C-h l
+C-x o C-x o C-x o C-r C-r C-r M-f M-f
+M-f C-SPC M-} M-w C-x o C-x o C-x o C-y C-x C-x C-&gt;
+C-d C-x C-s C-v C-x o C-x o C-f C-p C-p C-p C-n C-n
+C-n C-o &lt;tab&gt; &lt;backspace&gt; &lt;backspace&gt; p r i n t ( '
+SPC ' . j o i n ( p r e f i x ) ) C-a C-o C-x C-s C-x
+o M-p M-p &lt;return&gt; M-p M-p &lt;return&gt; C-d C-d M-v M-v
+M-v M-v M-v M-v M-v M-v M-v C-x o C-x o C-x o C-r [
+C-d { C-e &lt;backspace&gt; } C-x C-s &lt;return&gt; &lt;return&gt; c
+m d s SPC = SPC { &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
+&lt;backspace&gt; t r SPC SPC &lt;backspace&gt; = SPC ' ' ' &lt;return&gt;
+C - v SPC C-h k C-v s c r o l l - u p &lt;return&gt; M -
+v SPC s c r o l l - d o w n C-h f &lt;return&gt; C-p C-p
+C-p C-p C-e C-b , SPC ( ' C - h , &lt;backspace&gt; ' , )
+C-x C-s C-x o C-x o C-x o C-x o C-n C-n C-n C-n &lt;return&gt;
+C - h SPC l SPC v i e w - l o s s a g e &lt;return&gt; C-x
+C-s C - x SPC o SPC o t h e r - w i n d o w C-h f &lt;return&gt;
+&lt;return&gt; C - r SPC i s e a r c - b a &lt;backspace&gt; &lt;backspace&gt;
+&lt;backspace&gt; h - b a c k w a r d C-h f &lt;return&gt; &lt;return&gt;
+' ' ' C-x C-s C-h l
+C-h f &lt;return&gt; C-h k M-w &lt;M-backspace&gt; &lt;M-backspace&gt;
+&lt;M-backspace&gt; &lt;M-backspace&gt; k i l l - r i n g - s a
+v e C-x C-s &lt;return&gt; C - p SPC p r e v i o u s - l
+n e C-x C-s &lt;backspace&gt; &lt;backspace&gt; i n e C-x C-s &lt;return&gt;
+C - y SPC y a n k C-h f &lt;return&gt; &lt;return&gt; C - x SPC
+C - x SPC C-h k C-x C-x e x c h a M-/ C-x C-s C-h k
+C-x 1 &lt;return&gt; d e &lt;backspace&gt; &lt;backspace&gt; C - x SPC
+1 SPC d e l e t e - o t M-/ - w M-/ &lt;M-backspace&gt; w
+i n d o w s C-x C-s C-n &lt;return&gt; c m d s SPC = SPC
+{ w o r d [ &lt;backspace&gt; s [ M-b ' SPC ' . j o i n (
+C-e : - 1 ] ) : S-SPC w o r d s [ - 1 ] &lt;return&gt; &lt;tab&gt;
+f o r SPC l i n e SPC i n SPC C-p C-a C-o C-n C-n C-e
+c m d s M-/ . s p l i t ( \ &lt;backspace&gt; ' \ n ' ( &lt;backspace&gt;
+) &lt;return&gt; &lt;tab&gt; f o r SPC w o r d s SPC 9 &lt;backspace&gt;
+i n SPC [ l i n e . s p l i t ( ) ] &lt;return&gt; &lt;tab&gt;
+f o r SPC &lt;M-backspace&gt; i f SPC C-x o M-&gt; p y t h o
+n 3 &lt;return&gt; ' \ n ' . s p l i t ( ) &lt;return&gt; M-p M-b
+M-b C-b SPC &lt;return&gt; C-x o w C-g C-/ C-x o C-x o w
+o r d s } C-x C-s C-h l
+C-x o C-x
+o C-x o C-r C-r C-r M-&lt; C-f C-f C-SPC M-&gt; C-p C-p M-w
+C-x o C-x o C-x o C-y C-x C-x C-&gt; C-g C-x C-s C-x C-x
+C-g C-x o C-x o C-f C-v C-n C-l C-n C-n C-o &lt;tab&gt; c
+m d SPC = SPC M-d C-d C-e &lt;backspace&gt; &lt;return&gt; C-k
+C-n C-o &lt;tab&gt; i f SPC &lt;M-backspace&gt; p r i n t ( p r
+e f i x , SPC c m d s . g e t ( p r e f i x , SPC '
+s e l f - i n s e r t - c o m m a n d ) &lt;backspace&gt;
+' ) ) C-x C-s C-x o C-d M-p M-p M-p M-p M-p &lt;return&gt;
+M-p M-p M-p M-p M-p &lt;return&gt; C-d C-c C-p C-v C-x o
+C-x o C-x o C-a M-f M-f &lt;M-backspace&gt; c m d M-f M-f
+M-f &lt;M-backspace&gt; c m d s &lt;backspace&gt; C-x C-s C-x o
+M-&gt; C-d M-p M-p &lt;return&gt; M-p M-p &lt;return&gt; C-d C-c C-c
+C-c C-p C-v &lt;next&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt;
+&lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt;
+&lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; C-x o C-x
+o C-h l
+C-r C-r C-r M-f M-f M-f C-SPC M-&gt; C-p
+C-p M-w C-x o C-x o C-x o C-y C-x C-x C-&gt; C-d C-x C-s
+C-x o C-x o M-{ C-x C-s C-p C-p C-p C-p C-n C-n C-n
+C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-p C-p
+C-e M-b M-b M-b M-d M-d M-d ? ? ? C-x C-s C-x o M-&gt;
+M-p M-p &lt;return&gt; M-p M-p &lt;return&gt; C-d C-d C-c C-p C-v
+C-v C-v C-l C-x o C-x o C-x o C-h k C-&gt; M-v C-l C-n
+C-n C-n C-o C - &gt; SPC i n d e n t i &lt;backspace&gt; - r
+i g i d l y - 4 &lt;return&gt; C - l SPC C-h k C-l r e c
+e n t e r - t o p - b o t t o m C-x C-s &lt;return&gt; C
+- x SPC C s - &lt;backspace&gt; &lt;backspace&gt; - s SPC C-h k
+C-x C-s s a v e - b u f f e r C-x C-s &lt;return&gt; C -
+o SPC C-h k C-o o p e n - l i n e &lt;return&gt; C - f SPC
+C-h k C-f f o r w a r d - c h a r C-x C-s C-h k C-x
+2 &lt;return&gt; C - x SPC 2 SPC s p l i t - w i n d M-/
+&lt;backspace&gt; - M-/ M-/ &lt;M-backspace&gt; v e r M-/ &lt;backspace&gt;
+t i c a l l y C-x C-s C-h l
+C-x o C-x
+o C-x o C-r C-r C-r M-f M-f M-f C-SPC M-&gt; M-p C-p C-p
+M-w C-x o C-x o C-x o M-} C-y C-x C-x C-&gt; C-d C-x C-s
+C-x o C-x o &lt;return&gt; C - s SPC i e &lt;backspace&gt; s e
+a r c h - f o r w a r d C-h k C-s C-h k &lt;return&gt; &lt;return&gt;
+&lt; r e t u r n &gt; S-SPC n e w l i n e C-x C-s C-h k M-}
+&lt;return&gt; f o r w a r d - p a r a g r a p h C-a M -
+} S-SPC C-x C-s C-M-v C-v C-n C-n C-n C-n C-n C-n C-n
+C-o &lt;return&gt; f o r SPC c h r SPC i n SPC &lt;backspace&gt;
+&lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
+&lt;backspace&gt; _ c SPC i n SPC r a n g e ( 3 3 , SPC 1
+2 7 ) : &lt;return&gt; &lt;tab&gt; c m d s [ c ] SPC = SPC ' s
+e l f - i n s e r t - c o m m a n d ' C-x C-s C-h 
+l C-x o C-x o C-x o C-r C-r M-f
+M-f M-f C-SPC M-} M-w C-x o C-x o C-x o M-} C-y C-x
+C-x C-d C-x C-x C-&gt; C-f C-g C-x C-s C-x o C-x o C-x
+o M-&gt; M-p M-p &lt;return&gt; M-p C-x o C-x o C-x o C-a M-f
+C-f _ C-x C-s C-x o &lt;return&gt; M-p M-p M-p &lt;return&gt; C-d
+C-c C-c C-x o C-x o C-x o C-b c h r ( C-f C-f ) C-x
+C-s C-x o M-p M-p &lt;return&gt; M-p M-p &lt;return&gt; C-d C-c
+C-c C-c C-p C-v C-v &lt;next&gt; C-h k C-x b C-x o C-x o
+C-x o M-&lt; C-v M-} C-p C-o C - x SPC b SPC i s w i t
+c h - b u &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt; b - b
+u f f e r C-x C-s &lt;return&gt; S P C SPC C-h k SPC s e
+l f - i n s e r t - c o m m a n d C-x C-s C-M-v &lt;return&gt;
+C - b SPC b a c k w a r d - c h a r C-x C-s C-h k C-v
+C-h k C-b C-h l C-x
+o C-x o C-x o C-r C-r C-r M-f M-f M-f C-SPC M-&gt; C-p
+C-p M-w C-x o C-x o C-x o C-p C-y C-x C-x C-d M-^ C-n
+C-a C-SPC M-} C-&gt; C-g C-x C-s M-v C-x o C-x o C-M-v
+&lt;return&gt; &lt; p r i o r &gt; S-SPC s c r o l l - u p C-h
+k &lt;prior&gt; &lt;backspace&gt; &lt;backspace&gt; d o w n C-x C-s &lt;return&gt;
+&lt; n e x t &gt; S-SPC s c r o l l - u p C-h k &lt;next&gt; C-M-v
+C-h k &lt;S-backspace&gt; &lt;return&gt; &lt; S - b a k c p s &lt;backspace&gt;
+&lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt; c k s p a c e &gt;
+SPC p &lt;backspace&gt; C-x o C-h k &lt;S-backspace&gt; C-x o C-h
+k &lt;S-backspace&gt; C-x o C-x o d e l e t e - b a c k w
+a r d - c h a r C-x C-s &lt;return&gt; C - g SPC q u i t
+C-h k C-g M-b k e y b o a d &lt;backspace&gt; r d - C-x C-s
+C-e &lt;return&gt; H &lt;backspace&gt; C-h k C-k C - k SPC k i
+l l - l i n e C-x C-s &lt;return&gt; C-h k &lt;tab&gt; &lt; t a b
+&gt; S-SPC i n d e n t - f o r - t a b - c o m m a n C-h
+C-g d C-x C-s C-h l C-x o C-x o C-x o C-r C-r C-r M-f M-f M-f C-SPC
+M-} M-w C-x o C-x o C-x o M-} C-p C-e SPC C-y C-x C-x
+C-d C-x C-x C-x C-x C-n C-e C-a C-&gt; C-x C-s C-v M-}
+C-x o C-x o C-M-v C-h k &lt;backspace&gt; C-x o C-h k &lt;backspace&gt;
+C-x o C-x o C-x o C-p C-p C-p C-a C-k C-k C-y C-y C-p
+M-f M-f M-b &lt;M-backspace&gt; C-x C-s C-h l C-x o C-x o C-x o C-r C-r C-r M-f M-f M-f C-SPC
+C-SPC M-} C-x C-x M-w C-x o C-x o C-x o C-p C-e C-y
+C-x C-x C-n C-a C-n C-&gt; C-x C-s C-n C-g C-x o C-x o
+C-M-v C-M-v C-h k M-x C-n C-n C-n C-e &lt;return&gt; M -
+x SPC e x e c u t e - e x t e n d e d - c o m m a n
+d C-x C-s C-M-v C-h k M-p C-x o C-h k M-p C-x o C-x
+o C-x o &lt;return&gt; M - p SPC c o m i n t - p r e v i
+o u s - i n p u t C-x C-s &lt;return&gt; C - / SPC u n d
+o C-h l C-h k M-/ C-h k C-/ &lt;return&gt; M - / SPC d a
+b b r e v - e x p a n d C-x C-s C-h l
+C-x o C-x o C-x o C-r C-r C-r C-r M-f C-f C-f C-f C-f
+C-SPC M-} M-w C-x o C-x o C-x o C-n C-n C-n C-n C-n
+C-e C-y C-x C-x C-x C-x C-x C-x C-n C-f C-&gt; C-g C-x
+C-s C-x C-x C-x C-x C-g C-u C-SPC C-u C-SPC C-u C-SPC
+C-u C-SPC C-x o C-x o C-h k C-x g &lt;return&gt; C - x SPC
+g SPC m a g i t - s t a t u s C-x C-s C-M-v C-x o M-&gt;
+M-p M-p &lt;return&gt; M-p M-p &lt;return&gt; C-d C-c C-c C-h k
+M-&gt; C-x o C-x o C-x o &lt;return&gt; M - &gt; S-SPC e n d -
+o f - b u f f e r C-x C-s C-x o C-r ? ? C-r C-r M-&gt;
+C-x o C-x o C-h l
+C-r C-r &lt;return&gt; C-r c - h SPC l C-r C-n
+C-a C-SPC M-} M-w C-x o C-x o C-x o M-} C-y C-x C-x
+C-&gt; C-g C-x C-s C-x o C-x o C-v C-n C-n C-n C-n C-n
+C-n C-n C-n C-n C-p C-p C-p C-p C-p C-o &lt;tab&gt; f r e
+q s SPC = SPC { } C-f C-n C-x C-s C-n C-p C-p C-o C-n
+C-x C-s C-n C-n C-n C-p C-n C-n C-n C-n C-o &lt;tab&gt; M-{
+C-o &lt;tab&gt; u n k o n w n s &lt;backspace&gt; &lt;M-backspace&gt;
+u n k n o w n s SPC = SPC s e t ( ) M-} M-} C-p C-o
+&lt;tab&gt; C-a C-k C-n C-o &lt;tab&gt; i f SPC c m d SPC i n SPC
+c m d s : &lt;return&gt; &lt;tab&gt; f r e q &lt;M-backspace&gt; n a
+m e SPC = SPC c m d C-p C-p C-p C-n C-n C-n C-p C-p
+M-b C-M-S-SPC C-M-S-SPC C-M-S-SPC C-w n a m e C-p &lt;return&gt;
+&lt;tab&gt; n a m e SPC = SPC C-y C-n C-n C-a k &lt;tab&gt; i M-b
+C-k i f SPC n a m e SPC n o t SPC i n SPC f r e q s
+: &lt;return&gt; &lt;tab&gt; f r e q s [ n a m e ] SPC = SPC 0
+&lt;return&gt; &lt;tab&gt; &lt;backspace&gt; f r e q s [ n a m e ] S-SPC
++ = SPC 1 C-f C-k &lt;return&gt; &lt;tab&gt; i f SPC n a m e SPC
+= &lt;M-backspace&gt; c m d SPC n o t SPC i n SPC c m d s
+: &lt;return&gt; &lt;tab&gt; u n k n o w n s . a d d ( c m d )
+C-h l
+C-x o C-x o C-x o C-r C-r C-r M-f M-f
+M-f C-SPC M-&gt; C-p C-p M-w C-x o C-x o C-x o M-} C-y
+C-x C-x C-&gt; C-d C-x C-s C-x o C-x o C-f C-k C-x C-s
+C-n C-n C-o &lt;return&gt; &lt;tab&gt; f o r SPC n a m e SPC i
+n SPC s o r t e d ( f r e q s . k e y s ( ) , SPC k
+e y = f r e q s . g e t M-b C-e , SPC r e v e r s e
+= T r e u e ) &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
+u e ) : &lt;return&gt; &lt;tab&gt; p r i n t ( n a m e M-b ' %
+8 d SPC % s ' SPC % S-SPC ( f r e q s [ n a m e , SPC
+&lt;backspace&gt; &lt;backspace&gt; ] , SPC C-e ) ) &lt;return&gt; &lt;return&gt;
+&lt;tab&gt; p &lt;backspace&gt; &lt;backspace&gt; p r i n t ( " u n k
+n o w n s : " " &lt;backspace&gt; , SPC " , SPC " , &lt;backspace&gt;
+. j o i n ( u n k M-/ ) ) C-x C-s C-h l
+ C-x o C-x o C-x o C-r C-r C-r M-f M-f M-f
+C-SPC M-} M-w C-x o C-x o C-x o M-} C-y C-x C-x C-&gt;
+C-d C-x C-s C-x o C-x o C-x o M-p M-p &lt;return&gt; M-p
+M-p &lt;return&gt; C-d C-d M-v C-x o C-x o C-x o C-r r e
+v M-d M-d &lt;backspace&gt; &lt;backspace&gt; C-x C-s C-x o C-x
+o M-} C-SPC M-{ M-w C-x o C-x o C-x o M-&gt; M-p M-n C-x
+o C-x o C-x M-&lt; C-g C-x o M-&lt; C-n C-n C-o f r o m SPC
+_ - f u t u r &lt;M-backspace&gt; &lt;backspace&gt; _ f u r u t
+&lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt; t u r e _ _ S-SPC
+i m p o r t SPC p r i n t _ f u n c t i o n C-x C-s
+C-x o M-p M-p &lt;return&gt; C-x o C-SPC M-} M-w C-x o C-x
+o C-x o C-y &lt;return&gt; C-d C-d M-v C-v C-h l
+k C-d C-x o C-x o C-x o C-x o C-x o C-x o C - d SPC
+d e l e t e - c h a r C-h k C-a &lt;return&gt; C - a SPC
+m o v e - b e g M-/ - M-/ o f - l i n e C-x C-s C-h
+k S-SPC &lt;return&gt; S - S P C SPC s e l f M-/ &lt;return&gt;
+C - w SPC k i l l - r e g i o n C-h f &lt;return&gt; C-x
+C-s &lt;return&gt; C-h k C-x C-f C - x SPC C - f SPC f i
+n d - f i l e &lt;return&gt; C - x SPC C - e SPC C-h k C-z
+C-h k C-x C-r C-h k C-x C-e e v a l - l a s t - s e
+x p &lt;return&gt; C-x C-s C - u SPC C-h k C-u u n i v e
+f s &lt;backspace&gt; &lt;backspace&gt; r s a l - a r g u m e n
+t C-x C-s C-h k C-c C-d C-x o C-h k C-c C-d C-x o C-x
+o C-x o &lt;return&gt; C - c SPC C - d SPC c o m i n t -
+s e n d - e o f &lt;return&gt; C-x C-s M - &lt; S-SPC C-h k
+M-&lt; b e g i n M-/ - f M-/ &lt;M-backspace&gt; o M-/ - M-/
+M-/ C-x C-s &lt;return&gt; C-h k C-c C-c C-x o C-h k C-c
+C-c C-x o C-x o C-x o C - c SPC C - c SPC c o m i n
+t - i n t e r r u p t - s u b j o b C-h l
+C-x C-s C-x o C-x o C-r C-r C-r M-&lt; C-SPC M-} M-w C-x
+o M-} C-y C-x C-x C-&gt; C-g C-x C-s C-x o &lt;return&gt; C-h
+k M-0 M - 0 SPC d i g i t - a r g u m e n t &lt;return&gt;
+&lt;f3&gt; M - &lt;f4&gt; &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt; &lt;f3&gt;
+&lt;return&gt; M - &lt;f3&gt; SPC d i g i t - a r g u m e n t &lt;f4&gt;
+&lt;f4&gt; &lt;f4&gt; &lt;f4&gt; &lt;f4&gt; &lt;f4&gt; &lt;f4&gt; &lt;f4&gt; &lt;f4&gt; &lt;f4&gt; C-a C-p
+C-p C-p C-p C-p C-p C-p C-p C-p C-p C-k C-k C-SPC M-}
+C-p M-w C-y C-x C-x M-% M - &lt;return&gt; C - &lt;return&gt; !
+C-x C-s C-h l
+s - p r o m p t &lt;return&gt; C-x C-s C-h k M-( M - ( SPC
+i n s e r t - p a r e n t h e s e s C-x C-s &lt;return&gt;
+C - x SPC k C-h k C-x k SPC k i l l - b u f f e C-x
+C-s &lt;return&gt; &lt;backspace&gt; r &lt;return&gt; C - x SPC C = &lt;backspace&gt;
+- = SPC C-h k C-x C-= t e x t - s c a l e - a d j u
+s t C-x C-s &lt;return&gt; M - ^ SPC C-h k M-^ d e l e t
+e - i n d e n t a t i o n C-x C-s C-h k &lt;down&gt; &lt;return&gt;
+&lt; d o w n &gt; S-SPC n e x t - l i n e C-x C-s &lt;return&gt;
+C-h k C-x 3 C - x SPC 3 SPC s p l i t - w i n d M-/
+- h o r i z o n t a l l y C-x C-s C-h k C-= C-x o C-x
+o C-x o M-} C-r C - = C-h k C-M-v C-g C-h k C-M-v C-x
+o &lt;return&gt; C - M - v SPC s c r o l l - o t h e r -
+w i n d o w C-x C-s C-h k M-' &lt;return&gt; M - ' SPC s
+m a r t - a p o s t r o p h e C-x C-s &lt;return&gt; &lt; M
+- B &lt;backspace&gt; b a c k s p a c e S-SPC &lt;backspace&gt;
+&gt; S-SPC C-h k &lt;M-backspace&gt; b a c k w M-/ - M-/ M-/
+M-/ &lt;return&gt; C-h k M-{ C-h l
+C-M-v C-g C-h k C-M-v C-x o &lt;return&gt; C - M - v SPC
+s c r o l l - o t h e r - w i n d o w C-x C-s C-h k
+M-' &lt;return&gt; M - ' SPC s m a r t - a p o s t r o p
+h e C-x C-s &lt;return&gt; &lt; M - B &lt;backspace&gt; b a c k s
+p a c e S-SPC &lt;backspace&gt; &gt; S-SPC C-h k &lt;M-backspace&gt;
+b a c k w M-/ - M-/ M-/ M-/ &lt;return&gt; C-h k M-{ C-h
+l C-x o C-x o C-SPC C-r C-r C-g C-SPC C-g C-r c - h
+SPC l C-r M-{ C-SPC M-} M-w C-x o C-y C-x C-x C-&gt; C-g
+C-x o C-h k M-{ M - { S-SPC b a c k w a r d - p a r
+a g r a p h C-x C-s &lt;return&gt; C - h SPC f SPC d e s
+c r i b e - f u n c t i o n &lt;return&gt; C - h SPC k SPC
+d e s c r i b e - k e y &lt;return&gt; M - q SPC f i l l
+- p a r a g r a p h C-h k M-q C-x C-s &lt;return&gt; M -
+o SPC C-h k M-o C-g C-g s h e l l C-x C-s &lt;return&gt;
+C-h k M-n C-x o C-h k M-n C-x o C-x o C-x o M - n SPC
+c o m i n t - n e x t - i n p u t &lt;return&gt; M - d C-h
+k M-d SPC k i l l - w o r d C-x C-s C-h k C-g C-h 
+l
+C-x o C-x o C-r C-r &lt;return&gt; C-r c - SPC h &lt;backspace&gt;
+&lt;backspace&gt; h SPC l l l &lt;backspace&gt; &lt;backspace&gt; M-&lt;
+C-SPC M-} M-w C-x o M-} C-y C-x C-x C-&gt; C-g C-x C-s
+C-x o C-x o C-x o C-x o M-} C-SPC M-{ M-w C-x o C-x
+o M-&gt; M-p M-p &lt;return&gt; C-y &lt;return&gt; C-d C-d C-x o C-x
+o C-x o C-h k C-h C-g C-h k C-x M-&lt; C-h k C-x C-r C-h
+k &lt;f3&gt; &lt;return&gt; &lt; f 3 &gt; S-SPC k m a c r o - s t a r
+M-/ &lt;backspace&gt; &lt;backspace&gt; - M-/ m a c r o - o r -
+i n s e r t - c o u n t e r &lt;return&gt; M - S-SPC &lt;backspace&gt;
+% C-h k M-% SPC q u e r y - r e p l a c e &lt;return&gt;
+&lt; f 4 &gt; S-SPC C-h k &lt;f4&gt; k m a c r o - e n d - o r
+- c a l l - m a c r o C-x C-s C-h l
+t a l , SPC C-x C-s M-x M-p &lt;return&gt; M-&gt; M-p M-p &lt;return&gt;
+M-p M-p &lt;return&gt; C-d C-d M-v C-x 2 C-x b C-s &lt;return&gt;
+M-} &lt;return&gt; S o m e SPC n o t e s SPC o n SPC f r
+e q u e n c i e s SPC o f SPC c o m m a M-b M-b M-b
+m o s t SPC c o m m o n C-k SPC c o m m a n d SPC f
+r e q u e n c i e s : &lt;return&gt; &lt;return&gt; C-x C-s C-x
+o M-v C-p C-p C-p C-SPC C-n C-n C-n C-n C-n C-n C-n
+C-n C-n C-n C-v C-v C-v M-v M-v C-p M-v C-n C-n C-n
+C-n C-n C-n C-n M-w C-x o C-y C-x C-x C-&gt; C-g C-x C-s
+C-v C-x 1 C-l M-{ C-p C-e &lt;backspace&gt; . SPC S-SPC O
+u t SPC o f SPC C-x C-s C-x b &lt;return&gt; M-&gt; C-x b &lt;return&gt;
+5 8 8 2 SPC c o m a &lt;backspace&gt; m a n d s SPC r e c
+o r d e d SPC a b o v e SPC a n d SPC &lt;backspace&gt; SPC
+s u c c s s &lt;backspace&gt; &lt;backspace&gt; e s s f u l l y
+M-q d e c o d &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
+&lt;backspace&gt; SPC d e o c &lt;backspace&gt; &lt;backspace&gt; c o
+d e d , SPC t h e s e SPC C-f C-n C-SPC M-} M-= C-g
+M-{ C-p C-e 2 4 SPC c a &lt;backspace&gt; &lt;backspace&gt; a c
+c o u n t SPC f o r SPC C-v C-l M-( M-: M-( * S-SPC
+5 8 8 2 SPC . 9 &lt;return&gt; C-/ C-h l
+s SPC o b v i o u s l y SPC i s n ' t SPC e v e r y
+t h i n g SPC e s s e n t i a l ; SPC M-' C-x C-s i
+t ' s SPC m i s s i n g , SPC a m o n g SPC t h e r
+SPC t h i n g M-b M-b o C-e s , SPC f i n d - f i l
+e SPC a n d M-q SPC C-x C-s &lt;M-backspace&gt; &lt;backspace&gt;
+, SPC C-r k i l l C-g C-x b C-s &lt;return&gt; M-v C-l C-x
+b &lt;return&gt; y a n k , SPC k i l l - r i n g - s a v
+e SPC M-( t h e SPC n e w SPC c o p y - r e g M-/ i
+o n - a s k &lt;backspace&gt; - k i l l C-e . C-x C-s C-x
+b &lt;return&gt; C-x b &lt;return&gt; &lt;backspace&gt; , SPC C-h k M-:
+e v a l - e x p r e s s i o n , M-q SPC C-x C-s C-x
+1 M-v &lt;down&gt; &lt;down&gt; C-n C-n C-n C-n C-n C-l C-n C-n
+C-n C-n C-n C-n C-n C-n C-n C-e M-{ M-{ M-{ C-n C-n
+M-f M-f M-f M-f M-b ( &lt;backspace&gt; M-f M-f M-f SPC b
+y SPC a SPC j a n k y SPC e r r o &lt;M-backspace&gt; u n
+r e l i a b l e SPC c &lt;backspace&gt; s c r i p t M-q M-f
+&lt;backspace&gt; &lt;backspace&gt; SPC f l l o w i n g &lt;M-backspace&gt;
+f l &lt;M-backspace&gt; &lt;backspace&gt; s e C-x C-s C-h l
+C-x o C-r C - h SPC l
+M-&lt; C-SPC M-} M-w C-x o M-{ C-y C-x C-x C-&gt; C-g C-v
+M-} C-n C-n M-b M-d C-d M-f SPC o f SPC t h e M-q C-x
+C-s C-x 1 C-v C-l C-x b C-s &lt;return&gt; &lt;down&gt; &lt;up&gt; &lt;up&gt;
+&lt;up&gt; &lt;up&gt; C-x b &lt;return&gt; C-x b &lt;return&gt; &lt;down&gt; &lt;down&gt;
+&lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;S-down&gt; &lt;S-down&gt; &lt;S-up&gt;
+C-g C-x 2 C-x b &lt;return&gt; M-} C-n C-p C-n M-f M-f M-f
+M-f M-f M-f M-f M-f M-f C-o C-o SPC s u c h SPC b a
+s i c s SPC a s SPC f o r w a r d - c h a r , M-d M-d
+M-d C-d M-q C-n C-x o C-s e x t C-g C-x o C-e SPC n
+d SPC e M-b M-b a C-e x e c u t e - e x t e n d e d
+- c o m m a n d . C-r M - n C-r C-r C-r C-x C-f C-h
+k M-n q C-g C-x b &lt;return&gt; M-v M-v C-r M - n M-f C-f
+C-f C-f C-k n e x t - h i s t o r y - e l e m e n t
+C-r M - p M-f C-f C-f C-f C-k C-x C-f C-h k M-p q C-g
+p r e v i o u s - h i s t o r y - e l e m e n t C-x
+C-s C-x b &lt;return&gt; C-x 1 C-v C-v C-v C-h l
+C-x o C-r C-r M-&gt; C-r c - h SPC l C-r M-f M-f
+M-f C-SPC M-} M-w C-x o M-} C-y C-x C-x C-&gt; C-d C-l
+C-v C-x C-s M-} M-} M-} C-x C-x C-g C-x o C-x b &lt;return&gt;
+C-u C-SPC C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n
+C-n C-v C-l C-p C-p C-p C-p C-p C-p C-o &lt;tab&gt; u s e
+d _ k e y s SPC = SPC { } &lt;return&gt; &lt;tab&gt; C-a C-k C-x
+C-s C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n
+C-n C-n C-o C-o &lt;tab&gt; &lt;backspace&gt; C-a C-k C-o &lt;tab&gt;
+&lt;backspace&gt; i f SPC c h d &lt;backspace&gt; &lt;backspace&gt; m
+d SPC n o t SPC i n SPC u s M-/ : C-a C-o C-n C-e &lt;return&gt;
+&lt;tab&gt; C-p M-b M-d n a m e C-n &lt;tab&gt; u s e M-/ [ n a
+m e ] S-SPC = SPC c m d C-f C-k C-x C-s C-n C-n C-n
+C-n C-n C-n C-e C-a M-f M-f M-f M-f SPC ( e . g . ,
+SPC % s ) C-e C-b C-b , SPC u s M-/ [ n a m e ] C-e
+C-x C-s C-h l
+C-x o C-r C-r C-r
+M-f M-f C-f C-f C-SPC M-} M-w C-x b &lt;return&gt; C-y C-x
+C-x C-d C-x C-x C-&gt; C-g C-x C-s C-SPC M-{ M-w M-x M-p
+&lt;return&gt; M-&gt; M-p M-p &lt;return&gt; C-y &lt;return&gt; C-d C-d
+C-h k &lt;S-up&gt; C-x o C-x b C-s &lt;return&gt; M-v C-l C-n C-n
+C-n C-n C-n C-n C-n C-o M - : S-SPC e v a l C-h k M-:
+- e x p r e s s i o n C-x o C-x 2 C-x b C-s &lt;return&gt;
+C-x o C-x o &lt;return&gt; &lt; S - d o w n &gt; S-SPC C-a C-k
+C-k C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p
+C-p C-p C-p C-p C-y C-p C-p C-e C-n n e x t - l n e
+&lt;backspace&gt; &lt;backspace&gt; i n e C-x C-s C-r u p C-a C-r
+C-r C-v C-s C-s C-n C-n C-n C-n C-n C-y C-p C-e &lt;M-backspace&gt;
+u p S-SPC &lt;S-backspace&gt; &gt; SPC p r e v M-/ - M-/ M-/
+&lt;M-backspace&gt; &lt;M-backspace&gt; C-h k &lt;up&gt; p r e v i o
+u s - l i n e &lt;return&gt; &lt; u p &gt; SPC p r e v M-/ - M-/
+C-x C-s C-h l
+t SPC C-x C-s i f SPC y o u SPC h a v e SPC C-a C-k
+T h i s SPC i s SPC p r o b a b l y SPC m o s t SPC
+o f SPC w h a t SPC C-a C-k S o SPC w i t h SPC t h
+o s e SPC c o m m a n d s , SPC y o u ' d SPC h a v
+e SPC &lt;M-backspace&gt; &lt;M-backspace&gt; &lt;M-backspace&gt; i f
+SPC m y SPC c u r r e n t SPC e d i t i n g SPC s e
+s s i o n SPC w e r e SPC t y p i c a l SPC M-( w h
+i c h SPC i t SPC p r o b a b l y SPC i s n ' t M-'
+C-e , SPC M-q SPC y o u ' d SPC &lt;M-backspace&gt; &lt;M-backspace&gt;
+I ' d SPC r u n SPC M-' i n t o SPC a C-p C-a M-f M-d
+SPC i f SPC y o u SPC h a d M-f M-f SPC i m p l e m
+e n t e d C-a M-f M-f M-d SPC I M-q C-n C-e C-x s SPC
+C-p M-b C-n C-e SPC m i s s i n g SPC s t a i r SPC
+o &lt;backspace&gt; a b o u t SPC o n c e SPC o u t SPC o
+f SPC e v e r y SPC 1 0 0 SPC c h a r a c t e r &lt;M-backspace&gt;
+k e y s t r o k e s . M-q C-x C-s C-h l
+m a j o r i t y SPC o f SPC m y SPC k y &lt;backspace&gt;
+e y s t r o k e s , SPC M-l M-q C-x C-s C-l C-l C-l
+&lt;next&gt; &lt;prior&gt; &lt;down&gt; C-e M-b M-b M-b M-b a n d SPC
+h a v i n g SPC h &lt;backspace&gt; j u s t SPC t h e s e
+SPC i m p l e m e n t e d SPC o u &lt;M-backspace&gt; w o
+u l d SPC m a k e SPC s o m e t h i n g SPC " f e e
+l SPC l i k e SPC a n SPC E m a c s " , SPC M-" M-"
+M-q C-x C-s &lt;next&gt; &lt;next&gt; &lt;up&gt; &lt;next&gt; &lt;prior&gt; &lt;prior&gt;
+&lt;prior&gt; M-&gt; &lt;backspace&gt; , SPC b u t SPC i t SPC s e
+e m s SPC l i k e SPC i f SPC I S-SPC i m p l e m e
+n t e d SPC * m y * S-SPC M-q SPC i &lt;backspace&gt; s t
+a n &lt;M-backspace&gt; m o s t SPC u s e d SPC E m a c s
+SPC c o m m a n d s SPC i n s t e a d SPC o f SPC B
+e l l a r d ' s , SPC M-' t h e SPC s e t SPC w o u
+l d SPC b e SPC e v e n SPC s m a l l e r . M-b M-b
+M-b M-b t o SPC g e t SPC t o SPC c o m f o r t SPC
+M-q C-x C-s &lt;next&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; C-h l
+C-n C-h f &lt;return&gt; C-n C-h f &lt;return&gt; C-n C-n C-n C-n
+M-f M-f M-f C-h f &lt;return&gt; C-n C-h f &lt;return&gt; C-n C-h
+f &lt;return&gt; C-p C-h f &lt;return&gt; C-n C-h f &lt;return&gt; C-x
+0 a n d SPC d o d &lt;backspace&gt; w n c a s e - w o r d
+SPC ( ! ? ) . M-q C-x C-s C-x 1 C-l C-p C-p C-p C-p
+C-p M-b M-b &lt;M-backspace&gt; &lt;M-backspace&gt; m o s t SPC
+M-q C-x C-s &lt;prior&gt; &lt;next&gt; C-n C-n C-n C-n C-n C-n
+C-n C-n C-n C-n C-n C-n M-f M-f M-f M-f SPC E m a &lt;M-backspace&gt;
+G N U S-SPC E m a c s SPC i m p l e m e n t s SPC m
+o s t M-f M-f M-f M-d M-d M-d C-e M-f M-f C-a M-d M-d
+M-d &lt;backspace&gt; M-q M-&gt; C-x C-s C-h f r e c e n t e
+r &lt;return&gt; C-x 1 &lt;backspace&gt; S-SPC S-SPC S o m e SPC
+o f SPC t h e m SPC &lt;backspace&gt; , SPC l i k e SPC r
+e c e n M-/ , M-q SPC a r e SPC t h i n SPC L i s p
+SPC v e n e e r s SPC o n SPC t o p SPC o f SPC b u
+i l t - &lt;M-backspace&gt; p r i m i t i v e SPC f u n c
+t i o n s SPC l i k e SPC r e c e n t e r . M-b M-b
+M-d s u c h SPC a s M-q M-&gt; C-x C-s &lt;prior&gt; &lt;prior&gt;
+&lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt;
+&lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; C-h
+l C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-n C-a M-f
+, SPC c o n f l i c t i n g SPC w i t h SPC C-x b &lt;return&gt;
+M-&gt; &lt;return&gt; | a &lt;tab&gt; b &lt;M-right&gt; &lt;M-S-right&gt; x &lt;S-up&gt;
+&lt;S-right&gt; &lt;S-left&gt; &lt;S-up&gt; C-a C-p C-p C-k C-k C-k C-k
+C-k C-x C-s C-x b &lt;return&gt; s h i f t - s e l e c t
+i o n SPC a n d SPC s o m e SPC o r g - m o d e SPC
+b i n d i n g s M-q C-x C-s C-x C-s C-n C-n C-n C-n
+C-n M-} C-o &lt;return&gt; T h e r e ' s SPC a SPC t h i
+n g SPC c a l l e d SPC [ A c e SPC J u m p ] [ 2 ]
+&lt;return&gt; &lt;return&gt; [ 2 ] : SPC C-y C-p C-p C-e SPC w
+h i c h SPC l e t s SPC y o u SPC j u m p SPC t o SPC
+t e x t SPC b y SPC s e a &lt;M-backspace&gt; t y p i n g
+SPC i t , SPC e v e n SPC i f SPC i t ' s SPC i n SPC
+a n o t h e r SPC w i n d o w M-' . M-q C-x C-s &lt;backspace&gt;
+, SPC s i m M-' &lt;M-backspace&gt; s o r t SPC o f SPC l
+i k e SPC m o v i n g SPC b y SPC i n c r e m e n t
+a l SPC s e a r c h . M-q C-x C-s C-h l
+i g n SPC w i t h SPC &lt;M-backspace&gt; w i t h SPC t h
+e SPC d i s p l a y SPC d i v i d e d SPC i n t o M-q
+SPC v e r t i c a l SPC " t r a c k " S-SPC e a c &lt;M-backspace&gt;
+&lt;backspace&gt; &lt;backspace&gt; s " S-SPC e a c h SPC d i v
+i d e d SPC i n t o SPC h o r i z o n t a l SPC " w
+i n d o w s " M-q M-" M-" M-" M-" SPC m i &lt;backspace&gt;
+&lt;backspace&gt; &lt;backspace&gt; C-e SPC m i g h t SPC b e SPC
+a SPC C-x C-s &lt;M-backspace&gt; &lt;M-backspace&gt; p r o v i
+d e SPC s i m p l e r SPC a n d SPC m o r e SPC p r
+e d i c t a b l e SPC b e a v &lt;backspace&gt; &lt;backspace&gt;
+h a v i o r . M-q C-x C-s &lt;backspace&gt; SPC t h a n SPC
+t h e SPC t r a d &lt;M-backspace&gt; m &lt;backspace&gt; S m t
+a l l t &lt;M-backspace&gt; S m a l l t a l k - s t y l e
+SPC o v e r a l &lt;backspace&gt; &lt;backspace&gt; l a p p i n
+g SPC w i n d o w s . C-x C-s M-&gt; C-p C-p C-p M-b M-b
+&lt;M-backspace&gt; &lt;M-backspace&gt; w o n d e r SPC i f SPC
+M-q M-&gt; C-x C-s M-v M-v M-v M-v M-v M-v M-v M-v M-v
+M-v M-v &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt;
+&lt;next&gt; &lt;prior&gt; &lt;prior&gt; &lt;down&gt; C-h l C-x
+o C-r C - h SPC l M-&gt; C-SPC C-p C-p C-SPC M-&lt; M-w C-x
+o M-{ M-{ C-y C-x C-x C-&gt; C-g C-x C-s M-{ C-x 1 M-{
+M-{ M-{ M-{ M-{ M-{ &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt;
+&lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt;
+&lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt;
+&lt;next&gt; &lt;prior&gt; &lt;prior&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt; &lt;next&gt;
+&lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;prior&gt; &lt;next&gt; C-x b p y &lt;return&gt;
+C-f C-SPC M-v M-v M-{ C-n C-n M-= C-g C-x 2 C-x b &lt;return&gt;
+M-&gt; M-v M-v C-v M-v M-v M-v M-} C-o &lt;return&gt; I SPC
+u s e d SPC t h i s SPC t a b l e SPC t o SPC g e n
+e r a t e SPC t h e SPC b o &lt;M-backspace&gt; &lt;M-backspace&gt;
+t h e SPC a b o v e : M-b M-b M-b M-b o f SPC 9 9 SPC
+k e y b i n d i n g s SPC C-x C-s C-x o C-SPC C-v C-v
+C-v C-v C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n
+C-n M-w C-x o C-e &lt;return&gt; &lt;return&gt; C-y C-x C-x C-&gt;
+C-g C-x C-s C-x C-x C-k C-x C-x M-| s o r t &lt;return&gt;
+C-x C-x C-u M-| M-p &lt;return&gt; C-h l
+C-x C-&gt; C-x C-x C-o C-r C - h SPC l C-l C-l C-l C-x
+C-x C-r C-r C-p C-p C-p C-p C-p C-p C-p C-p C-g C-p
+C-p C-p C-p C-p C-p C-p C-p C-p M-f M-f C-f C-f C-SPC
+C-p C-p C-p C-p C-p C-p M-b M-b M-b C-w C-x C-s C-h
+k M-| M-} C-x o C-x b C-s &lt;return&gt; C-o M - | SPC s
+h e l l - c o m M-/ &lt;backspace&gt; &lt;backspace&gt; &lt;backspace&gt;
+m M-/ - M-/ &lt;M-backspace&gt; o n - r e g i n &lt;backspace&gt;
+o n C-h f &lt;return&gt; C-x o C-x b &lt;return&gt; C-SPC M-{ C-n
+M-| ~ / d e v e l / d e v 3 / d e c o d e l &lt;tab&gt; &lt;return&gt;
+C-x b C-s &lt;return&gt; C-x C-s C-x b &lt;return&gt; C-x C-x M-|
+M-p &lt;return&gt; C-x o M-&gt; C-x o C-x b &lt;return&gt; &lt;return&gt;
+C - x SPC 0 SPC C-h C-g C-x 2 C-h k C-x 0 C-x o C-x
+o d e l e t e - i &lt;backspace&gt; w i n d o w C-x C-s C-h
+k C-x M-&lt; C-h k C-x s C-h k &lt;M-right&gt; &lt;return&gt; &lt; M
+- R i g h t &gt; S-SPC f o r w r &lt;backspace&gt; a r d - w
+o r d &lt;return&gt; &lt; M - S - R i g h t &gt; C-h k &lt;M-S-right&gt;
+SPC f o r w a r d - w o r d C-x C-s C-x b C-g C-x o
+C-x o C-r C-g C-p C-p C-p C-p C-p C-SPC C-p C-SPC C-p
+M-w C-x o C-x o C-x b &lt;return&gt; C-v C-v C-v C-v C-v
+C-v C-v C-v C-v M-v C-p C-p C-y C-p C-&gt; C-x C-s C-h
+l
+&lt;down&gt; &lt;right&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt;
+&lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt;
+&lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt;
+&lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt; &lt;down&gt;
+&lt;down&gt; C-p M-v C-v C-n C-n C-n C-n C-n C-n C-n C-n
+C-n C-n C-n C-n C-n C-n C-n C-n C-n C-p C-SPC C-n C-n
+C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n C-n
+C-n C-n C-n C-n C-n C-n C-e C-x r k C-p C-p C-p C-p
+C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p
+C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p C-p
+C-p C-l C-p M-{ C-n C-e SPC SPC SPC SPC SPC SPC SPC
+SPC SPC SPC SPC SPC SPC SPC SPC SPC C-x r y C-x C--
+M-{ C-l C-n C-n C-n C-n C-n C-n C-l C-/ C-p SPC SPC
+SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC
+SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC
+SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC
+SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC
+SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC SPC C-x r y
+M-b M-b M-b M-b M-b M-b M-b C-s C-w C-w M-b M-b C-b
+C-b C-b C-b C-b C-b C-b C-b C-b C-b C-b C-b C-b C-b
+C-b C-b C-b C-b C-b C-b C-b C-b C-b C-b C-k C-p C-k
+C-p C-k C-p C-k C-p C-k C-p C-k C-p C-k C-p C-k C-/
+C-/ C-/ C-/ C-/ C-/ C-/ C-/ C-/ C-/ C-/ C-/ C-/ C-/
+C-/ C-/ C-/ C-/ C-p C-/ C-v C-n C-n C-n C-n C-n C-n
+M-} C-SPC M-} C-w C-h l
+</code></pre>
+<p>Some notes on most common command frequencies.  Out of 9014 of the
+commands recorded above and successfully decoded by a janky unreliable
+script, these 21 account for 90% of the commands:</p>
+<pre><code>    5632     5632 self-insert-command (e.g., d)
+     321     5953 next-line (e.g., C-n)
+     297     6250 other-window (e.g., C-x o)
+     242     6492 newline (e.g., &lt;return&gt;)
+     216     6708 delete-backward-char (e.g., &lt;backspace&gt;)
+     210     6918 previous-line (e.g., C-p)
+     162     7080 save-buffer (e.g., C-x C-s)
+     112     7192 scroll-up (e.g., C-v)
+     112     7304 forward-word (e.g., M-f)
+     101     7405 scroll-down (e.g., M-v)
+      98     7503 isearch-backward (e.g., C-r)
+      90     7593 describe-key (e.g., C-h k)
+      71     7664 backward-kill-word (e.g., &lt;M-backspace&gt;)
+      68     7732 previous-history-element (e.g., M-p)
+      67     7799 indent-for-tab-command (e.g., &lt;tab&gt;)
+      62     7861 backward-word (e.g., M-b)
+      59     7920 end-of-line (e.g., C-e)
+      56     7976 forward-paragraph (e.g., M-})
+      56     8032 exchange-point-and-mark (e.g., C-x C-x)
+      55     8087 set-mark-command (e.g., C-SPC)
+      54     8141 keyboard-quit (e.g., C-g)
+</code></pre>
+<p>Although this is the majority of my keystrokes, and having just these
+implemented would make something “feel like an Emacs”, this obviously
+isn’t everything essential; it's missing such basics as forward-char,
+find-file, yank, kill-ring-save (the new copy-region-as-kill),
+eval-expression, and execute-extended-command.  The next 9% (90% of
+the remainder) are accounted for by the following 29 commands:</p>
+<pre><code>      49     8190 forward-char (e.g., C-f)
+      48     8238 delete-char (e.g., C-d)
+      46     8284 yank (e.g., C-y)
+      45     8329 open-line (e.g., C-o)
+      45     8374 view-lossage (e.g., C-h l)
+      44     8418 backward-paragraph (e.g., M-{)
+      43     8461 dabbrev-expand (e.g., M-/)
+      41     8502 iswitchb-buffer (e.g., C-x b)
+      41     8543 kill-ring-save (e.g., M-w)
+      40     8583 fill-paragraph (e.g., M-q)
+      37     8620 end-of-buffer (e.g., M-&gt;)
+      33     8653 indent-rigidly-4 (e.g., C-&gt;)
+      30     8683 kill-line (e.g., C-k)
+      29     8712 move-beginning-of-line (e.g., C-a)
+      24     8736 kill-word (e.g., M-d)
+      21     8757 ??? (e.g., &lt;M-S-right&gt;)
+      21     8778 recenter-top-bottom (e.g., C-l)
+      20     8798 isearch-forward (e.g., C-s)
+      16     8814 backward-char (e.g., C-b)
+      15     8829 describe-function (e.g., C-h f)
+      15     8844 delete-other-windows (e.g., C-x 1)
+      14     8858 scroll-other-window (e.g., C-M-v)
+      14     8872 beginning-of-buffer (e.g., M-&lt;)
+      12     8884 kmacro-end-or-call-macro (e.g., &lt;f4&gt;)
+      10     8894 execute-extended-command (e.g., M-x)
+      10     8904 undo (e.g., C-/)
+       9     8913 smart-apostrophe (e.g., M-')
+       8     8921 split-window-vertically (e.g., C-x 2)
+       8     8929 delete-indentation (e.g., M-^)
+</code></pre>
+<p>So if I had those commands implemented, if my current editing session
+were typical (which it probably isn’t), I would run into a missing
+stair about once out of every 100 keystrokes, probably a couple of
+times a minute; still enough to break the spell of suspension of
+disbelief, but close to usable.  The remaining 24 commands, though,
+include some very significant ones:</p>
+<pre><code>       7     8936 universal-argument (e.g., C-u)
+       7     8943 find-file (e.g., C-x C-f)
+       6     8949 comint-interrupt-subjob (e.g., C-c C-c)
+       6     8955 smartquote (e.g., M-")
+       6     8961 insert-parentheses (e.g., M-()
+       5     8966 comint-previous-prompt (e.g., C-c C-p)
+       5     8971 shell-command-on-region (e.g., M-|)
+       5     8976 next-history-element (e.g., M-n)
+       4     8980 kmacro-start-macro-or-insert-counter (e.g., &lt;f3&gt;)
+       3     8983 eval-expression (e.g., M-:)
+       3     8986 comint-send-eof (e.g., C-c C-d)
+       3     8989 mark-sexp (e.g., C-M-S-SPC)
+       3     8992 digit-argument (e.g., M-0)
+       3     8995 split-window-horizontally (e.g., C-x 3)
+       2     8997 magit-status (e.g., C-x g)
+       2     8999 delete-window (e.g., C-x 0)
+       2     9001 query-replace (e.g., M-%)
+       2     9003 eval-last-sexp (e.g., C-x C-e)
+       2     9005 kill-buffer (e.g., C-x k)
+       2     9007 kill-region (e.g., C-w)
+       2     9009 shell (e.g., M-o)
+       2     9011 text-scale-adjust (e.g., C-x C-=)
+       2     9013 count-lines-region (e.g., M-=)
+       1     9014 downcase-word (e.g., M-l)
+</code></pre>
+<p>My notes on QEmacs from Dercuano noted the things I missed from Emacs
+in QEmacs: M-^, M-;, C-k appending properly, M-q leaving you in place,
+redisplay that isn’t visibly slow (!), M-/, control-backspace,
+command-granularity undo, and prefix arguments.  Also some things I
+used that did work: goto-line and yank-pop, say.  I was astonished
+that with only 88 commands it managed to be pretty usable, but it
+seems like if I implemented <em>my</em> most used Emacs commands instead of
+Bellard’s, the set to get to comfort would be even smaller, less than
+75.</p>
+<p>I used this table of 99 keybindings to generate the above:</p>
+<pre><code>&lt;M-Right&gt; forward-word
+&lt;M-S-Right&gt; forward-word
+&lt;M-backspace&gt; backward-kill-word
+&lt;S-backspace&gt; delete-backward-char
+&lt;S-down&gt; next-line
+&lt;S-up&gt; previous-line
+&lt;backspace&gt; delete-backward-char
+&lt;down&gt; next-line
+&lt;f3&gt; kmacro-start-macro-or-insert-counter
+&lt;f4&gt; kmacro-end-or-call-macro
+&lt;next&gt; scroll-up
+&lt;prior&gt; scroll-down
+&lt;return&gt; newline
+&lt;tab&gt; indent-for-tab-command
+&lt;up&gt; previous-line
+C-/ undo
+C-0 digit-argument
+C-1 digit-argument
+C-2 digit-argument
+C-3 digit-argument
+C-4 digit-argument
+C-5 digit-argument
+C-6 digit-argument
+C-7 digit-argument
+C-8 digit-argument
+C-9 digit-argument
+C-&gt; indent-rigidly-4
+C-M-S-SPC mark-sexp
+C-M-SPC mark-sexp
+C-M-v scroll-other-window
+C-SPC set-mark-command
+C-a move-beginning-of-line
+C-b backward-char
+C-c C-c comint-interrupt-subjob
+C-c C-d comint-send-eof
+C-c C-p comint-previous-prompt
+C-d delete-char
+C-e end-of-line
+C-f forward-char
+C-g keyboard-quit
+C-h f describe-function
+C-h k describe-key
+C-h l view-lossage
+C-k kill-line
+C-l recenter-top-bottom
+C-n next-line
+C-o open-line
+C-p previous-line
+C-r isearch-backward
+C-s isearch-forward
+C-u universal-argument
+C-v scroll-up
+C-w kill-region
+C-x 0 delete-window
+C-x 1 delete-other-windows
+C-x 2 split-window-vertically
+C-x 3 split-window-horizontally
+C-x C-= text-scale-adjust
+C-x C-e eval-last-sexp
+C-x C-f find-file
+C-x C-s save-buffer
+C-x C-x exchange-point-and-mark
+C-x b iswitchb-buffer
+C-x g magit-status
+C-x k kill-buffer
+C-x o other-window
+C-y yank
+M-" smartquote
+M-% query-replace
+M-' smart-apostrophe
+M-( insert-parentheses
+M-/ dabbrev-expand
+M-0 digit-argument
+M-1 digit-argument
+M-2 digit-argument
+M-3 digit-argument
+M-4 digit-argument
+M-5 digit-argument
+M-6 digit-argument
+M-7 digit-argument
+M-8 digit-argument
+M-9 digit-argument
+M-: eval-expression
+M-&lt; beginning-of-buffer
+M-= count-lines-region
+M-&gt; end-of-buffer
+M-^ delete-indentation
+M-b backward-word
+M-d kill-word
+M-f forward-word
+M-l downcase-word
+M-n next-history-element
+M-o shell
+M-p previous-history-element
+M-q fill-paragraph
+M-v scroll-down
+M-w kill-ring-save
+M-x execute-extended-command
+M-{ backward-paragraph
+M-| shell-command-on-region
+M-} forward-paragraph
+S-SPC self-insert-command
+SPC self-insert-command
+</code></pre>
+<p>Notice that 20 of these 99 are just digit-argument.  I supplemented
+these with self-insert-command bindings for printable ASCII.</p>
+<p>indent-rigidly-4, smartquote, and smart-apostrophe are little commands
+I wrote that I often find useful.</p>
+<p>Worth noting is that GNU Emacs implements most of these commands in
+Elisp, with a few exceptions: self-insert-command, other-window,
+delete-backward-char, forward-word, scroll-up, end-of-line,
+scroll-down, delete-char, forward-char, backward-char,
+scroll-other-window (!?), delete-other-windows,
+execute-exptended-command, kill-buffer, and downcase-word (!?).  Some
+of them, like recenter-top-bottom, are thin Lisp veneers on top of
+primitive functions such as recenter.</p>
+<h2>Window management</h2>
+<p>The Emacs way of handling windows from the keyboard is totally broken.
+With two windows on the screen it’s fine.  Three is awkward.  Four is
+unusable.  In the above lossage there are strings of up to six
+other-window commands in a row.  Any number of better alternatives for
+window <em>switching</em> have been invented: Win16 LRU alt-tab; screen/tmux
+numbering of windows; irssi numbering of windows with
+alt-1/alt-2/alt-3 etc. to switch between them and alt-a to jump to the
+window that’s demanding attention; modifier keys which make the arrow
+keys move you between windows (Hovav Shacham’s windmove from 1998,
+inspired by Julian Assange’s change-windows-intuitively, uses shift by
+default, conflicting with cua-mode shift-selection and some org-mode
+bindings); iswitchb’s/icomplete’s/ido’s LRU list of buffers with
+typeahead filtering; Win16 MDI ctrl-tab/ctrl-f4; etc.  Emacs itself
+has accreted ace-window (apparently this involves assigning numbers to
+all the windows so you can type C-x o 3, and there are other
+characters for things like deleting windows, splitting windows,
+maximizing windows, etc.), dimitri/switch-window (same), etc.</p>
+<p><a href="https://github.com/syl20bnr/spacemacs/blob/master/doc/DOCUMENTATION.org#window-manipulation-key-bindings">Spacemacs</a> uses SPC 1, SPC 2, etc., to switch to windows 1, 2,
+etc, and has window-manipulation commands on SPC w.</p>
+<p>There’s a thing called <a href="https://www.emacswiki.org/emacs/AceJump">Ace Jump</a> which lets you jump to text by
+typing it, even if it’s in another window, sort of like moving by
+incremental search.</p>
+<p>A different problem is that many built-in Emacs commands, being
+designed for two windows or less, <a href="http://ergoemacs.org/emacs/emacs_effective_windows_management.html">happily replace your window
+contents with their own</a>, although <a href="https://stackoverflow.com/questions/21761971/prevent-emacs-commands-from-showing-new-buffers-in-other-windows">in some cases you can appease
+them by offering them a sacrificial window</a>.  There’s a whole
+ecosystem around the <code>display-buffer</code> command that attempts to make
+this less frequently annoying.</p>
+<p>I think this is a symptom of a broken user interface design.  I’m not
+sure what the right design is; maybe something where opening new
+things opens new windows by default, which you can then maximize and
+unmaximize, or close, or resize.  I wonder if the Cedar/Oberon design
+with the display divided into vertical “tracks” each divided into
+horizontal “windows” might provide simpler and more predictable
+behavior than the Smalltalk-style overlapping windows.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/programming.html">Programming</a> (49 notes)
+</li><li><a href="../topics/hci.html">Human-computer interaction</a> (22 notes)
+</li><li><a href="../topics/experiment-report.html">Experiment report</a> (14 notes)
+</li><li><a href="../topics/safety.html">Safe programming languages</a> (11 notes)
+</li><li><a href="../topics/lisp.html">Lisp</a> (11 notes)
+</li><li><a href="../topics/transactions.html">Transactions</a> (4 notes)
+</li><li><a href="../topics/editors.html">Editors</a> (4 notes)
+</li><li><a href="../topics/emacs.html">Emacs</a> (3 notes)
+</li><li><a href="../topics/incremental-search.html">Incremental search</a> (2 notes)
+</li><li>Qemacs</li></ul></div></html>

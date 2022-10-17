@@ -1,0 +1,7 @@
+Comment on <https://news.ycombinator.com/item?id=29151741>.
+
+"The cost of China’s new nuclear ambition has been estimated at US$440 billion."  But it doesn't say how much power that is, just that it's 150 new reactors, so it's about US$3B per reactor.  https://archive.md/A5B6S shows that the article didn't say how much power it was 9 hours ago either.  So, is this 15 GW, 150 GW, or 1500 GW?
+
+PV modules are about US$0.2/W, so if it were PV panels, US$440B would buy them 2.2 terawatts peak.  At an average capacity factor of 20% that would be 440 GW, but China's historical PV capacity factor has been terrible, more like 12% IIRC (maybe due to a Chinese version of the irrational misregulation robomartin documents in California in https://news.ycombinator.com/item?id=29155094), which would make it more like 260 GW.  But a PV power plant includes things that aren't panels; balance of plant (inverter, wiring, grid connection, monitoring, mounting, security) is typically roughly equal to the module cost.  So it would be more like 130 GW.
+
+In the US, nuclear plants cost about US$10/W

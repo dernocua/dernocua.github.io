@@ -1,0 +1,16 @@
+I’ve written a few interactive calculators with algebraic expressions,
+and I’d like to be able to do the same thing with XXX
+
+
+
+(Hmm, instead of thinking of a statement as a predicate transformer
+from a strongest postcondition to a weakest precondition, we could
+think of it as a function from a previous environment to a (Yes, No) ×
+environment tuple, where the boolean indicates which of two possible
+execution paths it will continue on.  This representation, derived
+from Baker’s COMFY, might facilitate not only the construction of
+compilers but also interactive symbolic manipulation of program
+fragments.  By extending it to include a “result value” or list
+thereof we can include expressions as well as statements.  What about
+two weakest-precondition functions, one taking the failure strongest
+postcondition and one taking that for success?)

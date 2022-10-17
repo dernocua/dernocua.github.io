@@ -1,0 +1,4 @@
+3-D printing with a MIG welder suffers from a positive-feedback
+problem which impairs geometrical precision: a little bump on one
+layer tends to attract the arc of the next level and consequently the
+droplets of metal.

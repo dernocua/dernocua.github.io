@@ -1,0 +1,32 @@
+Those costs actually sound very reasonable.
+
+At first I misread your comment to be saying that it would take US$575000 of catalyst to provide clean water to 5000 people, when actually you seem to have been saying that it would provide clean water to 200k people (200 mgd), a cost of US$2.87 per person, which is low enough that almost anybody in the world could pay it rather than exposing themselves to waterborne pathogens.  Moreover, I think the real situation is substantially better than your comment suggests, for four reasons:
+
+① what seems to have been a calculation error on your part resulting in a cost estimate that is too high by a factor of about 60;
+
+② people's drinking water needs are lower than you suggest by a factor of about 65, although conventional surface-water treatment plants cannot take advantage of this;
+
+③ you're not taking into account the supply-chain issues;
+
+④ unless the catalyst gets poisoned within a few months, even your US$2.87/person figure is already several times smaller than the consumable costs for conventional surface-water treatment facilities.  
+
+Thanks to mkr-hn I found the paper at https://www.researchgate.net/publication/352882305_A_residue-free_approach_to_water_disinfection_using_catalytic_in_situ_generation_of_reactive_oxygen_species; the supplementary 
+
+
+— ⁂ —
+
+First, you say 0.5 MGD is 6.5 million times higher than the 0.2 mℓ/s 
+
+Conventional surface-water treatment facilities involve treatment with hypochlorite, permanganate, chloramine, and whatnot in existing waterworks, but it's still and it doesn't require a continuous supply chain for these materials, which pose some safety concerns (especially at small scales) and in many places are subject to legal reporting requirements.
+
+They do say their catalyst is 0.5% Au and 0.5% Pd on a TiO₂ support, so I think you're reading it correctly: 0.6 mg of gold and 0.6 mg of palladium to process 0.2 mℓ/min of water.  Supplementary material at https://www.nature.com/articles/s41929-021-00642-w seems to be https://static-content.springer.com/esm/art%3A10.1038%2Fs41929-021-00642-w/MediaObjects/41929_2021_642_MOESM1_ESM.pdf has a plot of different catalyst mixes they tried (Sup. Fig. 14, p. 12, 13/32).
+
+If we normalize that amount of catalyst metal to SI units, that's 3 gram seconds per liter (g·s/ℓ) each of gold and palladium.  Your 0.5 MGD (22 ℓ/s) for 5000 people is 4.4 mℓ/s per person, which works out to 13 mg each of gold and palladium per person.  Palladium at US$2800 per troy ounce (https://www.kitco.com/charts/livepalladium.html — that *is* per troy ounce, isn't it?) is US$90/g.  Gold at US$1800 per troy ounce is US$58/g.  Multiplying it out, that's US$1.20 of palladium per person and US$0.76 of gold per person, for a total of US$1.95 of catalyst metals per person.
+
+This figure is substantially less than your computation of US$125 
+
+However, that's 380 liters per day per person, and Burning Man recommends 1.5 gallons per day per person (5.7 liters/day/person, 0.066 mℓ/s/person), which includes water for for showers, for cooking, and for drinking in a very dry environment with extensive physical exertion, though not for bidets.  That's almost two orders of magnitude lower.  Maybe your waterworks is supplying not only drinking water but also toilet-flushing water and lawn-irrigating water?  Those don't normally need antibacterial treatment.  Even the benchtop device they used in the paper would supply three people's water needs at Burning Man rates.
+
+
+
+Being able to operate in practical terms at a very small scale seems to me like an advantage rather than a disadvantage.

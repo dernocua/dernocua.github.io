@@ -1,0 +1,5 @@
+Writing file `drama-word-list.md`, I realized that a password using a
+reasonable PBKDF can 
+
+(This suggests the idea: perhaps we should use a PBKDF for
+content-addressing by hash?)

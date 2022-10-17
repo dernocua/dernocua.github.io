@@ -1,0 +1,16 @@
+Let's look at a binary search.  We have some array or slice A such
+that some predicate P is true for some possibly empty prefix of A, and
+then false for all following elements, and we want to define a
+procedure bsearch(A, P) that returns the first index for which it is
+false — which may be an index off the end of A, if the prefix is the
+whole thing.
+
+If A is empty, then the answer is simple: it's 0.  In other cases we
+can recurse.
+
+We choose an element from within A, which we can do because we know
+it’s nonempty.  We can choose M = #A // 2, rounding down; this is
+always within the bounds of A.  We test P(A[M]).  If it's false, we
+know our return value is at most M, so we can recurse: bsearch(A[:M],
+P).  This is guaranteed to make progress toward an empty array because
+#A // 2 < #A for #A > 0.

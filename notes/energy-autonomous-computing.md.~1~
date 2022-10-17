@@ -1,0 +1,257 @@
+
+
+Lead-acid batteries
+-------------------
+
+Lead-acid batteries are generally cheaper than the lithium-ion type,
+even in 02021.  At the very low end joules per buck drops
+dramatically; [a 1.3-amp-hour 12V HiStarX LA612 battery goes for
+AR$900][0]; at AR$147/US$ that’s US$6.10 for 56 kJ, or 9.2 kJ/US$.  By
+contrast, a [2-kg 7-amp-hour Risttone battery goes for AR$1220][1],
+US$8.30, 300 kJ, 36 kJ/US$.  A [24-amp-hour deep-cycle golf-cart Press
+PR12240D goes for AR$9000][2], US$61, which is getting low again: 17
+kJ/US$; while car starter batteries are in theory much cheaper, like
+[a Rosler 65-amp-hour starter goes for AR$4900][3], US$33, 84 kJ/US$,
+but of course you can only use a fraction of that before you start
+killing the battery.  Even with starter batteries, prices per joule go
+way up at the low end: [a Yuasa 5.3-amp-hour 1.5kg 12N5-3B 12-volt
+motorcycle starter battery][10] (230 kJ) is [sold for AR$2500][11]
+(US$17, 13 kJ/US$).
+
+[0]: https://articulo.mercadolibre.com.ar/MLA-904920119-bateria-de-gel-12v-13ah-recargable-luz-emergencia-ups-_JM
+[1]: https://articulo.mercadolibre.com.ar/MLA-871599822-bateria-de-gel-12v-7a-amper-sistema-alarmas-cerco-electrico-_JM
+[2]: https://articulo.mercadolibre.com.ar/MLA-671410956-bateria-12v-24ah-press-ciclo-profundo-moto-carros-golf-_JM
+[3]: https://articulo.mercadolibre.com.ar/MLA-856727008-bateria-12x65-super-oferta-nueva-_JM
+[10]: https://www.yuasa.es/batteries/moto-e-powersport/convencional-de-12-voltios/12n5-3b.html
+[11]: https://articulo.mercadolibre.com.ar/MLA-853988819-bateria-moto-yuasa-12n5-3b-motomel-c-110-0518-_JM
+
+Digging further suggests higher-capacity options like [the 2.8-kg
+9-amp-hour Moura 12MVA-9][19] for AR$2500 (US$17, 390 kJ, 23 kJ/US$),
+or, in the extreme, [the Ultracell UCG 100-12 100-amp-hour deep-cycle
+gel cell][18] for AR$38400 (4.3 MJ, US$261, 17 kJ/US$).
+
+[18]: https://articulo.mercadolibre.com.ar/MLA-852742149-bateria-ciclo-profundo-gel-12v-100ah-ultracell-ppanel-solar-_JM
+[19]: https://articulo.mercadolibre.com.ar/MLA-867421155-bateria-moura-12v-9ah-gel-ups-alarmas-paneles-solares-_JM
+
+Lithium-ion batteries
+---------------------
+
+Lithium-ion batteries are trickier to buy because of the profusion of
+fakery, but [this Sanyo NCR20700b cell is specified at 4250mAh and
+3.7V for AR$2500][4], which would be US$17 and 57 kJ, or only 3.3
+kJ/US$.  (The seller falsely claims it’s an 18650.  It’s tested at
+[3.7–4.2 amp hours at 0.2–15 amps of discharge rate][12] by what I
+think is an independent tester, who weighed it at 61 g.)  But there
+are a lot of fake lithium-ion batteries like this [UltroFite GH 18650
+“6800 mAh” which sells for AR$427][5], which would be 91 kJ, US$2.90,
+and 31 kJ/$, nearly an order of magnitude cheaper and up in the
+lead-acid price range.  (Lithium-ion batteries are already immensely
+cheaper per watt or amp rather than per joule, but so are capacitors.)
+USB “power banks” are even less controlled, but much more convenient
+to use; [this Tedge H555 claims 10 amp-hours for AR$1700][6],
+US$11.50, 180 kJ, 16 kJ/$, and it probably has 18650s inside, which
+could be replaced, while [this offbrand Libercam powerbank claims 20
+amp-hours for AR$1500][9] and is too thin to contain 18650s.
+
+My “10050 mAh” powerbank (180 kJ) can recharge my phone about four
+times, which can keep it alive for about a week.
+
+[4]: https://articulo.mercadolibre.com.ar/MLA-756391264-panasonic-sanyo-ncr20700b-4250mah-10a-20700-ion-litio-37v-_JM
+[5]: https://articulo.mercadolibre.com.ar/MLA-816550268-pila-bateria-recargable-18650-6800mah-37v-para-linterna-_JM
+[6]: https://articulo.mercadolibre.com.ar/MLA-795347543-cargador-bateria-portatil-powerbank-2-usb-10000-mah-tedge-_JM
+[9]: https://articulo.mercadolibre.com.ar/MLA-856270207-power-bank-cargador-portatil-20000-mah-celular-micro-usb-_JM
+[12]: https://lygte-info.dk/review/batteries2012/Sanyo%20NCR20700B%204000mAh%20%28Red%29%20UK.html
+
+Lithium starters?
+-----------------
+
+I thought maybe the motorcycle starter batteries were about to get
+murdered by lithium, since lithium is so great at rapid discharge, but
+it’s not so clear.  The Yuasa 12N5-3B above is only 35 or 39 cold
+cranking amps, depending on who you believe, which is only like 450
+watts (26 W/US$).  At 3.7 volts and 15 amps the Sanyo cell, which is
+the same US$17 price, delivers only 56 watts; you’d need 9 of them (9
+times the price!)  to deliver the same starter power as the lead-acid
+beast, though admittedly the resulting 0.550 kg of lithium battery is
+noticeably lighter the 1.5 kg of the Yuasa battery.
+
+However, 4 amp hours and 15 amps is a discharge rate of only “3.75C”,
+and [lithium-ion batteries for drones][13] come in “C ratings” of
+“15C”, “20C”, “25C”, “30C”, and even “50C”, though at a substantial
+penalty in joules per buck.  Does this make them competitive for
+starting motorcycles?  Well, a [Blomiky SDL-853562 7.4V 1600mAh 25C
+radio-controlled car battery][14], for example, is listed for AR$6900
+(US$47) and hypothetically ought to hold only 43 kJ (0.91 kJ/US$) but
+be able to deliver 40 amps.  But that’s still only 300 watts, and it
+costs more than twice as much as the lead-acid battery.  Cheaper drone
+batteries like [this Kitch Tech 30C 7.5-V 1200-mAh YZ-803063 for
+AR$3500][15] come closer — if real, that’s 32 kJ for US$24 (1.4
+kJ/US$), 36 amps, and 270 watts, but lead-acid still beats it by a
+substantial factor.  [This Zippy 25C 2200mAh 11.1V drone battery][16]
+can purportedly deliver 610 watts (or 850 watts, 35C, in bursts) and
+is listed at only AR$4700 (US$32).  850 W / US$32 is 27 W/US$, within
+a stone’s throw of the Yuasa price — but far from dramatically
+undercutting it.
+
+Moreover, [advertised C ratings are often fake, even outside
+Argentina][17].
+
+[13]: https://electronica.mercadolibre.com.ar/drones-accesorios-repuestos-baterias/
+[14]: https://articulo.mercadolibre.com.ar/MLA-843144652-bateria-lipo-74v-1600mah-25c-t-connector-blomiky-_JM
+[15]: https://articulo.mercadolibre.com.ar/MLA-873577542-bateria-pila-lipo-yz-803063-1200mah-75v-30c-drone-drones-_JM
+[16]: https://articulo.mercadolibre.com.ar/MLA-741554734-bateria-lipo-zippy-compact-2200mah-3s-25c-111v-xt60-_JM
+[17]: https://oscarliang.com/lipo-battery-c-rating/
+
+Laptops
+-------
+
+My “new” HP laptop’s `/sys/class/power_supply/BAT0/power_now` produces
+numbers ranging from about 11 million to about 32 million, with CPU
+usage seeming to be the biggest determinant.  (I’m guessing these are
+microwatts.)  Its battery (four 18650 cells, I think) is so shot that
+it only runs for about an hour and a half on it, which suggests a
+capacity in the 60–180 kJ range, probably close to 100 kJ.  The (HP
+V104) notebook battery is *labeled as* “14.8 V” and “41Wh” (though the
+broken off-brand spare says “2200mAh/33Wh”), and
+`/sys/class/power_supply/BAT0/energy_full_design` says 23206000, and
+bizarrely so does `energy_full`, and `energy_now` approaches that
+level (20364000 at the moment).  `cycle_count` reports 208, but then
+after popping the battery out and back in, only 200.  [The docs
+say][7] that energy is reported in μWh; `power_now` is not documented
+there but [SuperUser says it’s in μW][8], and indeed 23 watt-hours
+divided by 15 watts is about an hour and a half.  I suspect the
+battery is worn out down to 57% capacity and just doesn’t report its
+design capacity.  23 Wh at 14.8 V is 1600 mAh, which is in a
+reasonable range for a half-worn-out 18650.
+
+[7]: https://www.kernel.org/doc/Documentation/power/power_supply_class.txt
+[8]: https://superuser.com/questions/808397/understanding-the-output-of-sys-class-power-supply-bat0-uevent
+
+It can do something like 10 or 15 billion instructions per second, so
+this is something like 2000–3000 pJ per instruction, including the
+monitor.
+
+Prospects for energy-independent computing
+------------------------------------------
+
+So I was thinking it might be worthwhile to buy a 12-volt gel cell
+like those mentioned above and rig up some power supplies for offline
+computation.  The AR$1200 7-amp-hour Risttone battery mentioned above
+ought to be able to run this laptop at 15 watts for 6 hours (given
+appropriate boost conversion), or recharge this cellphone about 6
+times, and there might be better deals out there too.  Two or three
+such batteries, or a single larger battery, could perhaps power the
+laptop, or a fan, through a long night.
+
+Standard photovoltaic solar panel modules are 990 mm × 1650 mm or
+thereabouts, deliver 200–400 Wp, and, at retail in Argentina, cost
+[AR$12000][20]–[AR$24000][21] (US$80–160), on the order of 30¢–40¢/Wp.
+Smaller panels like [this AR$3200 20-Wp jobbie][22] do exist but cost
+more per watt (US$22, US$1.09/Wp in this case).
+
+[20]: https://articulo.mercadolibre.com.ar/MLA-882723840-panel-solar-solamerica-260w-tipo-250w-270w-280w-12v24v-_JM
+[21]: https://articulo.mercadolibre.com.ar/MLA-898045941-panel-solar-jinko-solar-mono-perc-405w-media-celda-_JM
+[22]: https://articulo.mercadolibre.com.ar/MLA-718610857-panel-pantalla-solar-20w-watts-policristalino-111-amper-amp-_JM
+
+Suppose the solar capacity factor for residential solar panels here is
+15%, so 100 Wp delivers 15 watts average.  (It’s fairly sunny here in
+Buenos Aires, but we get more clouds than California and Arizona
+deserts with their 29% and 25% capacity factors, and also residential
+panels may have to deal with shadows and suboptimal angling.)  And
+suppose we want 24 hours of “autonomy”, meaning, we can keep computing
+even when it’s super cloudy; so a watt of average usage requires 24
+watt-hours (86 kJ) of battery.
+
+So each watt of usage requires 86 kJ of battery, which at 20 kJ/US$
+costs US$4.30, plus 7 Wp of solar panel, about US$2.30 at retail, for
+a total of US$6.60, plus some amount of power electronics.  So running
+the laptop all the time at 15 watts would cost a bit over US$100 of
+equipment; at 32 watts we’re talking US$210.  I paid AR$50k (at the
+time, about US$320) for the laptop a couple months ago.  So powering
+it autonomously nearly doubles its cost!  Also, 32 watts average at a
+15% capacity factor means 213 watts of solar panel, which is a whole
+square-meter panel.  It would occupy a significant fraction of the
+balcony and might attract unwanted attention.
+
+Lower-power computing
+---------------------
+
+Ordinary microcontrollers (without a monitor) are comparable to the
+laptop’s 2000–3000 pJ/intruction power usage, or a bit lower, or much
+worse for floating-point or SIMDable computations, but low-power
+microcontrollers like the STM32L0 or the Atmel SAMD picoPower ARM
+chips are in the 150–250 pJ/insn range, and the MSP430 just a little
+higher (though only 16-bit).
+
+Recent reports are that [the new RISC-V-based microcontroller line
+“GD32V”][23] are better by another factor of 3 or so.  [The datasheet
+for the GD32VF103][24] doesn’t yet provide a lot of detail on lowest
+possible power consumption, but the numbers they do give say that it
+uses about 2.1 mW/MHz at 2 MHz, which drops to 0.7 mW/MHz at 36–48 MHz
+and 0.6 mW/MHz at 72–108 MHz, at 3.3 V, executing from Flash, with all
+peripherals off.  You can probably improve this by running at 2.6 V,
+which is still kind of sad because the RISC-V core itself is running
+at 1.2 V.  (The datasheet and user manual claim it’s a Harvard
+architecture, so you probably can’t execute from RAM, and executing
+from RAM does improve power consumption on ARM microcontrollers.)  If
+we assume that’s about one instruction per clock cycle, 0.6 mW/MHz is
+also 0.6 mW/MIPS, which works out to 600 pJ per instruction.  This is
+a little better than the STM32F0 (which I think is 12 mA at 3.6 V and
+48 MHz: 900 pJ/instruction) but a lot worse than the STM32L0.
+
+[23]: http://www.gd32mcu.com/en/product/risc
+[24]: https://www.gigadevice.com/datasheet/gd32vf103xxxx-datasheet/
+
+My previous estimate in Dercuano was that basic interactive
+computation like word processing takes about 7500 32-bit instructions
+per keystroke.  At one point, I said, “WordStar on a 2MHz (≈0.5MIPS)
+8-bit CPU would sometimes fall behind your typing a bit,” but then
+later calculated that a Commodore 64 or Apple ][ would only do about
+200 000 8-bit instructions per second and were usable for word
+processing, and a 32-bit instruction is roughly equivalent to two
+8-bit instructions, so you need about 0.1 32-bit MIPS, and you might
+be typing like 160 wpm (13.3 keystrokes per second), which works out
+to about 7500 instructions per keystroke.  A Commodore 64 or Apple ][
+were also capable of running the VisiCalc spreadsheet, the Berkeley
+Softworks GEOS GUI and geoPaint and whatnot, and Contiki, though not,
+say, the GEM desktop.  The 5MHz and sub-MIPS Apple Lisa was capable of
+running a non-janky GUI, but even on the Macintosh (7.8 some MHz,
+16-bit ALU, [0.40–0.52][25] Dhrystone MIPS even though [some
+68000 machines were faster][26]) you it was slow enough that you could
+see the delay when dropdown menus got painted.
+
+[25]: http://performance.netlib.org/performance/html/dhrystone.data.col0.html
+[26]: https://en.wikipedia.org/wiki/Instructions_per_second
+
+Also I estimated that painting text in a framebuffer fast enough that
+it doesn’t slow down 350wpm reading might take about 50 bytes of I/O
+per glyph and 100 instructions / glyph × 350 wpm × 6 glyphs / word × 1
+minute / 60 seconds = 3500 instructions/second, orders of magnitude
+lower.  Indeed, old computers like the Sinclair ZX-81 with its
+3.25-MHz Z-80, lacking an external framebuffer, would use the CPU to
+repaint the screen 50 times a second.
+
+Anyway, 0.1 MIPS at 1000 pJ/insn works out to 0.1 milliwatts.  My
+estimate from Dercuano was that updating an E-Paper display takes
+about 25 μJ per glyph; at 350 wpm and thus 35 glyphs per second, this
+works out to 875 μW, which is several times more than the 0.1 MIPS.  A
+friend of mine tells me that he’s gotten old Nokia SPI screens (like
+the 84×48 Nokia 3310 screen, about 25 words of text) to maintain their
+display on less than 1 mA at 3.3 volts (though [others say it needs
+6–7 mA][25], and he reports that it consumes more when you’re updating
+it, too).  They’re readable without backlight in direct illumination,
+but if you use it, the backlight also uses nearly a milliamp.
+
+[25]: https://duino4projects.com/using-nokia-3310-84x48-lcd-arduino/
+
+So you might need 10 milliwatts or more to get a really good
+responsive interactive computation environment.
+
+For batch processing, it might make sense to wait until the daytime:
+an average watt of batch-processing power might be 7 watts during the
+15% of the time that the sun is shining full force, and 7 Wp of solar
+panels only costs US$2.30, which is a lot less than US$6.60.
+
+As I pointed out in Dercuano, a pullstring can yield 500 mm of pull at
+50 N, which is 25 J; that’s enough to run a 10-milliwatt computer for
+40 minutes.

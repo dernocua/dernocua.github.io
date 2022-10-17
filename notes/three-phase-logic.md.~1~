@@ -1,0 +1,3 @@
+Consider the traditional two-NPN multivibrator.  Both NPN transistors
+have their emitters grounded, base resistors of 10kΩ to the collector
+of the other transistor, and collector pullups of 1kΩ to Vcc.

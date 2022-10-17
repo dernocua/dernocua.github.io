@@ -1,0 +1,34 @@
+21:44 < muurkha> also I think a file that is a reflinked copy of another file can still be modified
+21:44 < muurkha> just not by modifications to the original file
+21:44 < leah2> yes, but only the changed blocks are allocated
+21:45 < leah2> oh you mean a reflinking mmap, misread
+21:45 < muurkha> right, but I mean another process can still ftruncate the copy and core-dump your editor or whatever
+21:45 < muurkha> maybe every editor buffer should be a separate process anyway
+21:45 < leah2> well that's a case where you are allowed to write a segv handler ;)
+21:46 < muurkha> maybe it would be better to prevent the segv!
+21:46 < leah2> a segv isnt a problem in itself :p
+21:47 < muurkha> no, but the fact that the data you wanted to see in your editor is gone is a problem
+21:47 < muurkha> a segv is extra complexity and complexity is a problem, but "suck it up" is a reasonable answer
+21:47 < leah2> > btrfs supports a new reflink() operation which is essentially a copy-on-write filesystem copy. You could reflink() your 
+               file to a temporary on start-up, mmap() the temporary, then msync() and reflink() the temporary back to the original to 
+               checkpoint.
+21:47 < muurkha> yaeh
+21:47 < leah2> aha, it could be used like this :D
+21:48 < muurkha> and you could unlink() the temporary
+21:48 < leah2> or even use the new swap syscall
+21:48 < muurkha> not familiar
+21:48 < muurkha> unlink() would make it unusual for the problem to arise
+21:48 < leah2> return renameat2(AT_FDCWD, s, AT_FDCWD, t, RENAME_EXCHANGE);
+21:48 < leah2> swaps the two files
+21:48 < leah2> atomically
+21:48 < muurkha> aha, interesting
+21:49 < muurkha> Oberon took a different approach to anonymous tempfiles: IIRC opening the file was one operation, while adding a name 
+                 to it was a second, optional operation
+21:49 < leah2> linux has O_TMPFILE nowadays too
+21:49 < muurkha> so if you never "added it to the directory" you were guaranteed nobody else could open it
+21:49 < leah2> yes
+21:50 < muurkha> hmm, I don't think you can use O_TMPFILE with reflink(), can you?
+21:51 < leah2> no, reflinkat needs names, but copy_file_range(2) uses fd
+21:51 < leah2> and is supposed to use reflinks below
+21:51 < leah2> could be a nice experiment :)
+21:51 < muurkha> oh interesting!  that's even better!

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html><title>Some notes on compiling and notations for grammars, starting from the inspiring RPN example in Parson ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Some notes on compiling and notations for grammars, starting from the inspiring RPN example in Parson</h1><div class="metadata">Kragen Javier Sitaker, 02021-01-15 (updated 02021-12-31)
+(15 minutes)</div><p>Darius Bacon’s Parson parsing library includes a beautiful little
+example compiler in 11 lines of code, “eg_calc_to_rpn.py”; quoted in
+full:</p>
+<pre><code>from parson import Grammar, alter
+
+g = Grammar(r"""  stmt* :end.
+
+stmt   :  ident '=' exp0 ';'  :assign.
+
+exp0   :  exp1 ('+' exp1      :'add')*.
+exp1   :  exp2 ('*' exp2      :'mul')*.
+
+exp2   :  '(' exp0 ')'
+       |  /(\d+)/
+       |  ident               :'fetch'.
+
+ident  :  /([A-Za-z]+)/.
+
+FNORD ~:  /\s*/.
+""")(assign=alter(lambda name, *rpn: rpn + (name, 'store')))
+
+## print ' '.join(g('v = 42 * (5+3) + 2*2; v = v + 1;'))
+#. 42 5 3 add mul 2 2 mul add v store v fetch 1 add v store
+</code></pre>
+<p>As can be seen from the Halp test at the bottom, this is all that’s
+needed for Parson to compile an infix grammar to a sequence of
+stack-machine operations, although it will go wrong if you use “add”,
+“mul”, “fetch”, or “store” as variable names.</p>
+<h2>Review of standard properties of Kleene algebras</h2>
+<p>A “Kleene algebra” is an <a href="https://en.wikipedia.org/wiki/Semiring">idempotent semiring</a> augmented with an
+unary “closure” operator “★” with certain properties.  In the concrete
+case of regular languages, the + and · operators of the semiring are
+alternation and concatenation; that is, if <em>a</em> and <em>b</em> are two
+languages, <em>a</em> + <em>b</em> is their union (and equal to <em>b</em> + <em>a</em>, because
+set union is commutative), and <em>a</em>·<em>b</em> is sort of their Cartesian
+product: the set of strings that can be produced by concatenating a
+string <em>α</em> ∈ <em>a</em> with a string <em>β</em> ∈ <em>b</em> to form <em>a</em> || <em>b</em>.  (This is
+only <em>sort of</em> their Cartesian product because the string boundary is
+lost, and as a result this product operator is associative:
+(<em>a</em>·<em>b</em>)·<em>c</em> = <em>a</em>·(<em>b</em>·<em>c</em>), which is not true with most
+formulations of the Cartesian product.)  In general <em>b</em>·<em>a</em> is a
+different language.  We can observe that there is a language 0
+containing no sentences that is the identity for +, and the language 1
+containing only the empty sentence that is the (left and right)
+identity for ·.  Multiplication by 0 produces 0: 0·<em>a</em> and <em>a</em>·0
+contains no sentences for any <em>a</em> because there are no sentences to
+draw from 0 for the left substring (respectively the right substring)
+of the product.</p>
+<p>We can also observe that multiplication distributes over addition:
+<em>a</em>·<em>b</em> + <em>a</em>·<em>c</em> = <em>a</em>·(<em>b</em> + <em>c</em>), because iff you have a string <em>α</em>
+∈ <em>a</em> and a string <em>γ</em> ∈ <em>b</em> + <em>c</em>, then by definition (<em>α</em> || <em>γ</em>) ∈
+<em>a</em>·(<em>b</em> + <em>c</em>).  Let <em>δ</em> be <em>α</em> || <em>γ</em>.  Also by definition, <em>γ</em> ∈
+<em>b</em> ∨ <em>γ</em> ∈ <em>c</em>.  In the first case <em>δ</em> ∈ <em>a</em>·<em>b</em> by the definition of
+·, and therefore <em>δ</em> ∈ <em>a</em>·<em>b</em> + <em>a</em>·<em>c</em>.  In the second case <em>δ</em> ∈
+<em>a</em>·<em>c</em> and so again <em>δ</em> ∈ <em>a</em>·<em>b</em> + <em>a</em>·<em>c</em>.  The same chain of
+reasoning works in reverse and <em>mutatis mutandis</em> to show <em>b</em>·<em>a</em> +
+<em>c</em>·<em>a</em> = (<em>b</em> + <em>c</em>)·<em>a</em>.</p>
+<p>These are the semiring properties (+ a commutative monoid operation, ·
+a monoid operation, distributivity, and annihilation) so we can
+conclude that languages are a semiring under such concatenation and
+alternation.  Importantly, this conclusion is not limited to, for
+example, regular languages.</p>
+<p>It happens that, with the union interpretation of addition, <em>a</em> + <em>a</em>
+= <em>a</em>, so languages form a so-called “idempotent semiring”, which
+induces a partial ordering relation: <em>a</em> ≤ <em>b</em> iff <em>a</em> + <em>b</em> = <em>b</em>.
+In this case, this is simply the subset relation ⊆.  (I’m not sure
+what happens in non-idempotent semirings.)</p>
+<p>(Henceforth I will write multiplication simply as juxtaposition.)</p>
+<p>The usual Kleene closure operation ★ from regular expressions can be
+defined in terms of an equation:</p>
+<pre><code>x★ = 1 + x x★ (or equivalently 1 + x★ x)
+</code></pre>
+<p><a href="https://en.wikipedia.org/wiki/Kleene_algebra">But the definition used for Kleene algebras</a>, invented not by
+Kleene but by Kozen in 1994, is axiomatic rather than equational:</p>
+<ul>
+<li>1 + <em>aa</em>★ ≤ <em>a</em>★</li>
+<li>1 + <em>a</em>★<em>a</em> ≤ <em>a</em>★</li>
+<li><em>ax</em> ≤ <em>x</em> ⇒ <em>a</em>★<em>x</em> ≤ <em>x</em></li>
+<li><em>xa</em> ≤ <em>x</em> ⇒ <em>xa</em>★ ≤ <em>x</em></li>
+</ul>
+<h2>A BNF grammar as a set of equations in a Kleene algebra</h2>
+<p>Let’s consider the expression grammar above as a grammar over tokens,
+with the semantic actions and tokens stripped out:</p>
+<pre><code>g      : stmt*.
+
+stmt   :  ident '=' exp0 ';'.
+
+exp0   :  exp1 ('+' exp1)*.
+exp1   :  exp2 ('*' exp2)*.
+
+exp2   :  '(' exp0 ')'
+       |  number
+       |  ident.
+</code></pre>
+<p>Parson parses PEGs, but we can safely regard this as a CFG because it
+doesn’t use any of the extra-CFG features of PEGs; for example, it
+doesn’t use negation, and it has no ambiguity of the sort that PEGs
+resolve in a non-CFG way.  So we can rewrite this as a system of
+equations in a Kleene algebra:</p>
+<blockquote>
+<p><em>g</em> = <em>s</em>★<br />
+<em>s</em> = <em>i</em> '=' <em>e</em>₀ ';'<br />
+<em>e</em>₀ = <em>e</em>₁ ('+' <em>e</em>₁)★<br />
+<em>e</em>₁ = <em>e</em>₂ ('<em>' </em>e<em>₂)★<br />
+</em>e<em>₂ = '(' </em>e<em>₀ ')' + </em>n<em> + </em>i* </p>
+</blockquote>
+<p>We could think of the problem of constructing a parser as the problem
+of finding the solution, or at least a least fixpoint, of these
+equations.  What (infinite, non-regular) language <em>g</em> satisfies this
+system of equations?  And a mostly satisfactory answer is “The
+language recognized by such-and-such a pushdown automaton,” in general
+a nondeterministic one.  We can always compute such an answer, and
+it’s reasonable to think of the parser generation problem as the
+problem of solving such sets of equations to compute such an answer.</p>
+<p>It’s not an entirely satisfactory answer, though, because if the PDA
+in question isn’t deterministic, its equivalence to another PDA is
+undecidable.  (The 1997 proof that <a href="https://en.wikipedia.org/wiki/Deterministic_pushdown_automaton#Equivalence_problem">the problem <em>is</em> decidable in the
+deterministic case</a> won Sénizergues the 2002 Gödel Prize,
+suggesting that it may be difficult in practice.)</p>
+<p>We don’t need the whole Kleene algebra to express the system of
+equations, though; its semiring operations are enough, and we don’t
+even need parentheses in the notation, except as literal strings:</p>
+<blockquote>
+<p><em>g</em> = <em>s</em> + <em>g s</em><br />
+<em>s</em> = <em>i</em> '=' <em>e</em>₀ ';'<br />
+<em>e</em>₀ = <em>e</em>₁ + <em>e</em>₁ '+' <em>e</em>₀<br />
+<em>e</em>₁ = <em>e</em>₂ + <em>e</em>₂ '<em>' </em>e<em>₂<br />
+</em>e<em>₂ = '(' </em>e<em>₀ ')' + </em>n<em> + </em>i* </p>
+</blockquote>
+<p>Note that there are three “nonlinear” terms in here, where two
+nonterminals (that is, from the equation-solving point of view,
+unknowns) are part of a single product.  A CFG that cannot do this,
+where each concatenation is restricted to at most one nonterminal,
+cannot express arbitrarily branching derivations — each parse tree
+node can only have a single non-leaf child — but it can still describe
+some non-regular languages, for example:</p>
+<blockquote>
+<p><em>p</em> = '&lt;' <em>p</em> '&gt;' + '⚜'</p>
+</blockquote>
+<p>But it can’t match parentheses in more than one place, so it can't
+express, for example:</p>
+<blockquote>
+<p><em>q</em> = '{' <em>q</em> '}' + <em>q q</em> + '☮'</p>
+</blockquote>
+<p>So these “linear” context-free grammars are a class of languages
+strictly larger than regular languages, but strictly smaller than
+CFGs.  There’s probably a well-known name for them.</p>
+<h2>Notational alternatives</h2>
+<p>Consider the original grammar again:</p>
+<pre><code>stmt* :end.
+
+stmt   :  ident '=' exp0 ';'  :assign.
+
+exp0   :  exp1 ('+' exp1      :'add')*.
+exp1   :  exp2 ('*' exp2      :'mul')*.
+
+exp2   :  '(' exp0 ')'
+       |  /(\d+)/
+       |  ident               :'fetch'.
+
+ident  :  /([A-Za-z]+)/.
+
+FNORD ~:  /\s*/.
+</code></pre>
+<p>Or the semantics-free version:</p>
+<pre><code>stmt*.
+
+stmt   :  ident '=' exp0 ';'.
+
+exp0   :  exp1 ('+' exp1)*.
+exp1   :  exp2 ('*' exp2)*.
+
+exp2   :  '(' exp0 ')'
+       |  /(\d+)/
+       |  ident.
+
+ident  :  /([A-Za-z]+)/.
+
+FNORD ~:  /\s*/.
+</code></pre>
+<p>If we were driven by a mad Tuftean urge to minimize ink on the page,
+we could start by shortening the identifiers as I did before:</p>
+<pre><code>s*.
+
+s   :  i '=' e ';'.
+
+e   :  f ('+' f)*.
+f   :  g ('*' g)*.
+
+g   :  '(' e ')'
+    |  /(\d+)/
+    |  i.
+
+i  :  /([A-Za-z]+)/.
+
+FNORD ~:  /\s*/.
+</code></pre>
+<p>Then we could omit the (strictly speaking, redundant) colons, and
+replace the <code>|</code> with something lighter, such as <code>,</code>, even though <code>;</code>
+would have a more accurate connotation from Prolog:</p>
+<pre><code>s*.
+
+s  i '=' e ';'.
+
+e  f ('+' f)*.
+f  g ('*' g)*.
+
+g  '(' e ')',
+   /(\d+)/,
+   i.
+
+i  /([A-Za-z]+)/.
+
+FNORD ~  /\s*/.
+</code></pre>
+<p>If we switch to <code>;</code> for rule terminators, we could use <code>.</code> to tag
+nonterminals, thus eliminating the need for <em>most</em> quotes:</p>
+<pre><code>.s*;
+s  .i = .e ';';
+e  .f (+ .f)*;
+f  .g ('*' .g)*;
+g  '(' .e ')', /(\d+)/, .i;
+i  /([A-Za-z]+)/;
+FNORD ~  /\s*/;
+</code></pre>
+<p>Hmm, that didn’t pay off quite as well as I was hoping; I could
+instead tag the literal tokens with a lighter-weight <code>:</code>, perhaps,
+unless they contain whitespace:</p>
+<pre><code>s*.
+s  i := e :; .
+e  f (:+ f)*.
+f  g (:* g)*.
+g  :( e :) , /(\d+)/, i.
+i  /([A-Za-z]+)/.
+FNORD ~  /\s*/.
+</code></pre>
+<p>We can replace Kleene’s <code>*</code> with a “join” operator, for which we can
+use <code>;</code>, vaguely connected to Perl’s <code>$;</code>; ( number; :, ) would mean
+“one or more numbers separated by commas”, for example, equivalent to
+the current (number (:, number)*) construct.  Parson spells this
+<code>number ** ','</code> or, in the Python interface, <code>star(number,
+separator=',')</code>.  The idea of <code>;</code> is that it's lower-noise than <code>**</code>
+and it binds <em>less</em> tightly than concatenation, or <code>,</code> alternation.
+This gives us:</p>
+<pre><code>, s ; .
+s  i := e :; .
+e  f ; :+ .
+f  g ; :* .
+g  :( e :) , /(\d+)/, i.
+i  /([A-Za-z]+)/.
+FNORD ~  /\s*/.
+</code></pre>
+<p>This eliminates the multiple references that gave rise to the
+necessity for naming f and g, so we can reduce this to:</p>
+<pre><code>, s ; .
+s  i := e :; .
+e  ((:( e :) , /(\d+)/, i) ; :*) ; :+ .
+i  /([A-Za-z]+)/.
+FNORD ~  /\s*/.
+</code></pre>
+<p>This is kind of unreadable but it’s also 97 characters.  To crunch it
+<em>further</em> we can try defining nonterminals inline; instead of saying
+<code>i := e :; .</code> and then only later defining <code>i</code>, we can define it right
+then and there by saying <code>&lt;i /([A-Za-z]+)/&gt; := e :; .</code> If we want to
+refer to <code>i</code> again, and we do, it's probably more readable to refer to
+it as <code>&lt;i&gt;</code>, although that obviously does cost some strokes if we’re
+playing golf.  This also means that the whole grammar can be inlined
+into one giant unreadable expression, so we no longer need any
+terminating periods.  Meanwhile we can rename FNORD to <code>_</code>, as in a
+variable you’re ignoring in Prolog, ML, Python, or Erlang.  Then we
+have <em>this</em>:</p>
+<pre><code>, &lt;_ /\s*/&gt; &lt;i /([A-Za-z]+)/&gt; := &lt;e ((:( &lt;e&gt; :) , /(\d+)/, &lt;i&gt;); :* ); :+ &gt; :; ;
+</code></pre>
+<p>That's 80 characters: an infix precedence partner for possibly-empty
+sequences of assignment statements in one line of code.</p>
+<p>I don’t like the colon-delimited tokens, though.  It’s too easy to
+remove the whitespace following them.  So I'm going to add some noise
+back in:</p>
+<pre><code>,&lt;_ /\s*/&gt; &lt;i /([A-Za-z]+)/&gt; "=" &lt;e (( "(" &lt;e&gt; ")", /(\d+)/, &lt;i&gt;); "*"); "+"&gt; ";";
+</code></pre>
+<p>It’s 83 characters now, but I think enormously more readable.</p>
+<p>So those are our means of <em>composition</em> or combination of grammars to
+make richer grammars.  But it would also be useful to have a lot of
+canned <em>primitives</em> with common meanings, not just regular expressions
+and constant strings, for common kinds of tokens with common
+semantics.  For example:</p>
+<ul>
+<li>$a one or more upper and lowercase letters</li>
+<li>$A one or more uppercase letters</li>
+<li>$w one or more digits, upper and lowercase ASCII letters, and
+  underscores, starting with a non-digit</li>
+<li>$s zero or more spaces, tabs, carriage returns, or newlines (but not
+  vertical tabs!)</li>
+<li>$S zero or more Unicode whitespace characters, including $s</li>
+<li>$u a single Unicode codepoint encoded in UTF-8</li>
+<li>$U one or more non-ASCII characters</li>
+<li>$d possibly signed decimal integer</li>
+<li>$n decimal integer with no sign</li>
+<li>$r either carriage return, linefeed, or carriage return and then linefeed</li>
+<li>$R the rest of the line: /.*/ $r</li>
+<li>$x hexadecimal digit</li>
+<li>$f possibly signed decimal floating-point number</li>
+<li>$c C-style double-quoted string with -escaping of doublequotes and \</li>
+<li>$e Elisp-style double-quoted string with -escaping and possible
+  embedded newlines</li>
+<li>$q SQL-style apostrophe-quoted string with doubling of embedded apostrophes</li>
+<li>$# comment to end of line introduced with #</li>
+<li>$^ ASCII control characters in general, including carriage returns,
+  linefees, tab, and delete, but not including the ISO-8859-1 control
+  characters after delete, the other Unicode control characters like
+  ZWNJ, or space (ASCII 32)</li>
+</ul>
+<p>Such an arsenal of preloaded ammunition allows us to reduce the above
+expression grammar to 62 characters, about 25%:</p>
+<pre><code>,&lt;_ $s&gt; $a "=" &lt;e (( "(" &lt;e&gt; ")", $n, $a); "*"); "+"&gt; ";";
+</code></pre>
+<p>We could even make some reasonable extensions:</p>
+<pre><code>,&lt;_ $s, $#&gt; $w "=" &lt;e (( "(" &lt;e&gt; ")", $n, $w); "*", "/"); "+", "-"&gt; ";";
+</code></pre>
+<p>An accommodation especially for precedence parsers would be to declare
+that the <code>;</code> operator associates to the left, allowing us to flatten
+the grammar considerably at, perhaps, some cost to readability:</p>
+<pre><code>,&lt;_ $s, $#&gt; $w "=" &lt;e "(" &lt;e&gt; ")", $n, $w; "*", "/"; "+", "-"&gt; ";";
+</code></pre>
+<p>As written, this can accidentally match the empty string an infinite
+number of times, which may or may not be a problem depending on your
+matching technology.  If so, parens help:</p>
+<pre><code>,(&lt;_ $s, $#&gt; $w "=" &lt;e "(" &lt;e&gt; ")", $n, $w; "*", "/"; "+", "-"&gt; ";";)
+</code></pre>
+<p>Because <code>;x</code> matches zero or more <code>x</code>es, we can rewrite this without
+any parens at all:</p>
+<pre><code>; &lt;_ $s, $#&gt; $w "=" &lt;e "(" &lt;e&gt; ")", $n, $w; "*", "/"; "+", "-"&gt; ";"
+</code></pre>
+<p>To compile into Forth, we could maybe try to include snippets of
+literal output with {} and use {{}} to mark bits of the input to copy
+to the output:</p>
+<pre><code>; &lt;_ $s, $#&gt; {{$w}} "="
+    &lt;e "(" &lt;e&gt; ")", {{$n}}, {{$w}};
+        "*" {"*"}, "/" {"/"}; "+" {"+"}, "-" {"-"}&gt;
+{"swap !"} ";"
+</code></pre>
+<p>The inability to reorder chunks of the input here is a clear weakness.
+In this case we not only need a <code>swap</code>, we’re emitting the operators
+too early!  We can fix this in the conventional way, though losing the
+advantage of <code>;</code>:</p>
+<pre><code>; &lt;_ $s, $#&gt; {{$w}} "="
+    &lt;e &lt;e2 &lt;e3 "(" &lt;e&gt; ")", {{$n}}, {{$w}}&gt;
+           (; "*" &lt;e3&gt; {"*"}, "/" &lt;e3&gt; {"/"})&gt;
+       (; "+" &lt;e2&gt; {"+"}, "-" &lt;e2&gt; {"-"})&gt;
+{"swap !"} ";"
+</code></pre>
+<p>If we define a lowest-precedence <code>@@</code> operator which discards its
+right argument, we could write one of the above versions perhaps more
+readably as</p>
+<pre><code>,($w "=" &lt;e&gt; ";";)
+@@
+    &lt;_ $s, $#&gt;
+    &lt;e "(" &lt;e&gt; ")", $n, $w; "*", "/"; "+", "-"&gt;
+</code></pre>
+<p>Using apostrophes instead of doublequotes:</p>
+<pre><code>,($w '=' &lt;e&gt; ';';)
+@@
+    &lt;_ $s, $#&gt;
+    &lt;e '(' &lt;e&gt; ')', $n, $w; '*', '/'; '+', '-'&gt;
+</code></pre>
+<p>JSON might be (from memory) something like</p>
+<pre><code>&lt;v "[" &lt;_ $s&gt; (,(v; ",")) "]"
+ , "{" (,(&lt;s $c&gt; ":" &lt;v&gt;; ",")) "}"
+ , ("true", "false", "null") !!$s
+ , $f
+ &gt;
+</code></pre>
+<p>Hmm, I just checked, and JSON has a slightly more complex string
+syntax, and doesn’t actually require whitespace after the keywords as
+I claimed above.  And my definition above of $s happens to be perfect
+for JSON.</p>
+<pre><code>&lt;v '[' &lt;_ $s&gt; (,(&lt;v&gt;; ',')) ']'
+ , 'true', 'false', 'null'
+ , &lt;s '"' 
+    (;
+        !'"' !'\\' !$^ $u,
+        '\\' ('"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u' $x $x $x $x)
+    ) '"'&gt;
+ , '{' (,(&lt;s&gt; ':' &lt;v&gt;; ',')) '}'
+ , $f
+ &gt;
+</code></pre>
+<p>You might want to add more tags and regex captures to help with
+semantic actions:</p>
+<pre><code>,(&lt;_ $s, $#&gt; &lt;s $w&gt; "=" &lt;e &lt;t "(" &lt;e&gt; ")", &lt;k $n&gt;, &lt;f $w&gt;;
+                           &lt;m /([*/])/&gt;; &lt;a /([-+])/&gt;&gt;";";)
+</code></pre>
+<p>An alternative to <code>;</code> might be <code>|</code>, as in Haskell list comprehensions,
+though that looks awkward without extra whitespace:</p>
+<pre><code>,(&lt;_ $s, $#&gt; $w "=" &lt;e "(" &lt;e&gt; ")", $n, $w | "*", "/" | "+", "-"&gt; ";" | )
+</code></pre>
+<p>Or <code>:</code>, since we aren't using that for anything else and it's less
+jarring than <code>|</code> in the absence of whitespace:</p>
+<pre><code>,(&lt;_ $s, $#&gt; $w "=" &lt;e "(" &lt;e&gt; ")", $n, $w: "*", "/": "+", "-"&gt; ";":)
+</code></pre>
+<p>Or <code>*</code> of course, although that visually binds more tightly than ",":</p>
+<pre><code>,(&lt;_ $s, $#&gt; $w "=" &lt;e "(" &lt;e&gt; ")", $n, $w * "*", "/" * "+", "-"&gt; ";" *)
+</code></pre>
+<p>An alternative to <x y> would be x: y.  This would reduce the <code>;</code>
+version to</p>
+<pre><code>,(&lt;_ $s, $#&gt; $w "=" e: "(" e ")", $n, $w; "*", "/"; "+", "-". ";";)
+</code></pre>
+<p>An alternative use of <code>.</code> would be for canned primitives:</p>
+<pre><code>,(&lt;_ .s, .#&gt; .w "=" e: "(" e ")", .n, .w; "*", "/"; "+", "-". ";";)
+</code></pre><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/math.html">Math</a> (11 notes)
+</li><li><a href="../topics/compilers.html">Compilers</a> (10 notes)
+</li><li><a href="../topics/syntax.html">Syntax</a> (5 notes)
+</li><li><a href="../topics/parsing.html">Parsing</a> (5 notes)
+</li><li><a href="../topics/rpn.html">Reverse Polish notation (RPN)</a> (4 notes)
+</li><li><a href="../topics/dsls.html">Domain-specific languages (DSLs)</a> (4 notes)
+</li><li><a href="../topics/kleene-algebras.html">Kleene algebras</a> (3 notes)
+</li></ul></div></html>

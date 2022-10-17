@@ -1,0 +1,6 @@
+A list of CLI tools developed from a chat channel.
+
+- `jq`, JSON query
+- `history`
+- `ls`, `cd`, `mkdir`, `rmdir`, `mv`, `ln`, `rm`, `cp`: basic file manager
+- `man`, `info`: online help

@@ -1,0 +1,2 @@
+As mentioned in file `layout-typescript.md` one of the deficiencies of
+the Lisp object-graph memory model is that locations aren’t first-class.

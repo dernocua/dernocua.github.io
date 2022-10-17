@@ -1,0 +1,6 @@
+Suppose I write the equations:
+
+    area = height * section.perimeter + 2 * section.area
+    volume = height * section.area
+    
+These describe a cylinder or prism.

@@ -1,0 +1,16 @@
+<ttk> that idea appeals to me because the next logical step after automatically detecting errors is automatically correcting errors, and\
+ I've been contemplating for a couple of decades the eventual necessity of my cognitive processes growing
+
+now, for "automatically correcting errors", you have a different problem: the property you're testing in your test needs to be fully suf\
+ficient for correctness!
+<xentrac> now, for "automatically correcting errors", you have a different problem: the property you're testing in your test needs to be\
+ fully sufficient for correctness!
+otherwise the automatic "correction" may just convert a bug your test detects into a bug it can't.  there may be a gray area in the midd\
+le where heuristic shrinking of the implementation, similar to what Hypothesis does for test cases, will usually produce the smallest po\
+ssible program that satisfies the test, and it might be possible to write an Ockham-approved set of tests such that the simplest code th\
+at can satisfy them is actually correct
+<xentrac> otherwise the automatic "correction" may just convert a bug your test detects into a bug it can't.  there may be a gray area i\
+n the middle where heuristic shrinking of the implementation, similar to what Hypothesis does for test cases, will
+<xentrac> usually produce the smallest possible program that satisfies the test, and it might be possible to write an Ockham-approved se\
+t of tests such that the simplest code that can satisfy them is actually correct
+even if the tests aren't actually fully sufficient for correctness

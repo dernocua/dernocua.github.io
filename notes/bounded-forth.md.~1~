@@ -1,0 +1,11 @@
+What if we use the Fortran memory model in Forth?  With bounds
+checking?
+
+    3 value x
+
+creates a scalar variable x with value 3.
+
+    4 to x
+
+sets scalar x to 4.
+

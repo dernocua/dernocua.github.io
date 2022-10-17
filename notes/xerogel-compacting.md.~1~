@@ -1,0 +1,33 @@
+
+This suggests that by this means we can fabricate composite materials
+with high loadings of fibrous or especially laminar reinforcing filler
+(e.g., talc, clays, carbon fibers, carborundum whiskers, graphene,
+MXenes; see file `electrolytic-2d-cutting.md` for some fuller lists)
+without having to assemble them layer by layer.  Specifically, you
+bulk up the polymer with a lot of solvent, mix in your functional
+filler, deposit it in an X–Y sheet of uniform thickness on some
+substrate, evaporate off the solvent resulting in a great loss of
+volume, and then break the sheet free from the substrate.
+
+Adherence to the substrate prevents the sheet from shrinking in the
+X–Y plane as it dries, forcing all of the volume loss to be in the Z
+direction; this reorients the filler particles nearly parallel to the
+X–Y plane, allowing them to pack much more tightly than laminar
+reinforcing particles normally could, potentially resulting in a final
+product that consists almost entirely of the filler, bound together
+with a small amount of matrix.  If the solution is sufficiently
+viscous or dense, or if surface charges maintain the filler particles
+deflocculated, the filler will not settle out or float out before
+being held in place during the drying process.  Thus the filler will
+be evenly dispersed through the resulting matrix.
+
+As I understand it, the drying process normally works by first gelling
+the viscous solution into a hydrogel, then contracting it into a
+xerogel under the influence of surface tension in the nanopores of the
+gel.  Thus, carrying out the above process with metals using mercury
+as a solvent may or may not work, because solid amalgams are not gels,
+and the shrinking process may be different from xerogel collapse.  It
+may work anyway, though; I think mercury can dissolve all of zinc,
+copper, tin, lead, silver, and gold to an appreciable extent, and at
+least in the case of gold it is commonplace to recover fully dense
+solid gold by heating, which is how mercury gilding works.

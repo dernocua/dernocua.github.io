@@ -1,0 +1,44 @@
+The traditional way to make a character-cell CRT terminal such as an
+ADM-3A in hardware (as opposed to embedding a computer into the
+terminal, as was done in the VT-100, Datapoint 2200, and PLATO V
+terminals) is by mapping each character cell to a fixed position in a
+random-access screen-buffer memory, then controlling the memory
+address bus with a counter during raster scanout.  A pixel counter
+overflows into the column counter, which overflows into a scanline
+counter, which overflows into a text-line counter.  The pixel counter
+and scanline counters are used to drive some address lines on a font
+memory (often, tragically, a mask ROM) while the column and text-line
+counters drive the screen-buffer address lines, the data from which
+drives the other address lines on the font memory, perhaps delayed by
+a clock cycle or two of latches.  A little buffering logic delays
+writes to the screen buffer until an HBI to avoid the need for
+dual-ported RAM or the occurrence of CGA-clone snow.
+
+This approach to driving the screen can produce a high pixel rate with
+relatively slow RAM.  Typical numbers from this epoch might be 60 Hz
+for vertical scan, 5 horizontal pixels per glyph, 80 glyphs per line,
+8 scanlines per text line, 24 text lines per screen, and about 10%
+horizontal blanking interval (HBI) and 10% vertical blanking interval
+(VBI).  Multiplying this out, the visible part of the screen contains
+192 scan lines, so including the VBI it’s about 213, giving a
+horizontal scan frequency of 12.8 kHz.  In practice this is low enough
+to produce an annoying whine audible to many people, so often higher
+frequencies were used; suppose the horizontal scan is instead 20 kHz,
+including 400 pixels and a 44-pixel HBI.  Then our pixel clock is
+8.9 MHz; pixels come out 113 ns apart.  This is fast enough to require
+significant attention to signal integrity and path-length issues.
+
+One solution to this problem is to dump each character slice from an
+N-bit-wide font memory into a buffered shift register.  The shift
+register needs to run at the full dot clock speed, but the font memory
+can run N times slower, in this case 1.78 MHz, 560 ns per access,
+which is easily attainable with memory chips from the 01970s and maybe
+even some core memory.  The screen-buffer memory runs at the same
+speed.
+
+(To be concrete about sizes, the font buffer might contain 96 5×8
+glyphs, 480 bytes in all, while the screen buffer is just under 2000
+bytes.  When that amount of RAM was too expensive, you were stuck with
+vector displays or printing terminals.)
+
+A drawback of this organization is that the 

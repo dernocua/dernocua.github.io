@@ -1,0 +1,6 @@
+PCB contract manufacturers like JLCPCB will score your printed circuit
+boards with V-grooves on one side so you can break it into panels.
+Looking at the Boréas Technology evaluation board, I see that it’s
+scored this way to be able to break into three boards, but has traces
+across the scoring on the opposite side of the board, so *until* you
+*do* break it into panels this way, it's

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><title>Fibonacci scan ⁑ Dernocua</title><meta charset="utf-8"></meta><link href="../liabilities/style.css" rel="stylesheet"></link><meta content="width=device-width, initial-scale=1.0" name="viewport"></meta><h1>Fibonacci scan</h1><div class="metadata">Kragen Javier Sitaker, 02021-01-10 (updated 02021-01-15)
+(1 minute)</div><p>The Fibonacci sequence is F(0) = 1, F(1) = 1, F(<em>n</em>&gt;1) = F(<em>n</em>-1) +
+F(<em>n</em>-2), giving 1 1 2 3 5 8 13 21 34 55 89... and a property I just
+noticed is that Σ<em>ₙ</em>F(<em>n</em>) for 0 ≤ <em>n</em> ≤ <em>m</em> is just F(<em>m</em> + 2) - 1.</p>
+<p>We can observe that this property is true for <em>m</em> = 0: the sum is 1,
+<em>m</em> + 2 = 2, F(2) = 2, so F(2) - 1 = 1.  When we advance the sum from
+<em>m</em>₀ to <em>m</em>₀ + 1, we are adding F(<em>m</em>₀ + 1) to it.  F(<em>m</em>₀ + 3) =
+F(<em>m</em>₀ + 2) + F(<em>m</em>₀ + 1), by definition, so if this property is true
+for some <em>m</em>₀, it is also true for <em>m</em>₀ + 1.  So by induction it is
+always true.</p>
+<p>In some sense we should expect something like this to be true, since
+the Fibonacci sequence grows exponentially, but it was still a bit of
+a surprise to me to observe that 1+1+2+3+5+8+13+21+34 = 89-1.</p><script src="../liabilities/addtoc.js"></script><div><h2>Topics</h2><ul><li><a href="../topics/math.html">Math</a> (11 notes)
+</li><li><a href="../topics/prefix-sums.html">Prefix sums</a> (2 notes)
+</li></ul></div></html>
